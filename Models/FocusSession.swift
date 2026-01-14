@@ -1,9 +1,54 @@
 import Foundation
 
+// MARK: - Session Source
+enum SessionSource: String, Codable {
+    case iphone = "iPhone"
+    case watch = "Watch"
+    case handoff = "Handoff"  // Started on one device, continued on another
+}
+
+// MARK: - Biometric Data
+struct BiometricSessionData: Codable {
+    var averageHR: Double = 0
+    var peakHR: Double = 0
+    var minimumHR: Double = 0
+    var averageHRV: Double = 0  // RMSSD
+    var peakHRV: Double = 0
+    var averageFlowScore: Int = 0
+    var peakFlowScore: Int = 0
+    var timeInFlowState: TimeInterval = 0  // Seconds where state == .flow
+
+    // Detailed breakdown (Flow Score components)
+    var hrvScore: Int = 0      // Out of 40
+    var hrScore: Int = 0       // Out of 30
+    var sleepScore: Int = 0    // Out of 20
+    var substanceScore: Int = 0 // Out of 10
+}
+
+// MARK: - Flow Data Point (for timeline)
+struct FlowDataPoint: Codable, Identifiable {
+    let id: UUID
+    let timestamp: Date
+    let hr: Double
+    let hrv: Double
+    let flowScore: Int
+    let flowState: String  // "Calibrating", "Pre-Flow", "Flow", etc.
+
+    init(id: UUID = UUID(), timestamp: Date, hr: Double, hrv: Double, flowScore: Int, flowState: String) {
+        self.id = id
+        self.timestamp = timestamp
+        self.hr = hr
+        self.hrv = hrv
+        self.flowScore = flowScore
+        self.flowState = flowState
+    }
+}
+
+// MARK: - Focus Session
 struct FocusSession: Codable, Identifiable {
     let id: UUID
     let gardenId: UUID
-    let plantId: UUID?
+    var plantId: UUID?
     var taskDescription: String
     var seedType: SeedType
     var plantSpecies: PlantSpecies
@@ -17,6 +62,11 @@ struct FocusSession: Codable, Identifiable {
     var pauseCount: Int
     var totalPauseTime: TimeInterval
     var growthStageAchieved: Int
+
+    // New properties for Watch integration
+    var source: SessionSource
+    var biometrics: BiometricSessionData?
+    var flowTimeline: [FlowDataPoint]?
 
     init(
         id: UUID = UUID(),
@@ -34,7 +84,10 @@ struct FocusSession: Codable, Identifiable {
         wasAbandoned: Bool = false,
         pauseCount: Int = 0,
         totalPauseTime: TimeInterval = 0,
-        growthStageAchieved: Int = 0
+        growthStageAchieved: Int = 0,
+        source: SessionSource = .iphone,
+        biometrics: BiometricSessionData? = nil,
+        flowTimeline: [FlowDataPoint]? = nil
     ) {
         self.id = id
         self.gardenId = gardenId
@@ -52,6 +105,9 @@ struct FocusSession: Codable, Identifiable {
         self.pauseCount = pauseCount
         self.totalPauseTime = totalPauseTime
         self.growthStageAchieved = growthStageAchieved
+        self.source = source
+        self.biometrics = biometrics
+        self.flowTimeline = flowTimeline
     }
 
     // Computed properties

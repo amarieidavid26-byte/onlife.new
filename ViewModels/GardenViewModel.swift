@@ -52,6 +52,24 @@ class GardenViewModel: ObservableObject {
         loadGardens()
     }
 
+    // MARK: - Garden Selection (for Watch)
+
+    @discardableResult
+    func selectGarden(id: UUID) -> Bool {
+        print("🌳 [GardenViewModel] selectGarden called with id: \(id)")
+
+        guard let garden = gardens.first(where: { $0.id == id }) else {
+            print("❌ [GardenViewModel] Garden not found with id: \(id)")
+            return false
+        }
+
+        selectedGarden = garden
+        plants = garden.plants
+
+        print("✅ [GardenViewModel] Selected garden: \(garden.name) with \(plants.count) plants")
+        return true
+    }
+
     // MARK: - Computed Properties
 
     var plantCount: Int {

@@ -76,25 +76,58 @@ iPhone Bundle ID:        (should be: com.onlife.OnLife or similar)
 
 ```bash
 Instructions:
-1. Connect iPhone to Mac via USB cable
-2. Unlock iPhone
-3. Xcode → Window → Devices and Simulators
-4. Select your iPhone in left sidebar
-5. Under "Connection" checkbox, UNCHECK "Connect via network"
-6. Verify "Connected via USB" shows in status
+
+METHOD A - SIMPLE USB CONNECTION:
+1. **Disable WiFi on Mac temporarily** (easiest way to force USB):
+   - Click WiFi icon in menu bar → Turn Wi-Fi Off
+   - OR: System Settings → Network → Wi-Fi → Toggle OFF
+   
+2. Connect iPhone to Mac via USB cable
+3. Unlock iPhone and tap "Trust This Computer" if prompted
+4. Open Xcode
+5. Xcode toolbar → Select your iPhone (should show cable icon 🔌)
+6. Clean Build Folder: Product → Clean Build Folder (⌘⇧K)
+7. Build & Run: Product → Run (⌘R)
+8. **Keep WiFi OFF until Watch app installs**
+9. Watch Xcode console for: "Installing OnLife Watch App to [Watch]"
+10. After successful installation, turn WiFi back ON
+
+METHOD B - VERIFY CONNECTION IN DEVICES WINDOW:
+1. Connect iPhone via USB cable
+2. Xcode → Window → Devices and Simulators (⌘⇧2)
+3. Select your iPhone in left sidebar
+4. Look for connection indicator next to device name:
+   - 🔌 or "Connected via USB" = Good! Proceed
+   - 📡 or "Connected via Network" = Bad! See Method A or C
+5. If you see "Connect via network" checkbox: UNCHECK it
+6. If no checkbox visible: Use Method A (disable WiFi)
 7. Close Devices window
-8. In Xcode, select "OnLife (iPhone)" scheme
-9. Select your physical iPhone as destination
-10. Clean Build Folder: Product → Clean Build Folder (⌘⇧K)
-11. Build & Run: Product → Run (⌘R)
-12. Wait for iPhone app to launch
-13. Keep watching Xcode console for Watch installation messages
-14. Watch app should automatically install to Watch
-15. Check Watch home screen for OnLife app icon
+8. Continue with steps 6-10 from Method A
+
+METHOD C - NETWORK SETTINGS (if checkbox missing):
+1. Connect iPhone via USB
+2. Xcode → Window → Devices and Simulators
+3. Right-click on your iPhone in sidebar
+4. If "Disconnect via Network" appears → Click it
+5. Device should now show USB connection
+6. Continue with Method A steps 6-10
 ```
+
+**How to verify you're using USB (not wireless):**
+
+In Xcode toolbar (top of window), look at your device name:
+- ✅ **"Your iPhone" with cable icon (🔌)** = USB connection
+- ❌ **"Your iPhone" with network icon (📡)** = Wireless (won't work for Watch app)
+- ❌ **"Your iPhone (wireless)"** = Wireless connection
+
+OR check Xcode console during build:
+- ✅ Good: `"Launching app on 'Your iPhone' via USB"`
+- ❌ Bad: `"Launching app on 'Your iPhone' via network"`
 
 **Expected console output:**
 ```
+Launching app on 'Your iPhone' via USB
+...
 Installing "OnLife Watch App" to [Your Watch Name]
 Installation successful
 ```
@@ -337,9 +370,17 @@ The green checkmark proves your code is correct! This is purely an installation 
 ⌘⇧K = Clean Build Folder
 ```
 
-**Disable wireless:**
+**Force USB connection:**
 ```
-Xcode → Window → Devices and Simulators → Uncheck "Connect via network"
+EASIEST: Turn OFF WiFi on Mac, then build with USB cable connected
+OR: Xcode → Window → Devices → Right-click device → "Disconnect via Network"
+OR: Xcode → Window → Devices → Uncheck "Connect via network" (if visible)
+```
+
+**Verify USB connection:**
+```
+Check Xcode toolbar - device should show cable icon 🔌
+OR: Console should say "Launching via USB"
 ```
 
 **View console:**

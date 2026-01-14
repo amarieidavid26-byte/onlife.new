@@ -3,10 +3,12 @@ import SwiftUI
 struct SettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @StateObject private var profileManager = MetabolismProfileManager.shared
+    @StateObject private var watchConnectivity = WatchConnectivityManager.shared
     @State private var showClearDataConfirmation = false
     @State private var showingProfileEdit = false
 
     var body: some View {
+        NavigationStack{
         ZStack {
             AppColors.richSoil
                 .ignoresSafeArea()
@@ -69,6 +71,63 @@ struct SettingsView: View {
                         SettingsSection(title: "ACCOUNT") {
                             SettingsRow(icon: "👤", title: "Profile", value: "Coming soon")
                             SettingsRow(icon: "☁️", title: "Sync", value: "Local only")
+                        }
+
+                        // Developer/Debug section
+                        SettingsSection(title: "DEVELOPER") {
+                            NavigationLink {
+                                WatchConnectivityDebugView()
+                            } label: {
+                                HStack {
+                                    Text("⌚")
+                                        .font(.system(size: 20))
+
+                                    Text("WatchConnectivity Debug")
+                                        .font(AppFont.body())
+                                        .foregroundColor(AppColors.textPrimary)
+
+                                    Spacer()
+
+                                    // Status indicator
+                                    if watchConnectivity.isSessionActivated {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .foregroundColor(.green)
+                                    } else {
+                                        Image(systemName: "exclamationmark.triangle.fill")
+                                            .foregroundColor(.red)
+                                    }
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                .padding(Spacing.lg)
+                                .background(AppColors.lightSoil)
+                                .cornerRadius(CornerRadius.medium)
+                            }
+
+                            NavigationLink {
+                                WatchConnectivityTestView()
+                            } label: {
+                                HStack {
+                                    Image(systemName: "applewatch.radiowaves.left.and.right")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(AppColors.textPrimary)
+
+                                    Text("Test Watch Connection")
+                                        .font(AppFont.body())
+                                        .foregroundColor(AppColors.textPrimary)
+
+                                    Spacer()
+
+                                    Image(systemName: "chevron.right")
+                                        .font(.caption)
+                                        .foregroundColor(AppColors.textSecondary)
+                                }
+                                .padding(Spacing.lg)
+                                .background(AppColors.lightSoil)
+                                .cornerRadius(CornerRadius.medium)
+                            }
                         }
 
                         SettingsSection(title: "DANGER ZONE") {
@@ -157,6 +216,7 @@ struct SettingsView: View {
         .sheet(isPresented: $showingProfileEdit) {
             NavigationView {
                 MetabolismProfileEditView()
+            }
             }
         }
     }

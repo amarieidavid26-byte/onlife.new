@@ -10,6 +10,7 @@ struct ProductLookupView: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var showManualEntry = false
+    @State private var shouldLog = false
 
     var body: some View {
         NavigationView {
@@ -35,7 +36,8 @@ struct ProductLookupView: View {
                     ProductDetailsView(
                         product: product,
                         onLog: {
-                            logProduct(product)
+                            print("🎯 [ProductLookup] onLog closure invoked! Setting shouldLog = true")
+                            shouldLog = true
                         },
                         onCancel: {
                             dismiss()
@@ -57,6 +59,12 @@ struct ProductLookupView: View {
         }
         .task {
             await lookupProduct()
+        }
+        .onChange(of: shouldLog) { _, newValue in
+            if newValue, let product = product {
+                print("🔄 [ProductLookup] onChange triggered - logging product")
+                logProduct(product)
+            }
         }
         .sheet(isPresented: $showManualEntry) {
             ManualProductEntryView(barcode: barcode) { product in
@@ -103,16 +111,27 @@ struct ProductLookupView: View {
     // MARK: - Logging
 
     private func logProduct(_ product: ScannedProduct) {
+        print("📝 [ProductLookup] User tapped Log button")
+        print("📝 [ProductLookup] Logging: \(product.displayName)")
+        print("📝 [ProductLookup] Caffeine: \(product.caffeineAmount ?? 0)mg, L-theanine: \(product.lTheanineAmount ?? 0)mg, Volume: \(product.volumeAmount ?? 0)ml")
+
         // Convert product to substance logs
-        let logs = product.toSubstanceLogs()
+        let substanceLogs = product.toSubstanceLogs()
+        print("📝 [ProductLookup] Created \(substanceLogs.count) substance logs from product")
 
         // Log each substance
-        for log in logs {
+        for log in substanceLogs {
+            print("📝 [ProductLookup] Logging to tracker: \(log.substanceType.rawValue) \(log.amount)\(log.unit.rawValue)")
             SubstanceTracker.shared.log(
                 log.substanceType,
                 amount: log.amount,
                 source: log.source
             )
+        }
+
+        // If no substances to log, warn
+        if substanceLogs.isEmpty {
+            print("⚠️ [ProductLookup] WARNING: No substances to log from this product!")
         }
 
         // Haptic feedback
@@ -124,7 +143,10 @@ struct ProductLookupView: View {
             ProductDatabaseManager.shared.addUserProduct(product)
         }
 
+        print("📝 [ProductLookup] Calling onProductLogged callback")
         onProductLogged()
+
+        print("📝 [ProductLookup] Dismissing view")
         dismiss()
     }
 }
@@ -258,18 +280,23 @@ struct ProductDetailsView: View {
 
                 // Buttons
                 VStack(spacing: Spacing.md) {
-                    Button(action: onLog) {
+                    Button {
+                        print("🔘 [ProductDetails] Log button tapped!")
+                        onLog()
+                    } label: {
                         HStack {
                             Image(systemName: "checkmark.circle.fill")
                             Text("Log This Product")
                         }
                         .font(AppFont.button())
+                        .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
                         .background(AppColors.healthy)
-                        .foregroundColor(.white)
                         .cornerRadius(CornerRadius.medium)
                     }
+                    .buttonStyle(.plain)
+                    .contentShape(Rectangle())
 
                     Button(action: onCancel) {
                         Text("Cancel")

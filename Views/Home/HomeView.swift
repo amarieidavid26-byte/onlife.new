@@ -179,6 +179,12 @@ struct HomeView: View {
                 gardenViewModel.refreshGardens()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .selectGardenFromWatch)) { notification in
+            if let gardenId = notification.userInfo?["gardenId"] as? UUID {
+                print("🏠 [HomeView] Received garden selection from Watch: \(gardenId)")
+                gardenViewModel.selectGarden(id: gardenId)
+            }
+        }
     }
 }
 

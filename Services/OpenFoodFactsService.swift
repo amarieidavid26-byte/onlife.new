@@ -75,18 +75,38 @@ class OpenFoodFactsService {
 
     /// Extract caffeine amount from product data
     private func extractCaffeineAmount(from product: OpenFoodFactsProduct) -> Double? {
-        // Check nutriments for caffeine (in mg per 100g or 100ml)
-        if let caffeinePer100 = product.nutriments?.caffeine_100g {
+        // OpenFoodFacts stores caffeine in GRAMS, not milligrams!
+        // caffeine_100g is grams per 100g/100ml
+        // We need to convert to milligrams (multiply by 1000)
+
+        let nutriments = product.nutriments
+        let caffeineUnit = nutriments?.caffeine_unit ?? "g"
+        let isGrams = caffeineUnit.lowercased() == "g"
+        let conversionFactor = isGrams ? 1000.0 : 1.0  // Convert g to mg
+
+        print("🔬 [OpenFoodFacts] Parsing caffeine - unit: \(caffeineUnit), conversion: \(conversionFactor)x")
+        print("🔬 [OpenFoodFacts] Raw values - caffeine_100g: \(nutriments?.caffeine_100g ?? -1), caffeine_serving: \(nutriments?.caffeine_serving ?? -1)")
+
+        // Check nutriments for caffeine per 100g/100ml
+        if let caffeinePer100 = nutriments?.caffeine_100g, caffeinePer100 > 0 {
+            let caffeineMgPer100 = caffeinePer100 * conversionFactor
+            print("🔬 [OpenFoodFacts] caffeine_100g: \(caffeinePer100)\(caffeineUnit) = \(caffeineMgPer100)mg per 100ml")
+
             // Convert to total amount if we have serving size
-            if let servingQuantity = product.servingQuantity {
-                return (caffeinePer100 / 100.0) * servingQuantity
+            if let servingQuantity = product.servingQuantity, servingQuantity > 0 {
+                let totalCaffeine = (caffeineMgPer100 / 100.0) * servingQuantity
+                print("🔬 [OpenFoodFacts] With serving \(servingQuantity)ml: \(totalCaffeine)mg total")
+                return totalCaffeine
             }
-            return caffeinePer100
+            // Return per 100ml value if no serving size
+            return caffeineMgPer100
         }
 
-        // Check for caffeine per serving
-        if let caffeineServing = product.nutriments?.caffeine_serving {
-            return caffeineServing
+        // Check for caffeine per serving (also in grams usually)
+        if let caffeineServing = nutriments?.caffeine_serving, caffeineServing > 0 {
+            let caffeineMg = caffeineServing * conversionFactor
+            print("🔬 [OpenFoodFacts] caffeine_serving: \(caffeineServing)\(caffeineUnit) = \(caffeineMg)mg")
+            return caffeineMg
         }
 
         // Try to parse from ingredients text using regex
@@ -100,11 +120,87 @@ class OpenFoodFactsService {
                         let numberRange = match.range(at: 1)
                         let numberString = nsString.substring(with: numberRange)
                         if let amount = Double(numberString) {
+                            print("🔬 [OpenFoodFacts] Found caffeine in ingredients text: \(amount)mg")
                             return amount
                         }
                     }
                 }
             }
+        }
+
+        // Fallback: Estimate caffeine for known brands/categories
+        if let estimatedCaffeine = estimateCaffeineForKnownProduct(product) {
+            print("🔬 [OpenFoodFacts] Using estimated caffeine for known product: \(estimatedCaffeine)mg")
+            return estimatedCaffeine
+        }
+
+        print("🔬 [OpenFoodFacts] No caffeine data found")
+        return nil
+    }
+
+    /// Estimate caffeine for well-known products when API data is missing
+    private func estimateCaffeineForKnownProduct(_ product: OpenFoodFactsProduct) -> Double? {
+        let productName = (product.productName ?? "").lowercased()
+        let brand = (product.brands ?? "").lowercased()
+        let categories = (product.categories ?? "").lowercased()
+
+        // Known caffeine amounts per standard serving
+        // Sources: FDA, product labels, caffeineinformer.com
+
+        // Coca-Cola products (~34mg per 12oz/355ml, ~10mg per 100ml)
+        if brand.contains("coca-cola") || brand.contains("coca cola") || productName.contains("coca-cola") || productName.contains("coca cola") {
+            if productName.contains("zero") || productName.contains("diet") {
+                return 34.0  // ~34mg per can
+            }
+            return 34.0  // Regular Coca-Cola: 34mg per 12oz can
+        }
+
+        // Pepsi (~38mg per 12oz)
+        if brand.contains("pepsi") || productName.contains("pepsi") {
+            return 38.0
+        }
+
+        // Red Bull (~80mg per 8.4oz can)
+        if brand.contains("red bull") || productName.contains("red bull") {
+            return 80.0
+        }
+
+        // Monster Energy (~160mg per 16oz can) - already handled by API but backup
+        if brand.contains("monster") || productName.contains("monster") {
+            if categories.contains("energy") {
+                return 160.0
+            }
+        }
+
+        // Rockstar (~160mg per 16oz can)
+        if brand.contains("rockstar") || productName.contains("rockstar") {
+            return 160.0
+        }
+
+        // Starbucks drinks (varies widely, estimate for bottled)
+        if brand.contains("starbucks") || productName.contains("starbucks") {
+            if productName.contains("doubleshot") {
+                return 135.0  // Doubleshot Espresso
+            }
+            if productName.contains("frappuccino") {
+                return 75.0  // Bottled Frappuccino
+            }
+            return 100.0  // Generic estimate
+        }
+
+        // Dr Pepper (~41mg per 12oz)
+        if brand.contains("dr pepper") || brand.contains("dr. pepper") || productName.contains("dr pepper") {
+            return 41.0
+        }
+
+        // Mountain Dew (~54mg per 12oz)
+        if brand.contains("mountain dew") || productName.contains("mountain dew") {
+            return 54.0
+        }
+
+        // Generic energy drink category fallback
+        if categories.contains("energy drink") || categories.contains("energy drinks") {
+            return 80.0  // Conservative estimate
         }
 
         return nil
@@ -219,10 +315,14 @@ struct OpenFoodFactsProduct: Codable {
 struct Nutriments: Codable {
     let caffeine_100g: Double?
     let caffeine_serving: Double?
+    let caffeine_unit: String?
+    let caffeine_value: Double?
 
     enum CodingKeys: String, CodingKey {
         case caffeine_100g = "caffeine_100g"
         case caffeine_serving = "caffeine_serving"
+        case caffeine_unit = "caffeine_unit"
+        case caffeine_value = "caffeine_value"
     }
 }
 

@@ -8,10 +8,17 @@ import SwiftUI
  Steps:
  1. Welcome - Explain personalization benefits
  2. Demographics - Age, weight, height, sex
- 3. Caffeine Tolerance - Daily caffeine intake habits
- 4. Lifestyle - Sleep quality and exercise frequency
- 5. Metabolism Speed - Self-assessed metabolic rate
- 6. Summary - Review and confirm profile
+ 3. Health Status - Contraceptives, smoking, pregnancy, medications (safety-critical)
+ 4. Caffeine Tolerance - Daily caffeine intake habits
+ 5. Lifestyle - Sleep quality
+ 6. Metabolism Speed - Self-assessed metabolic rate
+ 7. Summary - Review and confirm profile
+
+ SCIENTIFIC NOTE:
+ - Oral contraceptives: 1.7× longer caffeine half-life (Abernethy & Todd 1985)
+ - Smoking: 1.67× faster clearance (PubMed 15289794)
+ - Pregnancy: Up to 2× longer half-life by third trimester (PMC5564294)
+ - Fluvoxamine: 5-6× longer half-life (PubMed 8807660)
  */
 
 struct MetabolismOnboardingFlow: View {
@@ -26,7 +33,7 @@ struct MetabolismOnboardingFlow: View {
     @State private var weightError: String?
     @State private var heightError: String?
 
-    let totalSteps = 6
+    let totalSteps = 7  // Updated: Added Health Status screen
 
     var body: some View {
         NavigationView {
@@ -49,17 +56,21 @@ struct MetabolismOnboardingFlow: View {
                     )
                     .tag(1)
 
-                    CaffeineToleranceScreen(profile: $profile)
+                    // NEW: Health Status screen (safety-critical factors)
+                    HealthStatusScreen(profile: $profile)
                         .tag(2)
 
-                    LifestyleScreen(profile: $profile)
+                    CaffeineToleranceScreen(profile: $profile)
                         .tag(3)
 
-                    MetabolismSpeedScreen(profile: $profile)
+                    LifestyleScreen(profile: $profile)
                         .tag(4)
 
-                    SummaryScreen(profile: $profile)
+                    MetabolismSpeedScreen(profile: $profile)
                         .tag(5)
+
+                    SummaryScreen(profile: $profile)
+                        .tag(6)
                 }
                 .tabViewStyle(.page(indexDisplayMode: .never))
 
@@ -87,7 +98,7 @@ struct MetabolismOnboardingFlow: View {
                             .padding(.vertical, Spacing.md)
                             .background(
                                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                                    .fill(AppColors.healthy)
+                                    .fill(canProceed ? AppColors.healthy : AppColors.lightSoil)
                             )
                     }
                     .disabled(!canProceed)
@@ -132,10 +143,11 @@ struct MetabolismOnboardingFlow: View {
         switch currentStep {
         case 0: return true // Welcome screen
         case 1: return validateDemographics() // Demographics
-        case 2: return true // Caffeine tolerance
-        case 3: return true // Lifestyle
-        case 4: return true // Metabolism speed
-        case 5: return true // Summary
+        case 2: return true // Health status
+        case 3: return true // Caffeine tolerance
+        case 4: return true // Lifestyle
+        case 5: return true // Metabolism speed
+        case 6: return true // Summary
         default: return false
         }
     }
@@ -473,6 +485,256 @@ struct DemographicsScreen: View {
     }
 }
 
+// MARK: - Health Status Screen (Safety-Critical)
+
+struct HealthStatusScreen: View {
+    @Binding var profile: UserMetabolismProfile
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.lg) {
+                // Header
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    Text("Health Factors")
+                        .font(AppFont.heading2())
+                        .foregroundColor(AppColors.textPrimary)
+
+                    Text("These factors significantly affect caffeine metabolism and safety limits")
+                        .font(AppFont.body())
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .padding(.horizontal)
+                .padding(.top, Spacing.xl)
+
+                // Smoking Status
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack {
+                        Image(systemName: "smoke.fill")
+                            .foregroundColor(AppColors.healthy)
+                        Text("Smoking Status")
+                            .font(AppFont.body())
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+
+                    ForEach(SmokingStatus.allCases, id: \.self) { status in
+                        HealthStatusOption(
+                            icon: status.icon,
+                            title: status.rawValue,
+                            subtitle: status.displayName,
+                            isSelected: profile.smokingStatus == status,
+                            onSelect: { profile.smokingStatus = status }
+                        )
+                    }
+
+                    Text("Smoking significantly speeds up caffeine metabolism (1.67× faster)")
+                        .font(AppFont.bodySmall())
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding()
+                .background(AppColors.lightSoil)
+                .cornerRadius(CornerRadius.medium)
+                .padding(.horizontal)
+
+                // Hormonal Contraceptives (only for female users)
+                if profile.sex == .female {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        HStack {
+                            Image(systemName: "pills.fill")
+                                .foregroundColor(AppColors.healthy)
+                            Text("Hormonal Contraceptives")
+                                .font(AppFont.body())
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+
+                        Toggle(isOn: $profile.usesHormonalContraceptives) {
+                            Text("I use hormonal birth control")
+                                .font(AppFont.body())
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .tint(AppColors.healthy)
+
+                        Text("Oral contraceptives nearly double caffeine half-life (1.7× longer)")
+                            .font(AppFont.bodySmall())
+                            .foregroundColor(AppColors.textTertiary)
+                    }
+                    .padding()
+                    .background(AppColors.lightSoil)
+                    .cornerRadius(CornerRadius.medium)
+                    .padding(.horizontal)
+                }
+
+                // Pregnancy Status (only for female users)
+                if profile.sex == .female {
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        HStack {
+                            Image(systemName: "heart.fill")
+                                .foregroundColor(AppColors.healthy)
+                            Text("Pregnancy Status")
+                                .font(AppFont.body())
+                                .fontWeight(.semibold)
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+
+                        Toggle(isOn: $profile.isPregnant) {
+                            Text("I am currently pregnant")
+                                .font(AppFont.body())
+                                .foregroundColor(AppColors.textPrimary)
+                        }
+                        .tint(AppColors.healthy)
+
+                        if profile.isPregnant {
+                            Text("Which trimester?")
+                                .font(AppFont.body())
+                                .foregroundColor(AppColors.textSecondary)
+                                .padding(.top, Spacing.xs)
+
+                            ForEach(PregnancyTrimester.allCases, id: \.self) { trimester in
+                                HealthStatusOption(
+                                    icon: "calendar",
+                                    title: "Trimester \(trimester.rawValue)",
+                                    subtitle: trimester.displayName,
+                                    isSelected: profile.pregnancyTrimester == trimester,
+                                    onSelect: { profile.pregnancyTrimester = trimester }
+                                )
+                            }
+                        }
+
+                        // Pregnancy warning
+                        if profile.isPregnant {
+                            HStack(alignment: .top, spacing: Spacing.sm) {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(.orange)
+                                Text("ACOG/WHO recommends limiting caffeine to 200mg/day during pregnancy. Consult your healthcare provider.")
+                                    .font(AppFont.bodySmall())
+                                    .foregroundColor(.orange)
+                            }
+                            .padding()
+                            .background(Color.orange.opacity(0.1))
+                            .cornerRadius(CornerRadius.small)
+                        }
+                    }
+                    .padding()
+                    .background(AppColors.lightSoil)
+                    .cornerRadius(CornerRadius.medium)
+                    .padding(.horizontal)
+                }
+
+                // Medication Interactions
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack {
+                        Image(systemName: "cross.case.fill")
+                            .foregroundColor(AppColors.healthy)
+                        Text("Medications")
+                            .font(AppFont.body())
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+
+                    Toggle(isOn: $profile.takesFluvoxamine) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Fluvoxamine (Luvox)")
+                                .font(AppFont.body())
+                                .foregroundColor(AppColors.textPrimary)
+                            Text("SSRI antidepressant")
+                                .font(AppFont.bodySmall())
+                                .foregroundColor(AppColors.textSecondary)
+                        }
+                    }
+                    .tint(AppColors.healthy)
+
+                    // Fluvoxamine warning
+                    if profile.takesFluvoxamine {
+                        HStack(alignment: .top, spacing: Spacing.sm) {
+                            Image(systemName: "exclamationmark.octagon.fill")
+                                .foregroundColor(.red)
+                            Text("⚠️ CRITICAL: Fluvoxamine increases caffeine half-life 5-6×. This is a severe interaction. Consult your healthcare provider before using this app.")
+                                .font(AppFont.bodySmall())
+                                .foregroundColor(.red)
+                        }
+                        .padding()
+                        .background(Color.red.opacity(0.1))
+                        .cornerRadius(CornerRadius.small)
+                    }
+
+                    Text("Other medications that may interact: ciprofloxacin, clozapine, some antifungals")
+                        .font(AppFont.bodySmall())
+                        .foregroundColor(AppColors.textTertiary)
+                }
+                .padding()
+                .background(AppColors.lightSoil)
+                .cornerRadius(CornerRadius.medium)
+                .padding(.horizontal)
+
+                // Privacy note
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    HStack {
+                        Image(systemName: "lock.shield.fill")
+                            .foregroundColor(.blue)
+                        Text("Privacy Note")
+                            .font(AppFont.body())
+                            .fontWeight(.semibold)
+                            .foregroundColor(AppColors.textPrimary)
+                    }
+
+                    Text("This health information is stored only on your device and is never shared. You can skip any question by leaving it as default.")
+                        .font(AppFont.bodySmall())
+                        .foregroundColor(AppColors.textSecondary)
+                }
+                .padding()
+                .background(Color.blue.opacity(0.1))
+                .cornerRadius(CornerRadius.medium)
+                .padding(.horizontal)
+
+                Spacer()
+            }
+        }
+        .background(AppColors.richSoil)
+    }
+}
+
+struct HealthStatusOption: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let isSelected: Bool
+    let onSelect: () -> Void
+
+    var body: some View {
+        Button(action: onSelect) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(isSelected ? .white : AppColors.healthy)
+                    .frame(width: 24)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(AppFont.body())
+                        .fontWeight(.semibold)
+                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+
+                    Text(subtitle)
+                        .font(AppFont.bodySmall())
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.white)
+                }
+            }
+            .padding(.vertical, Spacing.xs)
+            .padding(.horizontal, Spacing.sm)
+            .background(isSelected ? AppColors.healthy.opacity(0.8) : Color.clear)
+            .cornerRadius(CornerRadius.small)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
 // MARK: - Caffeine Tolerance Screen
 
 struct CaffeineToleranceScreen: View {
@@ -486,7 +748,7 @@ struct CaffeineToleranceScreen: View {
                         .font(AppFont.heading2())
                         .foregroundColor(AppColors.textPrimary)
 
-                    Text("Regular caffeine use affects how quickly your body metabolizes it")
+                    Text("This helps us understand your caffeine sensitivity (but doesn't affect metabolism speed)")
                         .font(AppFont.body())
                         .foregroundColor(AppColors.textSecondary)
                 }
@@ -504,20 +766,25 @@ struct CaffeineToleranceScreen: View {
                 }
                 .padding(.horizontal)
 
-                // Info card
+                // Info card - corrected science
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "info.circle.fill")
                             .foregroundColor(.blue)
-                        Text("Why this matters")
+                        Text("What the science says")
                             .font(AppFont.body())
                             .fontWeight(.semibold)
                             .foregroundColor(AppColors.textPrimary)
                     }
 
-                    Text("Regular caffeine consumption upregulates the CYP1A2 enzyme, making your body metabolize caffeine 25-50% faster. This is why regular coffee drinkers can handle more caffeine!")
+                    Text("Research shows caffeine tolerance affects how you feel caffeine's effects (sensitivity), but does NOT significantly change how fast your body metabolizes it. We use this to understand your subjective experience, not to adjust clearance rates.")
                         .font(AppFont.body())
                         .foregroundColor(AppColors.textSecondary)
+
+                    Text("Source: PMC3715142")
+                        .font(AppFont.bodySmall())
+                        .foregroundColor(AppColors.textTertiary)
+                        .italic()
                 }
                 .padding()
                 .background(Color.blue.opacity(0.1))

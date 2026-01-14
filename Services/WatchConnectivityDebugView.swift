@@ -16,7 +16,6 @@ struct WatchConnectivityDebugView: View {
                 #if os(iOS)
                 InfoRow(label: "Watch Paired", value: connectivity.isPaired ? "✅ YES" : "❌ NO", color: connectivity.isPaired ? .green : .red)
                 InfoRow(label: "Watch App Installed", value: connectivity.isWatchAppInstalled ? "✅ YES" : "❌ NO", color: connectivity.isWatchAppInstalled ? .green : .red)
-                InfoRow(label: "Pairing Allowed", value: WCSession.default.isPairingAllowed ? "✅ YES" : "❌ NO", color: WCSession.default.isPairingAllowed ? .green : .red)
                 #endif
             }
             

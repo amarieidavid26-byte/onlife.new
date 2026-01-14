@@ -4,17 +4,31 @@ import Combine
 /*
  User Metabolism Profile System
 
+ SCIENTIFIC CITATIONS:
+ - Caffeine base half-life: Institute of Medicine consensus (3-7h range, 5h mean)
+ - CYP1A2 variation: 2-4× documented (Sachse et al., PMC6342244)
+ - Oral contraceptives: 1.7× longer half-life (Abernethy & Todd 1985)
+ - Smoking: 0.6× half-life / 1.67× clearance (PubMed 15289794)
+ - Pregnancy: Progressive increase to 2× by third trimester (PMC5564294)
+ - Fluvoxamine: 5-6× longer half-life (PubMed 8807660)
+ - Caffeine Tmax (peak): 45-60 min typical (White et al. 2016, Clinical Toxicology)
+ - L-theanine half-life: 58-74 min (van der Pijl 2010, Scheid et al. 2012)
+ - L-theanine Tmax: 45-50 min (human studies)
+ - Synergy: Minimum 50mg caffeine + 100mg L-theanine (Owen 2008, Kelly 2008)
+ - Kleiber's Law exponent 0.7: "highly disputed" but acceptable (Clinical Pharmacokinetics 2024)
+ - Age effects: NO evidence for adult decline (Blanchard & Sawers 1983)
+ - Exercise effects: NO effect on caffeine metabolism (Journal of Applied Physiology)
+ - Tolerance: Does NOT induce CYP1A2 in humans (PMC3715142)
+
  Provides personalized substance tracking based on individual metabolic factors:
  - Demographics (age, weight, sex)
- - Lifestyle (caffeine tolerance, sleep, exercise)
+ - Health status (pregnancy, contraceptives, smoking, medications)
  - Genetic factors (CYP1A2 enzyme activity)
 
- Research-backed metabolic modeling accounts for:
- - 3-4x variation in caffeine metabolism due to genetics
- - 10-15% sex-based metabolic differences
- - Age-related metabolism changes (1-2% per decade after 30)
- - Allometric scaling for weight (metabolism ∝ mass^0.75)
- - Enzyme induction from chronic caffeine use
+ REMOVED (not scientifically supported):
+ - Exercise frequency metabolism boost
+ - Caffeine tolerance metabolism boost (affects sensitivity, not clearance)
+ - Age decline after 30 (no evidence)
  */
 
 // MARK: - Biological Sex
@@ -208,6 +222,69 @@ enum ExerciseFrequency: String, Codable, CaseIterable {
     }
 }
 
+// MARK: - Smoking Status
+
+/// Smoking status significantly affects caffeine metabolism
+/// Smoking induces CYP1A2 ~50% (PMC studies)
+enum SmokingStatus: String, Codable, CaseIterable {
+    case nonSmoker = "Non-smoker"
+    case smoker = "Current smoker"
+    case recentlyQuit = "Quit within 6 months"
+
+    var displayName: String {
+        switch self {
+        case .nonSmoker: return "Non-smoker"
+        case .smoker: return "Current smoker (cigarettes or vaping)"
+        case .recentlyQuit: return "Recently quit (within 6 months)"
+        }
+    }
+
+    /// Metabolism multiplier for caffeine clearance
+    /// Smoking induces CYP1A2, resulting in faster caffeine metabolism
+    var metabolismMultiplier: Double {
+        switch self {
+        case .smoker: return 1.67       // 0.6× half-life = 1.67× faster clearance
+        case .recentlyQuit: return 1.11 // 0.9× half-life (enzyme induction fading)
+        case .nonSmoker: return 1.0
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .nonSmoker: return "nosign"
+        case .smoker: return "smoke.fill"
+        case .recentlyQuit: return "checkmark.circle"
+        }
+    }
+}
+
+// MARK: - Pregnancy Trimester
+
+/// Pregnancy trimester for caffeine metabolism adjustment
+/// Pregnancy progressively slows caffeine metabolism (PMC5564294)
+enum PregnancyTrimester: Int, Codable, CaseIterable {
+    case first = 1
+    case second = 2
+    case third = 3
+
+    var displayName: String {
+        switch self {
+        case .first: return "First trimester (weeks 1-12)"
+        case .second: return "Second trimester (weeks 13-26)"
+        case .third: return "Third trimester (weeks 27-40)"
+        }
+    }
+
+    /// Metabolism multiplier - pregnancy slows caffeine clearance progressively
+    var metabolismMultiplier: Double {
+        switch self {
+        case .first: return 0.83   // 1.2× longer half-life
+        case .second: return 0.67  // 1.5× longer half-life
+        case .third: return 0.50   // 2.0× longer half-life
+        }
+    }
+}
+
 // MARK: - CYP1A2 Genotype
 
 /// Genetic variation in CYP1A2 enzyme (primary caffeine metabolizer)
@@ -266,10 +343,24 @@ struct UserMetabolismProfile: Codable {
     var height: Double?         // centimeters (optional)
     var sex: BiologicalSex
 
+    // MARK: Health Status (Safety-Critical)
+    /// Oral contraceptives nearly double caffeine half-life (Abernethy & Todd 1985)
+    var usesHormonalContraceptives: Bool = false
+
+    /// Smoking induces CYP1A2 ~50% faster clearance (PubMed 15289794)
+    var smokingStatus: SmokingStatus = .nonSmoker
+
+    /// Pregnancy progressively slows caffeine metabolism (PMC5564294)
+    var isPregnant: Bool = false
+    var pregnancyTrimester: PregnancyTrimester? = nil
+
+    /// Fluvoxamine increases caffeine half-life 5-6× (PubMed 8807660)
+    var takesFluvoxamine: Bool = false
+
     // MARK: Lifestyle Factors
     var caffeineToleranceLevel: CaffeineToleranceLevel
     var averageSleepQuality: SleepQuality
-    var exerciseFrequency: ExerciseFrequency
+    var exerciseFrequency: ExerciseFrequency  // Kept for UI but no longer affects metabolism
 
     // MARK: Metabolism Assessment
     var metabolismSpeed: MetabolismSpeed
@@ -313,8 +404,10 @@ struct UserMetabolismProfile: Codable {
         return weight / (heightInMeters * heightInMeters)
     }
 
-    /// Overall metabolism multiplier combining all factors
-    /// Research-backed model accounting for sex, age, weight, and lifestyle
+    /// Overall metabolism multiplier combining all evidence-based factors
+    /// REMOVED: age decline after 30 (Blanchard & Sawers 1983 found no difference)
+    /// REMOVED: exercise boost (Journal of Applied Physiology: no effect on caffeine)
+    /// ADDED: contraceptives, smoking, pregnancy (peer-reviewed evidence)
     var overallMetabolismMultiplier: Double {
         var multiplier = 1.0
 
@@ -325,22 +418,33 @@ struct UserMetabolismProfile: Codable {
         multiplier *= sex.metabolismModifier
 
         // Weight adjustment using allometric scaling
-        // Metabolism ∝ mass^0.75 (Kleiber's law)
+        // Metabolism ∝ mass^0.75 (Kleiber's law - "highly disputed" but acceptable)
         let weightFactor = weight / 70.0  // 70kg baseline
         multiplier *= pow(weightFactor, 0.7)
 
-        // Age adjustment (metabolism slows ~1-2% per decade after 30)
-        if age > 30 {
-            let decadesPast30 = Double(age - 30) / 10.0
-            multiplier *= pow(0.985, decadesPast30)  // 1.5% per decade
-        } else if age < 20 {
-            // Younger people have faster metabolism
+        // Adolescent boost only (has separate evidence)
+        // REMOVED: age decline after 30 - Blanchard & Sawers 1983 found NO difference
+        if age < 20 {
             let yearsBefore20 = Double(20 - age)
             multiplier *= (1.0 + yearsBefore20 * 0.02)  // 2% faster per year
         }
 
-        // Exercise boost (regular exercise increases BMR)
-        multiplier *= exerciseFrequency.metabolismBoost
+        // Oral contraceptives nearly double caffeine half-life (Abernethy & Todd 1985)
+        // Critical for 17-25 female demographic
+        if sex == .female && usesHormonalContraceptives {
+            multiplier *= 0.59  // 1.7× longer half-life = 1/1.7 = 0.59× clearance
+        }
+
+        // Smoking induces CYP1A2 ~50% (PubMed 15289794)
+        multiplier *= smokingStatus.metabolismMultiplier
+
+        // Pregnancy progressively slows caffeine metabolism (PMC5564294)
+        if isPregnant, let trimester = pregnancyTrimester {
+            multiplier *= trimester.metabolismMultiplier
+        }
+
+        // REMOVED: Exercise boost - Journal of Applied Physiology found NO effect
+        // exerciseFrequency kept for UI/tracking but doesn't affect metabolism
 
         return multiplier
     }
@@ -348,25 +452,34 @@ struct UserMetabolismProfile: Codable {
     // MARK: - Substance-Specific Calculations
 
     /// Calculate personalized caffeine half-life
-    /// Base: 5 hours, but can vary 3-4x based on genetics and lifestyle
+    /// Base: 5 hours, but can vary 3-4x based on genetics
+    /// REMOVED: tolerance boost - PMC3715142 found caffeine does NOT induce CYP1A2 in humans
     func caffeineHalfLife(baseHalfLife: TimeInterval = 5 * 3600) -> TimeInterval {
         var adjusted = baseHalfLife
 
-        // Apply overall metabolism
+        // Apply overall metabolism (includes contraceptives, smoking, pregnancy)
         adjusted /= overallMetabolismMultiplier
 
-        // Apply caffeine tolerance (CYP1A2 enzyme upregulation)
-        adjusted /= caffeineToleranceLevel.metabolismBoost
-
-        // Apply genetic factors (can be 3-4x variation!)
+        // Apply genetic factors (can be 2-4× variation! - Sachse et al., PMC6342244)
         adjusted *= cyp1a2Genotype.caffeineMultiplier
+
+        // REMOVED: caffeineToleranceLevel.metabolismBoost
+        // PMC3715142: "caffeine does not induce CYP1A2 in humans"
+        // Tolerance affects sensitivity, not clearance rate
+
+        // Fluvoxamine increases caffeine half-life 5-6× (PubMed 8807660)
+        // This is a SEVERE interaction - user should consult healthcare provider
+        if takesFluvoxamine {
+            adjusted *= 5.5  // Middle of 5-6× range
+        }
 
         return adjusted
     }
 
     /// Calculate personalized L-theanine half-life
-    /// Base: 40 minutes, less genetic variation than caffeine
-    func lTheanineHalfLife(baseHalfLife: TimeInterval = 40 * 60) -> TimeInterval {
+    /// Base: 60 minutes (Scheid et al. 2012, Journal of Nutrition; van der Pijl 2010)
+    /// CORRECTED: 40min → 60min based on peer-reviewed pharmacokinetic studies
+    func lTheanineHalfLife(baseHalfLife: TimeInterval = 60 * 60) -> TimeInterval {
         var adjusted = baseHalfLife
 
         // L-theanine uses different metabolic pathway (less genetic variation)
@@ -389,31 +502,70 @@ struct UserMetabolismProfile: Codable {
     }
 
     /// Get recommended daily caffeine limit (mg)
-    /// FDA recommends max 400mg for adults, adjusted for individual factors
+    /// Evidence-based limits from EFSA 2015, AAP, ACOG/WHO
+    /// REMOVED: tolerance-based increase - tolerance affects sensitivity, not safe limits
     var recommendedDailyCaffeineLimit: Double {
-        // FDA recommends max 400mg for adults
-        var limit = 400.0
+        // Age-specific absolute limits (safety thresholds)
+        let maxLimit: Double
+        if age < 18 {
+            maxLimit = 100.0   // AAP recommendation for adolescents
+        } else if isPregnant {
+            maxLimit = 200.0   // ACOG/WHO/EFSA pregnancy limit
+        } else {
+            maxLimit = 400.0   // EFSA adult limit (reduced from 600mg)
+        }
 
-        // Adjust based on weight (mg/kg basis)
-        let mgPerKg = 5.7  // ~400mg for 70kg person
-        limit = mgPerKg * weight
+        // Start with weight-based calculation
+        let mgPerKg = 5.7  // ~400mg for 70kg adult
+        var limit = mgPerKg * weight
 
         // Reduce for slow metabolizers
         if metabolismSpeed == .slow || cyp1a2Genotype == .slow {
             limit *= 0.75
         }
 
-        // Reduce for poor sleep (more sensitive)
+        // Reduce for poor sleep (more sensitive to effects)
         if averageSleepQuality == .poor {
             limit *= 0.8
         }
 
-        // Increase for high tolerance (to a point)
-        if caffeineToleranceLevel == .high {
-            limit = min(limit * 1.2, 600)  // Cap at 600mg
+        // Reduce for fluvoxamine users (5-6× longer half-life!)
+        if takesFluvoxamine {
+            limit *= 0.2  // Much lower limit due to severe interaction
         }
 
-        return limit
+        // REMOVED: tolerance-based increase
+        // EFSA 2015: Tolerance does not increase safe limits
+        // High tolerance affects subjective sensitivity, not safety thresholds
+
+        // Apply absolute maximum based on age/pregnancy status
+        return min(limit, maxLimit)
+    }
+
+    // MARK: - Health Warnings
+
+    /// Get health warnings based on current profile
+    /// Returns array of warning messages for display to user
+    func getCaffeineWarnings() -> [String] {
+        var warnings: [String] = []
+
+        if takesFluvoxamine {
+            warnings.append("⚠️ CRITICAL: Fluvoxamine increases caffeine half-life 5-6×. Consult healthcare provider before using this app.")
+        }
+
+        if isPregnant {
+            warnings.append("Limit caffeine to 200mg/day during pregnancy (ACOG/WHO recommendation)")
+        }
+
+        if age < 18 {
+            warnings.append("Maximum 100mg caffeine per day recommended for adolescents (AAP guideline)")
+        }
+
+        if usesHormonalContraceptives {
+            warnings.append("Hormonal contraceptives nearly double caffeine half-life. Effects last longer.")
+        }
+
+        return warnings
     }
 
     // MARK: - Static Methods
@@ -448,6 +600,11 @@ struct UserMetabolismProfile: Codable {
             weight: 70,
             height: 170,
             sex: .other,
+            usesHormonalContraceptives: false,
+            smokingStatus: .nonSmoker,
+            isPregnant: false,
+            pregnancyTrimester: nil,
+            takesFluvoxamine: false,
             caffeineToleranceLevel: .moderate,
             averageSleepQuality: .good,
             exerciseFrequency: .moderate,

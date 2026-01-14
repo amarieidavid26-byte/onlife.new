@@ -12,6 +12,8 @@ class ProductDatabaseManager {
     private init() {
         loadLocalDatabase()
         loadUserProducts()
+        // Auto-migrate cached products with missing caffeine data
+        migrateUserProductsWithMissingCaffeine()
     }
 
     // MARK: - Local Database
@@ -85,14 +87,121 @@ class ProductDatabaseManager {
     /// - Parameter barcode: Barcode string to lookup
     /// - Returns: ScannedProduct if found in local/user databases, nil otherwise
     func findProduct(barcode: String) -> ScannedProduct? {
+        var product: ScannedProduct?
+
         // Check user products first (they might have corrected/updated data)
-        if let product = userProducts[barcode] {
-            return product
+        if let userProduct = userProducts[barcode] {
+            product = userProduct
+        }
+        // Then check local database
+        else if let localProduct = localProducts[barcode] {
+            product = localProduct
         }
 
-        // Then check local database
-        if let product = localProducts[barcode] {
-            return product
+        // Apply caffeine fallback if product has no caffeine data
+        if var foundProduct = product {
+            if (foundProduct.caffeineAmount ?? 0) == 0 {
+                if let estimatedCaffeine = estimateCaffeineForKnownProduct(foundProduct) {
+                    print("🔧 [ProductDB] Applying caffeine fallback: \(foundProduct.displayName) → \(estimatedCaffeine)mg")
+                    foundProduct = ScannedProduct(
+                        barcode: foundProduct.barcode,
+                        brand: foundProduct.brand,
+                        productName: foundProduct.productName,
+                        caffeineAmount: estimatedCaffeine,
+                        lTheanineAmount: foundProduct.lTheanineAmount,
+                        volumeAmount: foundProduct.volumeAmount,
+                        servingSize: foundProduct.servingSize,
+                        category: foundProduct.category,
+                        ingredients: foundProduct.ingredients,
+                        imageURL: foundProduct.imageURL,
+                        source: foundProduct.source,
+                        lastUpdated: foundProduct.lastUpdated
+                    )
+                    return foundProduct
+                }
+            }
+            return foundProduct
+        }
+
+        return nil
+    }
+
+    /// Estimate caffeine for well-known products when data is missing
+    /// Mirrors the logic in OpenFoodFactsService for consistency
+    private func estimateCaffeineForKnownProduct(_ product: ScannedProduct) -> Double? {
+        let productName = product.productName.lowercased()
+        let brand = (product.brand ?? "").lowercased()
+        let category = product.category
+
+        // Known caffeine amounts per standard serving
+        // Sources: FDA, product labels, caffeineinformer.com
+
+        // Monster Energy (~160mg per 16oz can)
+        if brand.contains("monster") || productName.contains("monster") {
+            if category == .energyDrink {
+                return 160.0
+            }
+        }
+
+        // Red Bull (~80mg per 8.4oz can)
+        if brand.contains("red bull") || productName.contains("red bull") {
+            return 80.0
+        }
+
+        // Rockstar (~160mg per 16oz can)
+        if brand.contains("rockstar") || productName.contains("rockstar") {
+            return 160.0
+        }
+
+        // Coca-Cola products (~34mg per 12oz/355ml)
+        if brand.contains("coca-cola") || brand.contains("coca cola") || productName.contains("coca-cola") || productName.contains("coca cola") {
+            return 34.0
+        }
+
+        // Pepsi (~38mg per 12oz)
+        if brand.contains("pepsi") || productName.contains("pepsi") {
+            return 38.0
+        }
+
+        // Starbucks drinks
+        if brand.contains("starbucks") || productName.contains("starbucks") {
+            if productName.contains("doubleshot") {
+                return 135.0
+            }
+            if productName.contains("frappuccino") {
+                return 75.0
+            }
+            return 100.0
+        }
+
+        // Dr Pepper (~41mg per 12oz)
+        if brand.contains("dr pepper") || brand.contains("dr. pepper") || productName.contains("dr pepper") {
+            return 41.0
+        }
+
+        // Mountain Dew (~54mg per 12oz)
+        if brand.contains("mountain dew") || productName.contains("mountain dew") {
+            return 54.0
+        }
+
+        // Bang Energy (~300mg per 16oz)
+        if brand.contains("bang") || productName.contains("bang") {
+            return 300.0
+        }
+
+        // Celsius (~200mg per can)
+        if brand.contains("celsius") || productName.contains("celsius") {
+            return 200.0
+        }
+
+        // C4 Energy (~150-200mg per can)
+        if brand.contains("c4") || productName.contains("c4") {
+            return 150.0
+        }
+
+        // Generic energy drink category fallback
+        if category == .energyDrink {
+            return 80.0  // Conservative estimate
         }
 
         return nil
@@ -159,6 +268,53 @@ class ProductDatabaseManager {
             user: userProducts.count,
             total: localProducts.count + userProducts.count
         )
+    }
+
+    /// Clear all cached user products (useful for fixing bad data)
+    /// Call this to force re-fetch from OpenFoodFacts with corrected parsing
+    func clearUserProductsCache() {
+        let count = userProducts.count
+        userProducts.removeAll()
+        saveUserProducts()
+        print("🧹 [ProductDB] Cleared \(count) cached user products")
+    }
+
+    /// Migrate user products with 0 caffeine - apply brand fallbacks
+    /// Returns count of products that were updated
+    @discardableResult
+    func migrateUserProductsWithMissingCaffeine() -> Int {
+        var updatedCount = 0
+
+        for (barcode, product) in userProducts {
+            if (product.caffeineAmount ?? 0) == 0 {
+                if let estimatedCaffeine = estimateCaffeineForKnownProduct(product) {
+                    let updatedProduct = ScannedProduct(
+                        barcode: product.barcode,
+                        brand: product.brand,
+                        productName: product.productName,
+                        caffeineAmount: estimatedCaffeine,
+                        lTheanineAmount: product.lTheanineAmount,
+                        volumeAmount: product.volumeAmount,
+                        servingSize: product.servingSize,
+                        category: product.category,
+                        ingredients: product.ingredients,
+                        imageURL: product.imageURL,
+                        source: product.source,
+                        lastUpdated: Date()
+                    )
+                    userProducts[barcode] = updatedProduct
+                    updatedCount += 1
+                    print("🔧 [ProductDB] Migrated: \(product.displayName) → \(estimatedCaffeine)mg caffeine")
+                }
+            }
+        }
+
+        if updatedCount > 0 {
+            saveUserProducts()
+            print("🔧 [ProductDB] Migration complete: updated \(updatedCount) products")
+        }
+
+        return updatedCount
     }
 }
 
