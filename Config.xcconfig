@@ -1,0 +1,15 @@
+// OnLife Configuration
+// =====================
+// DO NOT commit this file with real API keys!
+//
+// SETUP INSTRUCTIONS:
+// 1. Get a free Gemini API key from: https://makersuite.google.com/app/apikey
+// 2. Replace PLACEHOLDER_KEY below with your actual API key
+// 3. In Xcode, add this file to your scheme's environment variables:
+//    Product > Scheme > Edit Scheme > Run > Arguments > Environment Variables
+//    Add: GEMINI_API_KEY = $(GEMINI_API_KEY)
+//
+// This file is ignored by git (.gitignore) to keep your API key secure.
+
+// Gemini API Key (for AI-powered insights)
+GEMINI_API_KEY = PLACEHOLDER_KEY

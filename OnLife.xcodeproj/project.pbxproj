@@ -1,0 +1,618 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		63118A652F157899007AFB3B /* OnLife Watch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 63FF4C1C2F0D80F200E83F13 /* OnLife Watch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		63E8BA102EC72D7500A9EF7F /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */; };
+		63E8BA122EC72D7500A9EF7F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA112EC72D7500A9EF7F /* FirebaseAuth */; };
+		63E8BA142EC72D7500A9EF7F /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA132EC72D7500A9EF7F /* FirebaseFirestore */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		63118A662F157899007AFB3B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 63E8B9D32EC7064300A9EF7F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63FF4C1B2F0D80F200E83F13;
+			remoteInfo = "OnLife Watch App Watch App";
+		};
+		6376C9A12F1540CB00846DC8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 63E8B9D32EC7064300A9EF7F /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63FF4C1B2F0D80F200E83F13;
+			remoteInfo = "OnLife Watch App Watch App";
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		63118A682F157899007AFB3B /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				63118A652F157899007AFB3B /* OnLife Watch App Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		63E8B9DB2EC7064400A9EF7F /* OnLife.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OnLife.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		63FF4C1C2F0D80F200E83F13 /* OnLife Watch App Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "OnLife Watch App Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		63FF4C3D2F0D837B00E83F13 /* Exceptions for "OnLife" folder in "OnLife Watch App Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Models/BiometricModels.swift,
+				Models/Enums.swift,
+				Models/FocusSession.swift,
+				Models/Garden.swift,
+				Models/Plant.swift,
+				Models/ScannedProduct.swift,
+				Models/SubstanceLog.swift,
+				Models/User.swift,
+				Models/UserMetabolismProfile.swift,
+				Services/HealthKitManager.swift,
+				Services/WatchConnectivityManager.swift,
+			);
+			target = 63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */;
+		};
+		63FF4C422F0D8B4D00E83F13 /* Exceptions for "OnLife Watch App Watch App" folder in "OnLife Watch App Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		63E8B9DD2EC7064400A9EF7F /* OnLife */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				63FF4C3D2F0D837B00E83F13 /* Exceptions for "OnLife" folder in "OnLife Watch App Watch App" target */,
+			);
+			path = OnLife;
+			sourceTree = "<group>";
+		};
+		63FF4C202F0D80F200E83F13 /* OnLife Watch App Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				63FF4C422F0D8B4D00E83F13 /* Exceptions for "OnLife Watch App Watch App" folder in "OnLife Watch App Watch App" target */,
+			);
+			path = "OnLife Watch App Watch App";
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		63E8B9D82EC7064400A9EF7F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				63E8BA102EC72D7500A9EF7F /* FirebaseAnalytics in Frameworks */,
+				63E8BA122EC72D7500A9EF7F /* FirebaseAuth in Frameworks */,
+				63E8BA142EC72D7500A9EF7F /* FirebaseFirestore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63FF4C192F0D80F200E83F13 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		63118A642F157899007AFB3B /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		63E8B9D22EC7064300A9EF7F = {
+			isa = PBXGroup;
+			children = (
+				63E8B9DD2EC7064400A9EF7F /* OnLife */,
+				63FF4C202F0D80F200E83F13 /* OnLife Watch App Watch App */,
+				63118A642F157899007AFB3B /* Frameworks */,
+				63E8B9DC2EC7064400A9EF7F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		63E8B9DC2EC7064400A9EF7F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				63E8B9DB2EC7064400A9EF7F /* OnLife.app */,
+				63FF4C1C2F0D80F200E83F13 /* OnLife Watch App Watch App.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		63E8B9DA2EC7064400A9EF7F /* OnLife */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 63E8B9E62EC7064600A9EF7F /* Build configuration list for PBXNativeTarget "OnLife" */;
+			buildPhases = (
+				63E8B9D72EC7064400A9EF7F /* Sources */,
+				63E8B9D82EC7064400A9EF7F /* Frameworks */,
+				63E8B9D92EC7064400A9EF7F /* Resources */,
+				63118A682F157899007AFB3B /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6376C9A22F1540CB00846DC8 /* PBXTargetDependency */,
+				63118A672F157899007AFB3B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				63E8B9DD2EC7064400A9EF7F /* OnLife */,
+			);
+			name = OnLife;
+			packageProductDependencies = (
+				63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */,
+				63E8BA112EC72D7500A9EF7F /* FirebaseAuth */,
+				63E8BA132EC72D7500A9EF7F /* FirebaseFirestore */,
+			);
+			productName = OnLife;
+			productReference = 63E8B9DB2EC7064400A9EF7F /* OnLife.app */;
+			productType = "com.apple.product-type.application";
+		};
+		63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 63FF4C272F0D80F400E83F13 /* Build configuration list for PBXNativeTarget "OnLife Watch App Watch App" */;
+			buildPhases = (
+				63FF4C182F0D80F200E83F13 /* Sources */,
+				63FF4C192F0D80F200E83F13 /* Frameworks */,
+				63FF4C1A2F0D80F200E83F13 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				63FF4C202F0D80F200E83F13 /* OnLife Watch App Watch App */,
+			);
+			name = "OnLife Watch App Watch App";
+			packageProductDependencies = (
+			);
+			productName = "OnLife Watch App Watch App";
+			productReference = 63FF4C1C2F0D80F200E83F13 /* OnLife Watch App Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		63E8B9D32EC7064300A9EF7F /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2610;
+				LastUpgradeCheck = 2610;
+				TargetAttributes = {
+					63E8B9DA2EC7064400A9EF7F = {
+						CreatedOnToolsVersion = 26.1;
+					};
+					63FF4C1B2F0D80F200E83F13 = {
+						CreatedOnToolsVersion = 26.1;
+					};
+				};
+			};
+			buildConfigurationList = 63E8B9D62EC7064300A9EF7F /* Build configuration list for PBXProject "OnLife" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 63E8B9D22EC7064300A9EF7F;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 63E8B9DC2EC7064400A9EF7F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				63E8B9DA2EC7064400A9EF7F /* OnLife */,
+				63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		63E8B9D92EC7064400A9EF7F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63FF4C1A2F0D80F200E83F13 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		63E8B9D72EC7064400A9EF7F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		63FF4C182F0D80F200E83F13 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		63118A672F157899007AFB3B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */;
+			targetProxy = 63118A662F157899007AFB3B /* PBXContainerItemProxy */;
+		};
+		6376C9A22F1540CB00846DC8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 63FF4C1B2F0D80F200E83F13 /* OnLife Watch App Watch App */;
+			targetProxy = 6376C9A12F1540CB00846DC8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		63E8B9E42EC7064600A9EF7F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		63E8B9E52EC7064600A9EF7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.1;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		63E8B9E72EC7064600A9EF7F /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OnLife/OnLife.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KQL289534;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
+				INFOPLIST_KEY_NSCameraUsageDescription = "OnLife needs camera access to scan product barcodes for quick substance logging. Scan energy drinks, coffee, and supplements to automatically track caffeine intake.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses your health data including heart rate, HRV, and sleep to detect flow states and optimize your focus sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "OnLife records your focus sessions as workouts to track your cognitive performance progress over time.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife.watchkitapp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onlife.OnLife;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		63E8B9E82EC7064600A9EF7F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OnLife/OnLife.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KQL289534;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
+				INFOPLIST_KEY_NSCameraUsageDescription = "OnLife needs camera access to scan product barcodes for quick substance logging. Scan energy drinks, coffee, and supplements to automatically track caffeine intake.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses your health data including heart rate, HRV, and sleep to detect flow states and optimize your focus sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "OnLife records your focus sessions as workouts to track your cognitive performance progress over time.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife.watchkitapp;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onlife.OnLife;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		63FF4C282F0D80F400E83F13 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "OnLife Watch App Watch App/OnLife Watch App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KQL289534;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses heart rate and HRV data to detect when you're in a flow state during focus sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "OnLife saves your focus sessions as workouts.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onlife.OnLife.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		63FF4C292F0D80F400E83F13 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "OnLife Watch App Watch App/OnLife Watch App Watch App.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 5KQL289534;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses heart rate and HRV data to detect when you're in a flow state during focus sessions.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "OnLife saves your focus sessions as workouts.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife;
+				INFOPLIST_KEY_WKWatchOnly = NO;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.onlife.OnLife.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		63E8B9D62EC7064300A9EF7F /* Build configuration list for PBXProject "OnLife" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63E8B9E42EC7064600A9EF7F /* Debug */,
+				63E8B9E52EC7064600A9EF7F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		63E8B9E62EC7064600A9EF7F /* Build configuration list for PBXNativeTarget "OnLife" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63E8B9E72EC7064600A9EF7F /* Debug */,
+				63E8B9E82EC7064600A9EF7F /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		63FF4C272F0D80F400E83F13 /* Build configuration list for PBXNativeTarget "OnLife Watch App Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				63FF4C282F0D80F400E83F13 /* Debug */,
+				63FF4C292F0D80F400E83F13 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.6.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAnalytics;
+		};
+		63E8BA112EC72D7500A9EF7F /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		63E8BA132EC72D7500A9EF7F /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 63E8B9D32EC7064300A9EF7F /* Project object */;
+}
