@@ -8,6 +8,8 @@ struct WatchGardenPickerView: View {
     @State private var selectedGarden: Garden?
     @State private var showingConfirmation = false
     @State private var isLoading = false
+    @State private var fetchError: String?
+    @State private var fetchTask: Task<Void, Never>?
 
     var body: some View {
         Group {
@@ -19,6 +21,8 @@ struct WatchGardenPickerView: View {
                         .font(.caption)
                         .foregroundColor(.gray)
                 }
+            } else if let error = fetchError {
+                errorState(message: error)
             } else if gardens.isEmpty {
                 emptyState
             } else {
@@ -53,6 +57,54 @@ struct WatchGardenPickerView: View {
                 .font(.caption)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+
+            Button(action: {
+                loadGardens()
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Refresh")
+                }
+                .font(.caption)
+                .foregroundColor(.blue)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding()
+    }
+
+    // MARK: - Error State
+
+    private func errorState(message: String) -> some View {
+        VStack(spacing: 16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.system(size: 40))
+                .foregroundColor(.orange)
+
+            Text("Unable to Load")
+                .font(.headline)
+
+            Text(message)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+
+            Button(action: {
+                fetchError = nil
+                loadGardens()
+            }) {
+                HStack {
+                    Image(systemName: "arrow.clockwise")
+                    Text("Try Again")
+                }
+                .font(.headline)
+                .foregroundColor(.white)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 10)
+                .background(Color.blue)
+                .cornerRadius(10)
+            }
+            .buttonStyle(.plain)
         }
         .padding()
     }
@@ -102,14 +154,49 @@ struct WatchGardenPickerView: View {
     // MARK: - Actions
 
     private func loadGardens() {
+        // Cancel any existing fetch
+        fetchTask?.cancel()
+        fetchError = nil
         isLoading = true
         print("Loading gardens from iPhone...")
 
+        // Check connectivity first
+        guard connectivity.isReachable else {
+            isLoading = false
+            fetchError = "iPhone not connected. Please ensure your iPhone is nearby."
+            WKInterfaceDevice.current().play(.failure)
+            return
+        }
+
+        var didReceiveResponse = false
+
+        // Set up timeout
+        fetchTask = Task {
+            try? await Task.sleep(nanoseconds: 10_000_000_000) // 10 seconds
+
+            await MainActor.run {
+                if !didReceiveResponse && isLoading {
+                    isLoading = false
+                    fetchError = "Request timed out. Please check your iPhone connection and try again."
+                    WKInterfaceDevice.current().play(.failure)
+                    print("⚠️ Garden fetch timed out")
+                }
+            }
+        }
+
         connectivity.requestGardenList { receivedGardens in
+            didReceiveResponse = true
+
             DispatchQueue.main.async {
+                self.fetchTask?.cancel()
                 self.gardens = receivedGardens
                 self.isLoading = false
-                print("Loaded \(receivedGardens.count) gardens")
+
+                if receivedGardens.isEmpty {
+                    print("No gardens found on iPhone")
+                } else {
+                    print("Loaded \(receivedGardens.count) gardens")
+                }
             }
         }
     }

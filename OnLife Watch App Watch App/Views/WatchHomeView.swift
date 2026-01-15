@@ -1,4 +1,5 @@
 import SwiftUI
+import WatchKit
 
 struct WatchHomeView: View {
     @EnvironmentObject var workoutManager: WorkoutSessionManager
@@ -8,6 +9,10 @@ struct WatchHomeView: View {
     @State private var showingSession = false
     @State private var isRequestingAuth = false
     @State private var selectedGardenName: String?
+
+    // Alert states
+    @State private var showLowBatteryAlert = false
+    @State private var showOfflineAlert = false
 
     var body: some View {
         ScrollView {
@@ -47,6 +52,22 @@ struct WatchHomeView: View {
         .navigationTitle("OnLife")
         .fullScreenCover(isPresented: $showingSession) {
             WatchFocusSessionView()
+        }
+        .alert("Low Battery", isPresented: $showLowBatteryAlert) {
+            Button("Start Anyway") {
+                showingSession = true
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Your Watch battery is below 20%. Session may not complete.")
+        }
+        .alert("iPhone Not Connected", isPresented: $showOfflineAlert) {
+            Button("Start Anyway") {
+                showingSession = true
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Session data will sync when reconnected.")
         }
         .onAppear {
             workoutManager.checkAuthorizationStatus()
@@ -151,7 +172,7 @@ struct WatchHomeView: View {
 
     private var startButton: some View {
         Button(action: {
-            showingSession = true
+            checkConditionsAndStart()
         }) {
             VStack(spacing: 8) {
                 Image(systemName: "brain.head.profile")
@@ -184,6 +205,29 @@ struct WatchHomeView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Session Start Checks
+
+    private func checkConditionsAndStart() {
+        // Enable battery monitoring
+        WKInterfaceDevice.current().isBatteryMonitoringEnabled = true
+        let batteryLevel = WKInterfaceDevice.current().batteryLevel
+
+        // Check battery level (batteryLevel is -1 if monitoring not available)
+        if batteryLevel >= 0 && batteryLevel < 0.2 {
+            showLowBatteryAlert = true
+            return
+        }
+
+        // Check connectivity
+        if !connectivity.isReachable {
+            showOfflineAlert = true
+            return
+        }
+
+        // All checks passed, start session
+        showingSession = true
     }
 
     // MARK: - Active Session Card

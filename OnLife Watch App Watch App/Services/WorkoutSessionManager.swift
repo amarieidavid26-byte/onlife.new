@@ -44,8 +44,27 @@ final class WorkoutSessionManager: NSObject, ObservableObject {
     // Timer for elapsed time
     private var timer: Timer?
 
+    // Session persistence for crash recovery
+    private var persistenceTimer: Timer?
+    private let persistenceKey = "interruptedSession"
+
+    // Published property for interrupted session recovery
+    @Published var hasInterruptedSession = false
+    private(set) var interruptedSessionData: InterruptedSessionData?
+
     private override init() {
         super.init()
+        checkForInterruptedSession()
+    }
+
+    // MARK: - Interrupted Session Data
+
+    struct InterruptedSessionData: Codable {
+        let sessionID: String
+        let startTime: Date
+        let elapsedSeconds: Int
+        let taskName: String
+        let targetDuration: Int
     }
 
     // MARK: - Authorization
@@ -166,6 +185,9 @@ final class WorkoutSessionManager: NSObject, ObservableObject {
 
             // Notify iPhone about session start
             sendSessionStartToiPhone()
+
+            // Save initial session state for crash recovery
+            saveSessionState()
 
             print("✅ [WorkoutSession] Started successfully")
 
@@ -419,12 +441,78 @@ final class WorkoutSessionManager: NSObject, ObservableObject {
             guard let self = self, let start = self.sessionStartTime else { return }
             self.elapsedSeconds = Int(Date().timeIntervalSince(start))
         }
+
+        // Start persistence timer (save every 30 seconds)
+        persistenceTimer = Timer.scheduledTimer(withTimeInterval: 30.0, repeats: true) { [weak self] _ in
+            self?.saveSessionState()
+        }
     }
 
     private func stopTimer() {
         timer?.invalidate()
         timer = nil
+        persistenceTimer?.invalidate()
+        persistenceTimer = nil
         elapsedSeconds = 0
+        clearSavedSession()
+    }
+
+    // MARK: - Session Persistence
+
+    private func checkForInterruptedSession() {
+        guard let data = UserDefaults.standard.data(forKey: persistenceKey),
+              let sessionData = try? JSONDecoder().decode(InterruptedSessionData.self, from: data) else {
+            return
+        }
+
+        // Check if session was recent (within last 2 hours)
+        let hoursSinceStart = Date().timeIntervalSince(sessionData.startTime) / 3600
+        if hoursSinceStart < 2 {
+            interruptedSessionData = sessionData
+            hasInterruptedSession = true
+            print("⚠️ [WorkoutSession] Found interrupted session: \(sessionData.taskName), elapsed: \(sessionData.elapsedSeconds)s")
+        } else {
+            // Session too old, clear it
+            clearSavedSession()
+            print("🗑️ [WorkoutSession] Cleared stale interrupted session")
+        }
+    }
+
+    private func saveSessionState() {
+        guard isSessionActive,
+              let sessionID = currentSessionID,
+              let startTime = sessionStartTime else { return }
+
+        let sessionData = InterruptedSessionData(
+            sessionID: sessionID,
+            startTime: startTime,
+            elapsedSeconds: elapsedSeconds,
+            taskName: currentTaskName ?? "Focus Session",
+            targetDuration: currentTargetDuration
+        )
+
+        if let encoded = try? JSONEncoder().encode(sessionData) {
+            UserDefaults.standard.set(encoded, forKey: persistenceKey)
+            print("💾 [WorkoutSession] Saved session state: \(elapsedSeconds)s")
+        }
+    }
+
+    private func clearSavedSession() {
+        UserDefaults.standard.removeObject(forKey: persistenceKey)
+        hasInterruptedSession = false
+        interruptedSessionData = nil
+        print("🗑️ [WorkoutSession] Cleared saved session")
+    }
+
+    /// Dismiss the interrupted session recovery prompt
+    func dismissInterruptedSession() {
+        clearSavedSession()
+    }
+
+    /// Get interrupted session info for display
+    func getInterruptedSessionInfo() -> (taskName: String, elapsedMinutes: Int)? {
+        guard let data = interruptedSessionData else { return nil }
+        return (data.taskName, data.elapsedSeconds / 60)
     }
 
     // MARK: - Public Accessors
