@@ -254,7 +254,7 @@ class AnalyticsViewModel: ObservableObject {
     }
 
     private func generateFallbackInsight() -> String {
-        let totalMinutes = Int(totalFocusTime / 60)
+        let totalMinutes = totalFocusTime.isFinite ? max(0, Int(totalFocusTime / 60)) : 0
         let sessionCount = sessions.count
 
         if sessionCount >= 10 {
@@ -439,30 +439,35 @@ class AnalyticsViewModel: ObservableObject {
         }
 
         // Best day insight
-        if let bestDay = calculateBestDayOfWeek() {
+        if let bestDay = calculateBestDayOfWeek(), bestDay.avgMinutes.isFinite {
+            let avgMins = max(0, Int(bestDay.avgMinutes))
             generatedInsights.append(Insight(
                 icon: "calendar.badge.clock",
                 title: "Best Day: \(bestDay.name)",
-                description: "You average \(Int(bestDay.avgMinutes)) minutes on \(bestDay.name)s. Consider scheduling your most important work on this day!",
+                description: "You average \(avgMins) minutes on \(bestDay.name)s. Consider scheduling your most important work on this day!",
                 type: .positive
             ))
         }
 
         // Environment insight
-        if let best = bestEnvironment, let worst = worstEnvironment {
+        if let best = bestEnvironment, let worst = worstEnvironment, worst.avgDuration > 0 {
             let improvement = ((best.avgDuration - worst.avgDuration) / worst.avgDuration * 100)
-            generatedInsights.append(Insight(
-                icon: best.environment.icon,
-                title: "Best Focus Environment",
-                description: "You focus \(Int(improvement))% longer at \(best.environment.displayName) compared to \(worst.environment.displayName). Try scheduling important work there!",
-                type: .positive
-            ))
+            // Safety check for NaN/infinity before Int conversion
+            if improvement.isFinite {
+                let clampedImprovement = max(0, min(999, Int(improvement)))
+                generatedInsights.append(Insight(
+                    icon: best.environment.icon,
+                    title: "Best Focus Environment",
+                    description: "You focus \(clampedImprovement)% longer at \(best.environment.displayName) compared to \(worst.environment.displayName). Try scheduling important work there!",
+                    type: .positive
+                ))
+            }
         }
 
         // Time of day insight
-        if let bestTime = bestTimeOfDay {
-            let hours = Int(bestTime.avgDuration / 3600)
-            let minutes = Int((bestTime.avgDuration.truncatingRemainder(dividingBy: 3600)) / 60)
+        if let bestTime = bestTimeOfDay, bestTime.avgDuration.isFinite {
+            let hours = max(0, Int(bestTime.avgDuration / 3600))
+            let minutes = max(0, Int((bestTime.avgDuration.truncatingRemainder(dividingBy: 3600)) / 60))
             generatedInsights.append(Insight(
                 icon: timeIcon(for: bestTime.time),
                 title: "Peak Focus Time",
@@ -483,8 +488,8 @@ class AnalyticsViewModel: ObservableObject {
         }
 
         // Average duration insight
-        let avgMinutes = Int(averageSessionDuration / 60)
-        if avgMinutes < 25 {
+        let avgMinutes = averageSessionDuration.isFinite ? max(0, Int(averageSessionDuration / 60)) : 0
+        if avgMinutes < 25 && avgMinutes > 0 {
             generatedInsights.append(Insight(
                 icon: "clock.arrow.circlepath",
                 title: "Try Longer Sessions",
@@ -527,8 +532,9 @@ class AnalyticsViewModel: ObservableObject {
     // MARK: - Helper Methods
 
     private func formatDuration(_ duration: TimeInterval) -> String {
-        let hours = Int(duration / 3600)
-        let minutes = Int((duration.truncatingRemainder(dividingBy: 3600)) / 60)
+        guard duration.isFinite else { return "0m" }
+        let hours = max(0, Int(duration / 3600))
+        let minutes = max(0, Int((duration.truncatingRemainder(dividingBy: 3600)) / 60))
 
         if hours > 0 {
             return "\(hours)h \(minutes)m"
