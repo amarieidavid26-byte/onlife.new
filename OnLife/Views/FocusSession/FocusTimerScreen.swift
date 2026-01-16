@@ -12,7 +12,7 @@ struct FocusTimerScreen: View {
             ZStack {
                 // Glow effect
                 Circle()
-                    .fill(AppColors.healthy.opacity(glowOpacity))
+                    .fill(OnLifeColors.sage.opacity(glowOpacity))
                     .frame(width: 120, height: 120)
                     .blur(radius: 20)
 
@@ -36,24 +36,24 @@ struct FocusTimerScreen: View {
             // Timer
             ZStack {
                 Circle()
-                    .stroke(AppColors.lightSoil, lineWidth: ComponentSize.progressRingLineWidth)
+                    .stroke(OnLifeColors.surface, lineWidth: ComponentSize.progressRingLineWidth)
                     .frame(width: ComponentSize.progressRingSize, height: ComponentSize.progressRingSize)
 
                 Circle()
                     .trim(from: 0, to: viewModel.progress)
-                    .stroke(AppColors.healthy, style: StrokeStyle(lineWidth: ComponentSize.progressRingLineWidth, lineCap: .round))
+                    .stroke(OnLifeColors.sage, style: StrokeStyle(lineWidth: ComponentSize.progressRingLineWidth, lineCap: .round))
                     .frame(width: ComponentSize.progressRingSize, height: ComponentSize.progressRingSize)
                     .rotationEffect(.degrees(-90))
                     .animation(.linear, value: viewModel.progress)
 
                 VStack(spacing: Spacing.sm) {
                     Text(viewModel.timeString)
-                        .font(AppFont.timer())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.timer())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text(viewModel.taskDescription)
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .lineLimit(2)
                         .padding(.horizontal, Spacing.xl)
@@ -71,9 +71,9 @@ struct FocusTimerScreen: View {
                 }) {
                     Image(systemName: viewModel.isPaused ? "play.fill" : "pause.fill")
                         .font(.system(size: 24))
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .frame(width: 60, height: 60)
-                        .background(AppColors.lightSoil)
+                        .background(OnLifeColors.surface)
                         .cornerRadius(30)
                 }
 
@@ -82,9 +82,9 @@ struct FocusTimerScreen: View {
                 }) {
                     Image(systemName: "stop.fill")
                         .font(.system(size: 24))
-                        .foregroundColor(AppColors.error)
+                        .foregroundColor(OnLifeColors.terracotta)
                         .frame(width: 60, height: 60)
-                        .background(AppColors.lightSoil)
+                        .background(OnLifeColors.surface)
                         .cornerRadius(30)
                 }
             }

@@ -28,8 +28,8 @@ struct SeedPlantingAnimation: View {
                 }
 
                 Text("Planting your seed...")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
                     .opacity(opacity)
 
                 Spacer()
@@ -103,7 +103,7 @@ struct ParticleBurst: View {
     }
 
     func particleColor(_ index: Int) -> Color {
-        let colors = [AppColors.healthy, AppColors.thriving, Color.yellow, Color.green]
+        let colors = [OnLifeColors.sage, OnLifeColors.amber, Color.yellow, Color.green]
         return colors[index % colors.count]
     }
 }

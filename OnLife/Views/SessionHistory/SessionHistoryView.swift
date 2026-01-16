@@ -168,7 +168,6 @@ struct StatBox: View {
     let icon: String
     let value: String
     let label: String
-    @State private var isPressed = false
 
     var body: some View {
         VStack(spacing: Spacing.sm) {
@@ -195,17 +194,6 @@ struct StatBox: View {
             radius: 8,
             y: 4
         )
-        .scaleEffect(isPressed ? 0.98 : 1.0)
-        .onTapGesture {}
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
     }
 }
 
@@ -216,7 +204,6 @@ struct GardenFilterChip: View {
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -234,18 +221,8 @@ struct GardenFilterChip: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .fill(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
             )
-            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableChipStyle())
     }
 }
 
@@ -289,8 +266,6 @@ struct SessionCard: View {
     let session: FocusSession
     let gardenName: String
     let onDelete: () -> Void
-    @State private var isPressed = false
-    @State private var deletePressed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -306,17 +281,9 @@ struct SessionCard: View {
                 Button(action: onDelete) {
                     Image(systemName: "trash")
                         .font(.system(size: 16))
-                        .foregroundColor(deletePressed ? OnLifeColors.terracotta : OnLifeColors.textTertiary)
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
-                .simultaneousGesture(
-                    DragGesture(minimumDistance: 0)
-                        .onChanged { _ in
-                            withAnimation(OnLifeAnimation.quick) { deletePressed = true }
-                        }
-                        .onEnded { _ in
-                            withAnimation(OnLifeAnimation.quick) { deletePressed = false }
-                        }
-                )
+                .buttonStyle(PressableChipStyle())
             }
 
             // Date & Duration
@@ -377,16 +344,6 @@ struct SessionCard: View {
             color: Color.black.opacity(0.08),
             radius: 6,
             y: 3
-        )
-        .scaleEffect(isPressed ? 0.98 : 1.0)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
         )
     }
 

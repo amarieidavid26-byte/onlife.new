@@ -41,8 +41,8 @@ struct ConfettiPiece: View {
 
     var randomColor: Color {
         let colors = [
-            AppColors.healthy,
-            AppColors.thriving,
+            OnLifeColors.sage,
+            OnLifeColors.amber,
             Color.yellow,
             Color.green,
             Color.blue,

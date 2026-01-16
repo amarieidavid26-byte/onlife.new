@@ -539,6 +539,36 @@ struct OnLifeSecondaryButtonStyle: ButtonStyle {
     }
 }
 
+/// Pressable button style - for general buttons with scale feedback
+/// Use this instead of simultaneousGesture to avoid scroll conflicts
+struct PressableButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
+            .animation(OnLifeAnimation.quick, value: configuration.isPressed)
+    }
+}
+
+/// Pressable card style - subtle press feedback for cards
+/// Use this instead of simultaneousGesture to avoid scroll conflicts
+struct PressableCardStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.98 : 1.0)
+            .opacity(configuration.isPressed ? 0.95 : 1.0)
+            .animation(OnLifeAnimation.quick, value: configuration.isPressed)
+    }
+}
+
+/// Pressable chip style - for small interactive chips
+struct PressableChipStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(OnLifeAnimation.quick, value: configuration.isPressed)
+    }
+}
+
 // MARK: - View Extensions
 
 extension View {

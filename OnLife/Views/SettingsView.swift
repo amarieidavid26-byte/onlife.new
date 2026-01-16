@@ -378,8 +378,6 @@ struct SettingsRowButton: View {
     var showChevron: Bool = true
     let action: () -> Void
 
-    @State private var isPressed = false
-
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.md) {
@@ -414,18 +412,8 @@ struct SettingsRowButton: View {
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.vertical, Spacing.md)
-            .background(isPressed ? OnLifeColors.surface : Color.clear)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(SettingsRowButtonStyle())
     }
 }
 

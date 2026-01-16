@@ -202,7 +202,6 @@ struct GardenSelectorChip: View {
     let garden: Garden
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -224,18 +223,8 @@ struct GardenSelectorChip: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
             )
-            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableChipStyle())
     }
 }
 
@@ -245,7 +234,6 @@ struct SessionSeedTypeCard: View {
     let seedType: SeedType
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -272,18 +260,8 @@ struct SessionSeedTypeCard: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
             )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableCardStyle())
     }
 }
 
@@ -293,7 +271,6 @@ struct EnvironmentChip: View {
     let environment: FocusEnvironment
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -316,18 +293,8 @@ struct EnvironmentChip: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
             )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableCardStyle())
     }
 }
 
@@ -337,7 +304,6 @@ struct PlantSpeciesChip: View {
     let species: PlantSpecies
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -360,18 +326,8 @@ struct PlantSpeciesChip: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
             )
-            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableCardStyle())
     }
 }
 
@@ -380,7 +336,6 @@ struct PlantSpeciesChip: View {
 struct PlantSeedButton: View {
     let isEnabled: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -395,25 +350,13 @@ struct PlantSeedButton: View {
                 )
                 .shadow(
                     color: OnLifeColors.amber.opacity(isEnabled ? 0.4 : 0),
-                    radius: isPressed ? 4 : 12,
-                    y: isPressed ? 2 : 6
+                    radius: 12,
+                    y: 6
                 )
-                .scaleEffect(isPressed ? 0.98 : 1.0)
                 .opacity(isEnabled ? 1.0 : 0.5)
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(PressableCardStyle())
         .disabled(!isEnabled)
         .padding(.horizontal, Spacing.lg)
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    if isEnabled {
-                        withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                    }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
     }
 }

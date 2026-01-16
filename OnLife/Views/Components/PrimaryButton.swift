@@ -3,13 +3,13 @@ import SwiftUI
 struct PrimaryButton: View {
     let title: String
     let action: () -> Void
-    var color: Color = AppColors.healthy
+    var color: Color = OnLifeColors.sage
 
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(AppFont.button())
-                .foregroundColor(AppColors.textPrimary)
+                .font(OnLifeFont.button())
+                .foregroundColor(OnLifeColors.textPrimary)
                 .frame(maxWidth: .infinity)
                 .frame(height: ComponentSize.buttonHeight)
                 .background(color)

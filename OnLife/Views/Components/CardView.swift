@@ -29,7 +29,6 @@ struct PressableCardView<Content: View>: View {
     let content: Content
     var elevated: Bool = false
     let action: () -> Void
-    @State private var isPressed = false
 
     init(elevated: Bool = false, action: @escaping () -> Void, @ViewBuilder content: () -> Content) {
         self.elevated = elevated
@@ -49,20 +48,10 @@ struct PressableCardView<Content: View>: View {
                 )
                 .shadow(
                     color: Color.black.opacity(0.15),
-                    radius: isPressed ? 4 : 8,
-                    y: isPressed ? 2 : 4
+                    radius: 8,
+                    y: 4
                 )
-                .scaleEffect(isPressed ? 0.98 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableCardStyle())
     }
 }

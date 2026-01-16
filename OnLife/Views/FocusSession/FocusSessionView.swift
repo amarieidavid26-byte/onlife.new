@@ -5,7 +5,7 @@ struct FocusSessionView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             if viewModel.sessionPhase == .planting {

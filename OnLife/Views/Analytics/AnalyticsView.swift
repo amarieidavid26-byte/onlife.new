@@ -149,7 +149,6 @@ struct AnalyticsStatCard: View {
     let label: String
     let delay: Double
     let appeared: Bool
-    @State private var isPressed = false
     @State private var cardAppeared = false
 
     var body: some View {
@@ -177,22 +176,13 @@ struct AnalyticsStatCard: View {
             radius: 8,
             y: 4
         )
-        .scaleEffect(isPressed ? 0.97 : (cardAppeared ? 1.0 : 0.9))
+        .scaleEffect(cardAppeared ? 1.0 : 0.9)
         .opacity(cardAppeared ? 1 : 0)
         .onAppear {
             withAnimation(OnLifeAnimation.standard.delay(delay)) {
                 cardAppeared = true
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
     }
 }
 
@@ -289,7 +279,6 @@ struct InsightCard: View {
     let delay: Double
     let appeared: Bool
     @State private var cardAppeared = false
-    @State private var isPressed = false
 
     var iconBackgroundColor: Color {
         switch insight.type {
@@ -348,22 +337,13 @@ struct InsightCard: View {
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .fill(OnLifeColors.cardBackground)
         )
-        .scaleEffect(isPressed ? 0.98 : (cardAppeared ? 1.0 : 0.95))
+        .scaleEffect(cardAppeared ? 1.0 : 0.95)
         .opacity(cardAppeared ? 1 : 0)
         .onAppear {
             withAnimation(OnLifeAnimation.standard.delay(delay)) {
                 cardAppeared = true
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
     }
 }
 

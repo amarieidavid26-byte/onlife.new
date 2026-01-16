@@ -10,7 +10,6 @@ struct HomeView: View {
     @State private var editingGarden: Garden? = nil
     @State private var showDeleteAlert = false
     @State private var gardenToDelete: Garden? = nil
-    @State private var fabPressed = false
     @State private var headerAppeared = false
 
     var body: some View {
@@ -204,23 +203,16 @@ struct HomeView: View {
                     .frame(width: 56, height: 56)
                     .shadow(
                         color: OnLifeColors.amber.opacity(0.4),
-                        radius: fabPressed ? 8 : 16,
-                        y: fabPressed ? 4 : 8
+                        radius: 16,
+                        y: 8
                     )
 
                 Image(systemName: "plus")
                     .font(.system(size: 24, weight: .bold))
                     .foregroundColor(OnLifeColors.deepForest)
             }
-            .scaleEffect(fabPressed ? 0.92 : 1.0)
-            .animation(OnLifeAnimation.quick, value: fabPressed)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in fabPressed = true }
-                .onEnded { _ in fabPressed = false }
-        )
+        .buttonStyle(PressableButtonStyle())
     }
 
     // MARK: - Empty Garden View
@@ -312,7 +304,6 @@ struct GardenCard: View {
 
     @State private var scale: CGFloat = 0.95
     @State private var opacity: Double = 0
-    @State private var isPressed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -355,7 +346,7 @@ struct GardenCard: View {
             radius: 8,
             y: 4
         )
-        .scaleEffect(isPressed ? 0.98 : scale)
+        .scaleEffect(scale)
         .opacity(opacity)
         .onAppear {
             withAnimation(OnLifeAnimation.elegant) {
@@ -363,20 +354,6 @@ struct GardenCard: View {
                 opacity = 1.0
             }
         }
-        .onTapGesture { }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) {
-                        isPressed = true
-                    }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) {
-                        isPressed = false
-                    }
-                }
-        )
         .contextMenu {
             Button(action: {
                 onEdit?()
@@ -434,7 +411,6 @@ struct PlantGridItem: View {
 
     @State private var scale: CGFloat = 0.8
     @State private var opacity: Double = 0
-    @State private var isPressed = false
 
     var body: some View {
         VStack(spacing: Spacing.sm) {
@@ -460,7 +436,7 @@ struct PlantGridItem: View {
             RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
                 .fill(OnLifeColors.cardBackgroundElevated)
         )
-        .scaleEffect(isPressed ? 0.95 : scale)
+        .scaleEffect(scale)
         .opacity(opacity)
         .onAppear {
             // Staggered animation
@@ -470,19 +446,6 @@ struct PlantGridItem: View {
                 opacity = 1.0
             }
         }
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) {
-                        isPressed = true
-                    }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) {
-                        isPressed = false
-                    }
-                }
-        )
     }
 
     // MARK: - Helpers

@@ -30,8 +30,8 @@ struct SessionCompletedScreen: View {
                     }
 
                     Text("Session Complete!")
-                        .font(AppFont.heading1())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading1())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                 VStack(spacing: Spacing.md) {
                     StatRow(label: "Task", value: viewModel.taskDescription)
@@ -91,17 +91,17 @@ struct StatRow: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textTertiary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textTertiary)
 
             Spacer()
 
             Text(value)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textPrimary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textPrimary)
         }
         .padding(Spacing.lg)
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.surface)
         .cornerRadius(CornerRadius.medium)
     }
 }

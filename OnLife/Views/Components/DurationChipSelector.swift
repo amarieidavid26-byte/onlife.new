@@ -25,7 +25,6 @@ struct DurationChip: View {
     let duration: Int
     let isSelected: Bool
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -44,17 +43,7 @@ struct DurationChip: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .fill(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
             )
-            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableChipStyle())
     }
 }

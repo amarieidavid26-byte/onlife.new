@@ -304,7 +304,6 @@ struct ActiveSubstancesCard: View {
 struct QuickLogSection: View {
     @ObservedObject var tracker: SubstanceTracker
     @Binding var showingScanner: Bool
-    @State private var scanButtonPressed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -350,21 +349,11 @@ struct QuickLogSection: View {
                 )
                 .shadow(
                     color: OnLifeColors.amber.opacity(0.3),
-                    radius: scanButtonPressed ? 4 : 8,
-                    y: scanButtonPressed ? 2 : 4
+                    radius: 8,
+                    y: 4
                 )
-                .scaleEffect(scanButtonPressed ? 0.98 : 1.0)
             }
-            .buttonStyle(PlainButtonStyle())
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        withAnimation(OnLifeAnimation.quick) { scanButtonPressed = true }
-                    }
-                    .onEnded { _ in
-                        withAnimation(OnLifeAnimation.quick) { scanButtonPressed = false }
-                    }
-            )
+            .buttonStyle(PressableCardStyle())
 
             // Manual quick log buttons
             HStack(spacing: Spacing.md) {
@@ -385,7 +374,6 @@ struct QuickLogSection: View {
 struct QuickLogButton: View {
     let type: SubstanceType
     let action: () -> Void
-    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -408,18 +396,8 @@ struct QuickLogButton: View {
                 RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                     .fill(OnLifeColors.cardBackground)
             )
-            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(PlainButtonStyle())
-        .simultaneousGesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
-                }
-                .onEnded { _ in
-                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
-                }
-        )
+        .buttonStyle(PressableChipStyle())
     }
 }
 
