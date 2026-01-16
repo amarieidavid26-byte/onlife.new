@@ -404,7 +404,9 @@ struct EnvironmentBarRow: View {
     @State private var barWidth: CGFloat = 0
 
     var percentage: CGFloat {
-        CGFloat(avgDuration / maxDuration)
+        guard maxDuration > 0 else { return 0 }
+        let ratio = CGFloat(avgDuration / maxDuration)
+        return ratio.isNaN || ratio.isInfinite ? 0 : min(ratio, 1.0)
     }
 
     var durationFormatted: String {
@@ -446,8 +448,10 @@ struct EnvironmentBarRow: View {
                         .frame(width: barWidth, height: 8)
                 }
                 .onAppear {
+                    let targetWidth = geometry.size.width * percentage
+                    let safeWidth = targetWidth.isNaN || targetWidth.isInfinite ? 0 : max(0, targetWidth)
                     withAnimation(OnLifeAnimation.growth.delay(animationDelay)) {
-                        barWidth = geometry.size.width * percentage
+                        barWidth = safeWidth
                     }
                 }
             }
@@ -513,7 +517,9 @@ struct TimeOfDayBarRow: View {
     @State private var barWidth: CGFloat = 0
 
     var percentage: CGFloat {
-        CGFloat(avgDuration / maxDuration)
+        guard maxDuration > 0 else { return 0 }
+        let ratio = CGFloat(avgDuration / maxDuration)
+        return ratio.isNaN || ratio.isInfinite ? 0 : min(ratio, 1.0)
     }
 
     var durationFormatted: String {
@@ -567,8 +573,10 @@ struct TimeOfDayBarRow: View {
                         .frame(width: barWidth, height: 8)
                 }
                 .onAppear {
+                    let targetWidth = geometry.size.width * percentage
+                    let safeWidth = targetWidth.isNaN || targetWidth.isInfinite ? 0 : max(0, targetWidth)
                     withAnimation(OnLifeAnimation.growth.delay(animationDelay)) {
-                        barWidth = geometry.size.width * percentage
+                        barWidth = safeWidth
                     }
                 }
             }
@@ -634,7 +642,9 @@ struct GardenBarRow: View {
     @State private var barWidth: CGFloat = 0
 
     var percentage: CGFloat {
-        CGFloat(focusTime / maxTime)
+        guard maxTime > 0 else { return 0 }
+        let ratio = CGFloat(focusTime / maxTime)
+        return ratio.isNaN || ratio.isInfinite ? 0 : min(ratio, 1.0)
     }
 
     var timeFormatted: String {
@@ -682,8 +692,10 @@ struct GardenBarRow: View {
                         .frame(width: barWidth, height: 8)
                 }
                 .onAppear {
+                    let targetWidth = geometry.size.width * percentage
+                    let safeWidth = targetWidth.isNaN || targetWidth.isInfinite ? 0 : max(0, targetWidth)
                     withAnimation(OnLifeAnimation.growth.delay(animationDelay)) {
-                        barWidth = geometry.size.width * percentage
+                        barWidth = safeWidth
                     }
                 }
             }

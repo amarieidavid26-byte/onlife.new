@@ -3,7 +3,7 @@ import SwiftUI
 struct InsightsView: View {
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             ScrollView {
@@ -12,12 +12,12 @@ struct InsightsView: View {
                     HStack {
                         VStack(alignment: .leading, spacing: Spacing.xs) {
                             Text("Your Focus")
-                                .font(AppFont.bodySmall())
-                                .foregroundColor(AppColors.textTertiary)
+                                .font(OnLifeFont.bodySmall())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
                             Text("Insights")
-                                .font(AppFont.heading1())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading1())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
 
                         Spacer()
@@ -32,12 +32,12 @@ struct InsightsView: View {
 
                         VStack(spacing: Spacing.md) {
                             Text("Insights Coming Soon")
-                                .font(AppFont.heading2())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading2())
+                                .foregroundColor(OnLifeColors.textPrimary)
 
                             Text("Complete more focus sessions to unlock AI-powered insights about your productivity patterns")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textSecondary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textSecondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.horizontal, Spacing.xl)
                         }
@@ -83,18 +83,18 @@ struct InsightPreviewCard: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(value)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textTertiary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
 
             Spacer()
         }
         .padding(Spacing.lg)
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.surface)
         .cornerRadius(CornerRadius.large)
     }
 }
