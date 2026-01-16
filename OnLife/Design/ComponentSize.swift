@@ -1,5 +1,7 @@
 import SwiftUI
 
+// Note: CornerRadius is now defined in DesignSystem.swift
+
 struct ComponentSize {
     // Buttons
     static let buttonHeight: CGFloat = 56
@@ -25,11 +27,4 @@ struct ComponentSize {
     // Progress Ring
     static let progressRingSize: CGFloat = 280
     static let progressRingLineWidth: CGFloat = 12
-}
-
-struct CornerRadius {
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 12
-    static let large: CGFloat = 16
-    static let extraLarge: CGFloat = 20
 }

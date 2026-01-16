@@ -11,8 +11,10 @@ struct DurationChipSelector: View {
                     duration: duration,
                     isSelected: selectedDuration == duration
                 ) {
-                    selectedDuration = duration
-                    HapticManager.shared.selection()
+                    Haptics.selection()
+                    withAnimation(OnLifeAnimation.quick) {
+                        selectedDuration = duration
+                    }
                 }
             }
         }
@@ -23,26 +25,36 @@ struct DurationChip: View {
     let duration: Int
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Text("\(duration)")
-                    .font(.system(size: 24, weight: .semibold))
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(isSelected ? OnLifeColors.deepForest : OnLifeColors.textSecondary)
 
                 Text("min")
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(isSelected ? AppColors.textSecondary : AppColors.textTertiary)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(isSelected ? OnLifeColors.deepForest.opacity(0.7) : OnLifeColors.textTertiary)
             }
-            .frame(width: 70, height: 70)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
-            .overlay(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .stroke(isSelected ? AppColors.healthy : Color.clear, lineWidth: 2)
+            .frame(maxWidth: .infinity)
+            .frame(height: 72)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
             )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }

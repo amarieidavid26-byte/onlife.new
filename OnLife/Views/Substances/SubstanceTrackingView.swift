@@ -18,78 +18,101 @@ import SwiftUI
  */
 
 struct SubstanceTrackingView: View {
-    /// Use ObservedObject for singleton - StateObject would try to create new instance
     @ObservedObject private var tracker = SubstanceTracker.shared
     @State private var showingCustomLog = false
     @State private var showingScanner = false
     @State private var scannedBarcode: String?
+    @State private var contentAppeared = false
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: Spacing.lg) {
-                // SAFETY WARNINGS - Display at top when present
-                let warnings = tracker.getAllWarnings()
-                if !warnings.isEmpty {
-                    WarningBannerView(
-                        warnings: warnings,
-                        warningLevel: tracker.getCaffeineWarningLevel()
-                    )
-                }
+        ZStack {
+            // Background gradient
+            LinearGradient(
+                colors: [OnLifeColors.deepForest, OnLifeColors.surface],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-                // Feature explanation card
-                VStack(alignment: .leading, spacing: Spacing.xs) {
-                    HStack {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: Spacing.lg) {
+                    // SAFETY WARNINGS - Display at top when present
+                    let warnings = tracker.getAllWarnings()
+                    if !warnings.isEmpty {
+                        WarningBannerView(
+                            warnings: warnings,
+                            warningLevel: tracker.getCaffeineWarningLevel()
+                        )
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    // Feature explanation card
+                    HStack(spacing: Spacing.sm) {
                         Image(systemName: "drop.fill")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
+                            .font(.system(size: 18))
+
                         Text("Track substances to optimize your focus")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
+
+                        Spacer()
+                    }
+                    .padding(Spacing.md)
+                    .background(
+                        RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                            .fill(OnLifeColors.cardBackground)
+                    )
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 20)
+
+                    // Active Levels Card
+                    ActiveSubstancesCard(
+                        activeLevels: tracker.activeLevels,
+                        warningLevel: tracker.getCaffeineWarningLevel(),
+                        todaysCaffeine: tracker.getTodaysTotalCaffeine(),
+                        dailyLimit: MetabolismProfileManager.shared.profile.recommendedDailyCaffeineLimit,
+                        synergyMultiplier: tracker.calculateSynergy()
+                    )
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 20)
+                    .animation(OnLifeAnimation.elegant.delay(0.05), value: contentAppeared)
+
+                    // Quick Log Buttons
+                    QuickLogSection(tracker: tracker, showingScanner: $showingScanner)
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.1), value: contentAppeared)
+
+                    // Today's Logs
+                    TodayLogSection(logs: todayLogs)
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.15), value: contentAppeared)
+
+                    // Insights (only if there are logs)
+                    if !tracker.logs.isEmpty {
+                        SubstanceInsightsCard(tracker: tracker)
+                            .opacity(contentAppeared ? 1 : 0)
+                            .offset(y: contentAppeared ? 0 : 20)
+                            .animation(OnLifeAnimation.elegant.delay(0.2), value: contentAppeared)
                     }
                 }
-                .padding()
-                .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
-                )
-
-                // Active Levels Card with warning level integration and synergy display
-                ActiveSubstancesCard(
-                    activeLevels: tracker.activeLevels,
-                    warningLevel: tracker.getCaffeineWarningLevel(),
-                    todaysCaffeine: tracker.getTodaysTotalCaffeine(),
-                    dailyLimit: MetabolismProfileManager.shared.profile.recommendedDailyCaffeineLimit,
-                    synergyMultiplier: tracker.calculateSynergy()
-                )
-
-                // Quick Log Buttons
-                QuickLogSection(tracker: tracker, showingScanner: $showingScanner)
-
-                // Today's Logs
-                TodayLogSection(logs: todayLogs)
-
-                // Insights (only if there are logs)
-                if !tracker.logs.isEmpty {
-                    SubstanceInsightsCard(tracker: tracker)
-                }
+                .padding(Spacing.lg)
+                .padding(.bottom, Spacing.xxl)
             }
-            .padding()
         }
-        .background(AppColors.richSoil)
         .navigationTitle("Substances")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbarBackground(OnLifeColors.deepForest, for: .navigationBar)
+        .toolbarBackground(.visible, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .onAppear {
-            // Check and log warnings
-            let warnings = tracker.getAllWarnings()
-            let warningLevel = tracker.getCaffeineWarningLevel()
-            print("⚠️ [SubstanceTracking] onAppear - Warning level: \(warningLevel.rawValue)")
-            print("⚠️ [SubstanceTracking] onAppear - \(warnings.count) warnings found")
-            for warning in warnings {
-                print("⚠️ [SubstanceTracking] Warning: \(warning)")
+            withAnimation(OnLifeAnimation.elegant) {
+                contentAppeared = true
             }
-            print("⚠️ [SubstanceTracking] Today's caffeine: \(tracker.getTodaysTotalCaffeine())mg")
-            print("⚠️ [SubstanceTracking] Daily limit: \(MetabolismProfileManager.shared.profile.recommendedDailyCaffeineLimit)mg")
 
             #if DEBUG
-            // Run pharmacokinetics test on first appearance
             Task {
                 tracker.testPharmacokinetics()
             }
@@ -104,7 +127,6 @@ struct SubstanceTrackingView: View {
         }
         .sheet(item: $scannedBarcode) { barcode in
             ProductLookupView(barcode: barcode) {
-                // Product was logged successfully
                 Task { @MainActor in
                     tracker.updateActiveLevels()
                 }
@@ -124,9 +146,6 @@ struct SubstanceTrackingView: View {
 
 // MARK: - Active Substances Card
 
-/// Displays current active substance levels with progress bars showing decay
-/// Shows empty state when no substances are above threshold (1.0 mg/ml)
-/// Now includes warning level integration for caffeine safety and synergy display
 struct ActiveSubstancesCard: View {
     let activeLevels: [SubstanceType: Double]
     let warningLevel: SubstanceTracker.CaffeineWarningLevel
@@ -138,10 +157,12 @@ struct ActiveSubstancesCard: View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Image(systemName: "waveform.path.ecg")
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
+                    .font(.system(size: 18))
+
                 Text("Active Levels")
-                    .font(AppFont.heading3())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Spacer()
 
@@ -154,75 +175,66 @@ struct ActiveSubstancesCard: View {
                                 .font(.caption)
                         }
                         Text("\(Int(todaysCaffeine))/\(Int(dailyLimit))mg")
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.caption())
                             .foregroundColor(colorForWarningLevel(warningLevel))
                     }
                 }
             }
 
-            // SYNERGY INDICATOR - Prominent display when caffeine + L-theanine synergy is active
+            // SYNERGY INDICATOR
             if synergyMultiplier > 1.0 {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "sparkles")
-                        .foregroundColor(.purple)
+                        .foregroundColor(OnLifeColors.amber)
                         .font(.system(size: 18, weight: .semibold))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Synergy Active")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(.purple)
+                            .foregroundColor(OnLifeColors.amber)
 
                         Text("+15% focus boost from caffeine + L-theanine")
-                            .font(AppFont.bodySmall())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
 
                     Spacer()
 
                     Text("+15%")
-                        .font(AppFont.heading3())
-                        .foregroundColor(.purple)
+                        .font(OnLifeFont.heading3())
+                        .foregroundColor(OnLifeColors.amber)
                 }
-                .padding()
+                .padding(Spacing.md)
                 .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .fill(Color.purple.opacity(0.15))
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.small)
-                        .stroke(Color.purple.opacity(0.4), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                        .fill(OnLifeColors.amber.opacity(0.15))
                 )
             }
 
-            // Check if caffeine or L-theanine are active
-            // NOTE: Water is NOT shown in active levels because:
-            // - Biological half-life is 9-14 DAYS (not 1 hour)
-            // - Current "1 hour half-life" was a simplified UI model with no scientific basis
-            // - Water should use daily intake tracking instead (future feature)
+            // Only display caffeine and L-theanine (NOT water)
             let substancesToDisplay: [SubstanceType] = [.caffeine, .lTheanine]
             let hasActive = substancesToDisplay.contains { activeLevels[$0] ?? 0 > 1.0 }
 
             if !hasActive {
                 Text("No active substances")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .padding(.vertical, Spacing.sm)
             } else {
-                // Only display caffeine and L-theanine (NOT water)
                 ForEach(substancesToDisplay, id: \.self) { type in
                     if let level = activeLevels[type], level > 1.0 {
                         VStack(alignment: .leading, spacing: Spacing.xs) {
                             HStack {
                                 Image(systemName: type.iconName)
-                                    .foregroundColor(colorForType(type, warningLevel: warningLevel))
+                                    .foregroundColor(substanceColor(type, warningLevel: warningLevel))
 
                                 Text(type.rawValue)
-                                    .font(AppFont.body())
+                                    .font(OnLifeFont.body())
+                                    .foregroundColor(OnLifeColors.textPrimary)
 
                                 Spacer()
 
-                                // Warning icon for caffeine if over limit
                                 if type == .caffeine && warningLevel != .safe {
                                     Image(systemName: warningLevel.icon)
                                         .foregroundColor(colorForWarningLevel(warningLevel))
@@ -230,82 +242,98 @@ struct ActiveSubstancesCard: View {
                                 }
 
                                 Text("\(Int(level))mg")
-                                    .font(AppFont.heading3())
-                                    .foregroundColor(type == .caffeine ? colorForWarningLevel(warningLevel) : AppColors.textPrimary)
+                                    .font(OnLifeFont.heading3())
+                                    .foregroundColor(type == .caffeine ? colorForWarningLevel(warningLevel) : OnLifeColors.textPrimary)
                             }
 
-                            // Progress bar showing decay (color-coded for warnings)
-                            ProgressView(value: min(1.0, level / (type.defaultAmount * 1.5)))
-                                .tint(colorForType(type, warningLevel: warningLevel))
+                            // Progress bar showing decay
+                            GeometryReader { geometry in
+                                ZStack(alignment: .leading) {
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(OnLifeColors.surface)
+                                        .frame(height: 8)
+
+                                    RoundedRectangle(cornerRadius: 4)
+                                        .fill(substanceColor(type, warningLevel: warningLevel))
+                                        .frame(width: geometry.size.width * min(1.0, level / (type.defaultAmount * 1.5)), height: 8)
+                                }
+                            }
+                            .frame(height: 8)
                         }
                         .padding(.vertical, Spacing.xs)
                     }
                 }
             }
         }
-        .padding()
+        .padding(Spacing.lg)
         .background(
-            RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .fill(AppColors.lightSoil)
-                .overlay(
-                    // Add warning border if caffeine is over limit
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .stroke(warningLevel != .safe ? colorForWarningLevel(warningLevel).opacity(0.5) : Color.clear, lineWidth: 2)
-                )
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
+        .overlay(
+            // Warning border when caffeine is over limit
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(warningLevel != .safe ? colorForWarningLevel(warningLevel).opacity(0.5) : Color.clear, lineWidth: 2)
         )
     }
 
-    func colorForType(_ type: SubstanceType, warningLevel: SubstanceTracker.CaffeineWarningLevel) -> Color {
+    func substanceColor(_ type: SubstanceType, warningLevel: SubstanceTracker.CaffeineWarningLevel) -> Color {
         switch type {
         case .caffeine:
-            // Color-code caffeine based on warning level
             return colorForWarningLevel(warningLevel)
-        case .lTheanine: return .green
-        case .water: return .blue
+        case .lTheanine:
+            return OnLifeColors.sage
+        case .water:
+            return OnLifeColors.sage.opacity(0.7)
         }
     }
 
     func colorForWarningLevel(_ level: SubstanceTracker.CaffeineWarningLevel) -> Color {
         switch level {
-        case .safe: return .brown
-        case .caution: return .yellow
-        case .warning: return .orange
-        case .danger: return .red
-        case .emergency: return .purple
+        case .safe: return OnLifeColors.sage
+        case .caution: return OnLifeColors.amber
+        case .warning: return OnLifeColors.terracotta
+        case .danger: return Color.red
+        case .emergency: return Color.red
         }
     }
 }
 
 // MARK: - Quick Log Section
 
-/// One-tap buttons for logging substances with default amounts
-/// Triggers haptic feedback and immediately updates active levels
 struct QuickLogSection: View {
     @ObservedObject var tracker: SubstanceTracker
     @Binding var showingScanner: Bool
+    @State private var scanButtonPressed = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Image(systemName: "bolt.fill")
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
+                    .font(.system(size: 18))
+
                 Text("Quick Log")
-                    .font(AppFont.heading3())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
             }
 
-            // Scan button
-            Button(action: { showingScanner = true }) {
+            // Scan button - solid amber
+            Button(action: {
+                Haptics.impact(.medium)
+                showingScanner = true
+            }) {
                 HStack {
                     Image(systemName: "barcode.viewfinder")
                         .font(.system(size: 24))
 
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Scan Product")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
+
                         Text("Energy drinks, coffee, supplements...")
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.caption())
                             .opacity(0.8)
                     }
 
@@ -314,25 +342,39 @@ struct QuickLogSection: View {
                     Image(systemName: "camera.fill")
                         .font(.system(size: 20))
                 }
-                .foregroundColor(.white)
-                .padding()
+                .foregroundColor(OnLifeColors.deepForest)
+                .padding(Spacing.md)
                 .background(
-                    LinearGradient(
-                        colors: [Color.purple, Color.blue],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
+                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                        .fill(OnLifeColors.amber)
                 )
-                .cornerRadius(CornerRadius.medium)
+                .shadow(
+                    color: OnLifeColors.amber.opacity(0.3),
+                    radius: scanButtonPressed ? 4 : 8,
+                    y: scanButtonPressed ? 2 : 4
+                )
+                .scaleEffect(scanButtonPressed ? 0.98 : 1.0)
             }
             .buttonStyle(PlainButtonStyle())
+            .simultaneousGesture(
+                DragGesture(minimumDistance: 0)
+                    .onChanged { _ in
+                        withAnimation(OnLifeAnimation.quick) { scanButtonPressed = true }
+                    }
+                    .onEnded { _ in
+                        withAnimation(OnLifeAnimation.quick) { scanButtonPressed = false }
+                    }
+            )
 
             // Manual quick log buttons
             HStack(spacing: Spacing.md) {
                 ForEach(SubstanceType.allCases, id: \.self) { type in
                     QuickLogButton(
                         type: type,
-                        action: { tracker.quickLog(type) }
+                        action: {
+                            Haptics.selection()
+                            tracker.quickLog(type)
+                        }
                     )
                 }
             }
@@ -340,232 +382,225 @@ struct QuickLogSection: View {
     }
 }
 
-/// Individual quick log button with icon, name, and default amount
 struct QuickLogButton: View {
     let type: SubstanceType
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
             VStack(spacing: Spacing.xs) {
                 Image(systemName: type.iconName)
-                    .font(.system(size: 32))
-                    .foregroundColor(.white)
+                    .font(.system(size: 28))
+                    .foregroundColor(OnLifeColors.sage)
 
                 Text(type.rawValue)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(.white)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("\(Int(type.defaultAmount))\(type == .water ? "ml" : "mg")")
-                    .font(AppFont.labelSmall())
-                    .foregroundColor(.white.opacity(0.7))
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, Spacing.md)
             .background(
-                RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .fill(colorForType(type))
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(OnLifeColors.cardBackground)
             )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
-    }
-
-    func colorForType(_ type: SubstanceType) -> Color {
-        switch type {
-        case .caffeine: return .brown
-        case .lTheanine: return .green
-        case .water: return .blue
-        }
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }
 
 // MARK: - Today's Log Section
 
-/// Displays all substances logged today in reverse chronological order
-/// Shows empty state when no logs exist for current day
 struct TodayLogSection: View {
     let logs: [SubstanceLog]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
                 Image(systemName: "calendar")
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
+                    .font(.system(size: 18))
+
                 Text("Today's Log")
-                    .font(AppFont.heading3())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
             }
 
             if logs.isEmpty {
                 Text("No substances logged today")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
-                    .padding()
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
+                    .padding(Spacing.lg)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        RoundedRectangle(cornerRadius: CornerRadius.medium)
-                            .fill(AppColors.lightSoil)
+                        RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                            .fill(OnLifeColors.cardBackground)
                     )
             } else {
-                ForEach(logs) { log in
-                    LogEntryRow(log: log)
+                VStack(spacing: Spacing.sm) {
+                    ForEach(logs) { log in
+                        LogEntryRow(log: log)
+                    }
                 }
             }
         }
     }
 }
 
-/// Individual log entry showing substance, timestamp, and amount
 struct LogEntryRow: View {
     let log: SubstanceLog
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
             Image(systemName: log.substanceType.iconName)
-                .font(.system(size: 24))
-                .foregroundColor(colorForType(log.substanceType))
-                .frame(width: 40)
+                .font(.system(size: 22))
+                .foregroundColor(OnLifeColors.sage)
+                .frame(width: 36)
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(log.substanceType.rawValue)
-                    .font(AppFont.body())
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .fontWeight(.medium)
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(log.timestamp, style: .time)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 4) {
+            VStack(alignment: .trailing, spacing: 2) {
                 Text("\(Int(log.amount))")
-                    .font(AppFont.body())
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(log.unit.rawValue)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
         }
-        .padding()
+        .padding(Spacing.md)
         .background(
-            RoundedRectangle(cornerRadius: CornerRadius.small)
-                .fill(AppColors.lightSoil)
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
         )
-    }
-
-    func colorForType(_ type: SubstanceType) -> Color {
-        switch type {
-        case .caffeine: return .brown
-        case .lTheanine: return .green
-        case .water: return .blue
-        }
     }
 }
 
 // MARK: - Substance Insights Card
 
-/// Shows personalized insights based on active substance levels
-/// Includes synergy detection, timing recommendations, and hydration reminders
 struct SubstanceInsightsCard: View {
     @ObservedObject var tracker: SubstanceTracker
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            HStack {
-                Image(systemName: "sparkles")
-                    .foregroundColor(.yellow)
-                Text("Insights")
-                    .font(AppFont.heading3())
-                    .foregroundColor(AppColors.textPrimary)
+        HStack(spacing: 0) {
+            // Amber accent bar
+            RoundedRectangle(cornerRadius: 2)
+                .fill(OnLifeColors.amber)
+                .frame(width: 4)
+
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                HStack {
+                    Image(systemName: "sparkles")
+                        .foregroundColor(OnLifeColors.amber)
+                        .font(.system(size: 18))
+
+                    Text("Insights")
+                        .font(OnLifeFont.heading3())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+
+                VStack(alignment: .leading, spacing: Spacing.sm) {
+                    // Synergy detection
+                    if tracker.calculateSynergy() > 1.0 {
+                        InsightRow(
+                            icon: "leaf.fill",
+                            text: "Caffeine + L-theanine synergy active! 15% focus boost",
+                            color: OnLifeColors.sage
+                        )
+                    }
+
+                    // Caffeine timing
+                    if let caffeineLevel = tracker.activeLevels[.caffeine], caffeineLevel > 50 {
+                        InsightRow(
+                            icon: "clock.fill",
+                            text: "Caffeine active: \(Int(caffeineLevel))mg in your system",
+                            color: OnLifeColors.amber
+                        )
+                    }
+
+                    // L-theanine info
+                    if let lTheanineLevel = tracker.activeLevels[.lTheanine], lTheanineLevel > 50 {
+                        InsightRow(
+                            icon: "leaf.fill",
+                            text: "L-theanine active: \(Int(lTheanineLevel))mg - smooth focus mode",
+                            color: OnLifeColors.sage
+                        )
+                    }
+
+                    // Hydration check
+                    if let waterLevel = tracker.activeLevels[.water], waterLevel < 100 {
+                        InsightRow(
+                            icon: "drop.fill",
+                            text: "Consider drinking water for optimal focus",
+                            color: OnLifeColors.sage.opacity(0.7)
+                        )
+                    }
+
+                    // If no insights
+                    if tracker.calculateSynergy() == 1.0 &&
+                       (tracker.activeLevels[.caffeine] ?? 0) < 50 &&
+                       (tracker.activeLevels[.lTheanine] ?? 0) < 50 {
+                        Text("Log substances to see personalized insights")
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
+                }
             }
-
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                // Synergy detection
-                if tracker.calculateSynergy() > 1.0 {
-                    InsightRow(
-                        icon: "leaf.fill",
-                        text: "Caffeine + L-theanine synergy active! 15% focus boost",
-                        color: .green
-                    )
-                }
-
-                // Caffeine timing
-                if let caffeineLevel = tracker.activeLevels[.caffeine], caffeineLevel > 50 {
-                    InsightRow(
-                        icon: "clock.fill",
-                        text: "Caffeine active: \(Int(caffeineLevel))mg in your system",
-                        color: .brown
-                    )
-                }
-
-                // L-theanine info
-                if let lTheanineLevel = tracker.activeLevels[.lTheanine], lTheanineLevel > 50 {
-                    InsightRow(
-                        icon: "leaf.fill",
-                        text: "L-theanine active: \(Int(lTheanineLevel))mg - smooth focus mode",
-                        color: .green
-                    )
-                }
-
-                // Hydration check
-                if let waterLevel = tracker.activeLevels[.water], waterLevel < 100 {
-                    InsightRow(
-                        icon: "drop.fill",
-                        text: "Consider drinking water for optimal focus",
-                        color: .blue
-                    )
-                }
-
-                // If no insights
-                if tracker.calculateSynergy() == 1.0 &&
-                   (tracker.activeLevels[.caffeine] ?? 0) < 50 &&
-                   (tracker.activeLevels[.lTheanine] ?? 0) < 50 {
-                    Text("Log substances to see personalized insights")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
-                }
-            }
+            .padding(Spacing.lg)
         }
-        .padding()
         .background(
-            RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .fill(AppColors.lightSoil)
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .stroke(Color.yellow.opacity(0.6), lineWidth: 2)
-                )
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
         )
     }
 }
 
-/// Individual insight row with icon and text
 struct InsightRow: View {
     let icon: String
     let text: String
     let color: Color
 
     var body: some View {
-        HStack(spacing: Spacing.xs) {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: icon)
                 .foregroundColor(color)
-                .font(.caption)
+                .font(.system(size: 14))
 
             Text(text)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
         }
-        .padding(.vertical, 4)
     }
 }
 
 // MARK: - Warning Banner View
 
-/// Displays safety warnings prominently at top of view
-/// Color-coded based on severity: yellow (caution) → orange (warning) → red (danger) → purple (emergency)
 struct WarningBannerView: View {
     let warnings: [String]
     let warningLevel: SubstanceTracker.CaffeineWarningLevel
@@ -579,19 +614,19 @@ struct WarningBannerView: View {
                         .font(.system(size: 16, weight: .semibold))
 
                     Text(warning)
-                        .font(AppFont.bodySmall())
+                        .font(OnLifeFont.caption())
                         .foregroundColor(textColorForWarning(warning))
                         .multilineTextAlignment(.leading)
 
                     Spacer()
                 }
-                .padding()
+                .padding(Spacing.md)
                 .background(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                         .fill(backgroundColorForWarning(warning))
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.medium)
+                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                         .stroke(borderColorForWarning(warning), lineWidth: 1)
                 )
             }
@@ -599,76 +634,49 @@ struct WarningBannerView: View {
     }
 
     func iconForWarning(_ warning: String) -> String {
-        if warning.contains("🚨") || warning.contains("DANGEROUS") {
+        if warning.contains("DANGEROUS") {
             return "staroflife.fill"
         }
-        if warning.contains("🔴") || warning.contains("Very high") {
+        if warning.contains("Very high") {
             return "xmark.octagon.fill"
         }
         if warning.contains("CRITICAL") {
             return "exclamationmark.octagon.fill"
         }
-        if warning.contains("⚠️") {
-            return "exclamationmark.triangle.fill"
-        }
-        return "info.circle.fill"
+        return "exclamationmark.triangle.fill"
     }
 
     func backgroundColorForWarning(_ warning: String) -> Color {
-        if warning.contains("🚨") || warning.contains("DANGEROUS") {
-            return Color.purple.opacity(0.15)
-        }
-        if warning.contains("🔴") || warning.contains("Very high") {
+        if warning.contains("DANGEROUS") {
             return Color.red.opacity(0.15)
         }
-        if warning.contains("CRITICAL") {
-            return Color.red.opacity(0.2)
+        if warning.contains("Very high") || warning.contains("CRITICAL") {
+            return Color.red.opacity(0.15)
         }
-        if warning.contains("⚠️") && (warning.contains("High") || warning.contains("exceeded")) {
-            return Color.orange.opacity(0.15)
+        if warning.contains("High") || warning.contains("exceeded") {
+            return OnLifeColors.terracotta.opacity(0.15)
         }
-        if warning.contains("⚠️") {
-            return Color.yellow.opacity(0.15)
-        }
-        return Color.blue.opacity(0.1)
+        return OnLifeColors.amber.opacity(0.15)
     }
 
     func borderColorForWarning(_ warning: String) -> Color {
-        if warning.contains("🚨") || warning.contains("DANGEROUS") {
-            return Color.purple.opacity(0.5)
-        }
-        if warning.contains("🔴") || warning.contains("Very high") {
+        if warning.contains("DANGEROUS") || warning.contains("Very high") || warning.contains("CRITICAL") {
             return Color.red.opacity(0.5)
         }
-        if warning.contains("CRITICAL") {
-            return Color.red.opacity(0.6)
+        if warning.contains("High") || warning.contains("exceeded") {
+            return OnLifeColors.terracotta.opacity(0.5)
         }
-        if warning.contains("⚠️") && (warning.contains("High") || warning.contains("exceeded")) {
-            return Color.orange.opacity(0.5)
-        }
-        if warning.contains("⚠️") {
-            return Color.yellow.opacity(0.5)
-        }
-        return Color.blue.opacity(0.3)
+        return OnLifeColors.amber.opacity(0.5)
     }
 
     func textColorForWarning(_ warning: String) -> Color {
-        if warning.contains("🚨") || warning.contains("DANGEROUS") {
-            return Color.purple
-        }
-        if warning.contains("🔴") || warning.contains("Very high") {
+        if warning.contains("DANGEROUS") || warning.contains("Very high") || warning.contains("CRITICAL") {
             return Color.red
         }
-        if warning.contains("CRITICAL") {
-            return Color.red
+        if warning.contains("High") || warning.contains("exceeded") {
+            return OnLifeColors.terracotta
         }
-        if warning.contains("⚠️") && (warning.contains("High") || warning.contains("exceeded")) {
-            return Color.orange
-        }
-        if warning.contains("⚠️") {
-            return Color(red: 0.6, green: 0.5, blue: 0.0)  // Dark yellow
-        }
-        return Color.blue
+        return OnLifeColors.amber
     }
 }
 

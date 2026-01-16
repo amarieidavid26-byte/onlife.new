@@ -51,23 +51,23 @@ struct MainTabView: View {
                 }
                 .tag(4)
         }
-        .accentColor(AppColors.healthy)
+        .accentColor(OnLifeColors.sage)
         .onAppear {
-            // Customize tab bar appearance
+            // Customize tab bar appearance with forest green theme
             let appearance = UITabBarAppearance()
             appearance.configureWithOpaqueBackground()
-            appearance.backgroundColor = UIColor(AppColors.darkSoil)
+            appearance.backgroundColor = UIColor(OnLifeColors.surface)
 
             // Unselected item color
-            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(AppColors.textTertiary)
+            appearance.stackedLayoutAppearance.normal.iconColor = UIColor(OnLifeColors.textTertiary)
             appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
-                .foregroundColor: UIColor(AppColors.textTertiary)
+                .foregroundColor: UIColor(OnLifeColors.textTertiary)
             ]
 
-            // Selected item color
-            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(AppColors.healthy)
+            // Selected item color - sage green
+            appearance.stackedLayoutAppearance.selected.iconColor = UIColor(OnLifeColors.sage)
             appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
-                .foregroundColor: UIColor(AppColors.healthy)
+                .foregroundColor: UIColor(OnLifeColors.sage)
             ]
 
             UITabBar.appearance().standardAppearance = appearance

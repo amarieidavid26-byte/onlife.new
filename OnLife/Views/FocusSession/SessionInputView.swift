@@ -4,21 +4,24 @@ struct SessionInputView: View {
     @Environment(\.dismiss) var dismiss
     @ObservedObject var viewModel: FocusSessionViewModel
     @ObservedObject var gardenViewModel: GardenViewModel
+    @FocusState private var isTaskFieldFocused: Bool
+    @State private var contentAppeared = false
 
     var body: some View {
         NavigationView {
             ZStack {
-                AppColors.richSoil
-                    .ignoresSafeArea()
+                // Background gradient
+                LinearGradient(
+                    colors: [OnLifeColors.deepForest, OnLifeColors.surface],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: Spacing.xl) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: Spacing.lg) {
                         // Garden Selector
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("GARDEN")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
+                        sectionContainer(title: "GARDEN") {
                             ScrollView(.horizontal, showsIndicators: false) {
                                 HStack(spacing: Spacing.md) {
                                     ForEach(gardenViewModel.gardens) { garden in
@@ -26,122 +29,136 @@ struct SessionInputView: View {
                                             garden: garden,
                                             isSelected: viewModel.currentGarden?.id == garden.id
                                         ) {
-                                            viewModel.currentGarden = garden
+                                            Haptics.selection()
+                                            withAnimation(OnLifeAnimation.quick) {
+                                                viewModel.currentGarden = garden
+                                            }
                                         }
+                                    }
+                                }
+                                .padding(.horizontal, Spacing.lg)
+                            }
+                            .padding(.horizontal, -Spacing.lg) // Offset to allow edge-to-edge scrolling
+                        }
+
+                        // Task Description
+                        sectionContainer(title: "WHAT ARE YOU WORKING ON?") {
+                            TextField("Describe your task...", text: $viewModel.taskDescription)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
+                                .focused($isTaskFieldFocused)
+                                .padding(Spacing.md)
+                                .background(
+                                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                                        .fill(OnLifeColors.cardBackground)
+                                )
+                        }
+
+                        // Seed Type
+                        sectionContainer(title: "SEED TYPE") {
+                            HStack(spacing: Spacing.md) {
+                                SeedTypeCard(
+                                    seedType: .oneTime,
+                                    isSelected: viewModel.selectedSeedType == .oneTime
+                                ) {
+                                    Haptics.selection()
+                                    withAnimation(OnLifeAnimation.quick) {
+                                        viewModel.selectedSeedType = .oneTime
+                                    }
+                                }
+
+                                SeedTypeCard(
+                                    seedType: .recurring,
+                                    isSelected: viewModel.selectedSeedType == .recurring
+                                ) {
+                                    Haptics.selection()
+                                    withAnimation(OnLifeAnimation.quick) {
+                                        viewModel.selectedSeedType = .recurring
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, Spacing.xl)
-
-                        // Task Description
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("WHAT ARE YOU WORKING ON?")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
-                            TextField("Task description", text: $viewModel.taskDescription)
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
-                                .padding(Spacing.lg)
-                                .background(AppColors.lightSoil)
-                                .cornerRadius(CornerRadius.medium)
-                        }
-                        .padding(.horizontal, Spacing.xl)
-
-                        // Seed Type
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("SEED TYPE")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
-                            HStack(spacing: Spacing.md) {
-                                SessionSeedTypeCard(
-                                    seedType: .oneTime,
-                                    isSelected: viewModel.selectedSeedType == .oneTime
-                                ) {
-                                    viewModel.selectedSeedType = .oneTime
-                                }
-
-                                SessionSeedTypeCard(
-                                    seedType: .recurring,
-                                    isSelected: viewModel.selectedSeedType == .recurring
-                                ) {
-                                    viewModel.selectedSeedType = .recurring
-                                }
-                            }
-                        }
-                        .padding(.horizontal, Spacing.xl)
 
                         // Duration
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("DURATION")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
+                        sectionContainer(title: "DURATION") {
                             DurationChipSelector(selectedDuration: $viewModel.selectedDuration)
                         }
-                        .padding(.horizontal, Spacing.xl)
 
                         // Environment
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("ENVIRONMENT")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: Spacing.md) {
+                        sectionContainer(title: "ENVIRONMENT") {
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: Spacing.md),
+                                    GridItem(.flexible(), spacing: Spacing.md)
+                                ],
+                                spacing: Spacing.md
+                            ) {
                                 ForEach(FocusEnvironment.allCases, id: \.self) { environment in
                                     EnvironmentChip(
                                         environment: environment,
                                         isSelected: viewModel.selectedEnvironment == environment
                                     ) {
-                                        viewModel.selectedEnvironment = environment
+                                        Haptics.selection()
+                                        withAnimation(OnLifeAnimation.quick) {
+                                            viewModel.selectedEnvironment = environment
+                                        }
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, Spacing.xl)
 
                         // Plant Species
-                        VStack(alignment: .leading, spacing: Spacing.md) {
-                            Text("PLANT SPECIES")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
-
-                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: Spacing.md) {
+                        sectionContainer(title: "PLANT SPECIES") {
+                            LazyVGrid(
+                                columns: [
+                                    GridItem(.flexible(), spacing: Spacing.md),
+                                    GridItem(.flexible(), spacing: Spacing.md)
+                                ],
+                                spacing: Spacing.md
+                            ) {
                                 ForEach(PlantSpecies.allCases, id: \.self) { species in
                                     PlantSpeciesChip(
                                         species: species,
                                         isSelected: viewModel.selectedPlantSpecies == species
                                     ) {
-                                        viewModel.selectedPlantSpecies = species
+                                        Haptics.selection()
+                                        withAnimation(OnLifeAnimation.quick) {
+                                            viewModel.selectedPlantSpecies = species
+                                        }
                                     }
                                 }
                             }
                         }
-                        .padding(.horizontal, Spacing.xl)
 
                         // Plant Seed Button
-                        PrimaryButton(title: "Plant Seed") {
+                        PlantSeedButton(
+                            isEnabled: !viewModel.taskDescription.isEmpty && viewModel.currentGarden != nil
+                        ) {
+                            Haptics.impact(.medium)
                             dismiss()
                             viewModel.startSession()
                         }
-                        .disabled(viewModel.taskDescription.isEmpty || viewModel.currentGarden == nil)
-                        .opacity((viewModel.taskDescription.isEmpty || viewModel.currentGarden == nil) ? 0.5 : 1.0)
-                        .padding(.horizontal, Spacing.xl)
-                        .padding(.bottom, Spacing.xxxl)
+                        .padding(.top, Spacing.md)
+                        .padding(.bottom, Spacing.xxl)
                     }
-                    .padding(.top, Spacing.xl)
+                    .padding(.top, Spacing.lg)
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : 20)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle("New Focus Session")
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(OnLifeColors.deepForest, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
+                        Haptics.light()
                         dismiss()
                     }
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(OnLifeColors.sage)
                 }
             }
             .onAppear {
@@ -150,15 +167,42 @@ struct SessionInputView: View {
                     viewModel.currentGarden = gardenViewModel.selectedGarden
                     print("📝 SessionInputView: Set currentGarden to \(viewModel.currentGarden?.name ?? "nil")")
                 }
+
+                // Animate content in
+                withAnimation(OnLifeAnimation.elegant) {
+                    contentAppeared = true
+                }
+            }
+            .onTapGesture {
+                isTaskFieldFocused = false
             }
         }
     }
+
+    // MARK: - Section Container
+
+    @ViewBuilder
+    private func sectionContainer<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text(title)
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textTertiary)
+                .tracking(1.2)
+                .padding(.leading, Spacing.xs)
+
+            content()
+        }
+        .padding(.horizontal, Spacing.lg)
+    }
 }
+
+// MARK: - Garden Selector Chip
 
 struct GardenSelectorChip: View {
     let garden: Garden
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -167,49 +211,89 @@ struct GardenSelectorChip: View {
                     .font(.system(size: 20))
 
                 Text(garden.name)
-                    .font(AppFont.body())
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(isSelected ? OnLifeColors.sage : OnLifeColors.textSecondary)
             }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, Spacing.md)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage.opacity(0.2) : OnLifeColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }
 
-struct SessionSeedTypeCard: View {
+// MARK: - Seed Type Card
+
+struct SeedTypeCard: View {
     let seedType: SeedType
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
             VStack(alignment: .leading, spacing: Spacing.sm) {
                 Text(seedType.icon)
-                    .font(.system(size: 30))
+                    .font(.system(size: 28))
 
                 Text(seedType.displayName)
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(isSelected ? OnLifeColors.sage : OnLifeColors.textPrimary)
 
                 Text(seedType == .oneTime ? "One-time task" : "Recurring habit")
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textTertiary)
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.lg)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage.opacity(0.2) : OnLifeColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }
+
+// MARK: - Environment Chip
 
 struct EnvironmentChip: View {
     let environment: FocusEnvironment
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -218,22 +302,42 @@ struct EnvironmentChip: View {
                     .font(.system(size: 20))
 
                 Text(environment.displayName)
-                    .font(AppFont.body())
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(isSelected ? OnLifeColors.sage : OnLifeColors.textSecondary)
 
                 Spacer()
             }
             .padding(Spacing.md)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage.opacity(0.2) : OnLifeColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }
+
+// MARK: - Plant Species Chip
 
 struct PlantSpeciesChip: View {
     let species: PlantSpecies
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
@@ -242,14 +346,74 @@ struct PlantSpeciesChip: View {
                     .font(.system(size: 24))
 
                 Text(species.displayName)
-                    .font(AppFont.body())
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(isSelected ? OnLifeColors.sage : OnLifeColors.textSecondary)
 
                 Spacer()
             }
             .padding(Spacing.md)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage.opacity(0.2) : OnLifeColors.cardBackground)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
         }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
+    }
+}
+
+// MARK: - Plant Seed Button
+
+struct PlantSeedButton: View {
+    let isEnabled: Bool
+    let action: () -> Void
+    @State private var isPressed = false
+
+    var body: some View {
+        Button(action: action) {
+            Text("Plant Seed")
+                .font(OnLifeFont.button())
+                .foregroundColor(OnLifeColors.deepForest)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .background(
+                    RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                        .fill(OnLifeColors.amber)
+                )
+                .shadow(
+                    color: OnLifeColors.amber.opacity(isEnabled ? 0.4 : 0),
+                    radius: isPressed ? 4 : 12,
+                    y: isPressed ? 2 : 6
+                )
+                .scaleEffect(isPressed ? 0.98 : 1.0)
+                .opacity(isEnabled ? 1.0 : 0.5)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .disabled(!isEnabled)
+        .padding(.horizontal, Spacing.lg)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if isEnabled {
+                        withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                    }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }

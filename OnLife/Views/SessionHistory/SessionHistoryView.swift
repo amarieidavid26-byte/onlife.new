@@ -3,110 +3,152 @@ import Combine
 
 struct SessionHistoryView: View {
     @StateObject private var viewModel = SessionHistoryViewModel()
+    @State private var contentAppeared = false
+    @State private var sessionToDelete: FocusSession?
 
     var body: some View {
         NavigationView {
             ZStack {
-                AppColors.richSoil
-                    .ignoresSafeArea()
+                // Background gradient
+                LinearGradient(
+                    colors: [OnLifeColors.deepForest, OnLifeColors.surface],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    // Stats Header
-                    StatsHeader(
-                        totalSessions: viewModel.filteredSessions.count,
-                        totalFocusTime: viewModel.totalFocusTime
-                    )
-                    .padding(.horizontal, Spacing.xl)
-                    .padding(.top, Spacing.xl)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: Spacing.lg) {
+                        // Stats Header
+                        StatsHeader(
+                            totalSessions: viewModel.filteredSessions.count,
+                            totalFocusTime: viewModel.totalFocusTime
+                        )
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
 
-                    // Garden Filter Chips
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: Spacing.md) {
-                            GardenFilterChip(
-                                title: "All Gardens",
-                                icon: "🌿",
-                                isSelected: viewModel.selectedGardenId == nil
-                            ) {
-                                viewModel.selectedGardenId = nil
-                            }
-
-                            ForEach(viewModel.gardens) { garden in
+                        // Garden Filter Chips
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: Spacing.sm) {
                                 GardenFilterChip(
-                                    title: garden.name,
-                                    icon: garden.icon,
-                                    isSelected: viewModel.selectedGardenId == garden.id
+                                    title: "All Gardens",
+                                    icon: "🌿",
+                                    isSelected: viewModel.selectedGardenId == nil
                                 ) {
-                                    viewModel.selectedGardenId = garden.id
+                                    Haptics.selection()
+                                    withAnimation(OnLifeAnimation.quick) {
+                                        viewModel.selectedGardenId = nil
+                                    }
+                                }
+
+                                ForEach(viewModel.gardens) { garden in
+                                    GardenFilterChip(
+                                        title: garden.name,
+                                        icon: garden.icon,
+                                        isSelected: viewModel.selectedGardenId == garden.id
+                                    ) {
+                                        Haptics.selection()
+                                        withAnimation(OnLifeAnimation.quick) {
+                                            viewModel.selectedGardenId = garden.id
+                                        }
+                                    }
                                 }
                             }
+                            .padding(.horizontal, Spacing.lg)
                         }
-                        .padding(.horizontal, Spacing.xl)
-                    }
-                    .padding(.vertical, Spacing.lg)
+                        .padding(.horizontal, -Spacing.lg)
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.05), value: contentAppeared)
 
-                    // Search Bar
-                    HStack(spacing: Spacing.md) {
-                        Image(systemName: "magnifyingglass")
-                            .foregroundColor(AppColors.textTertiary)
+                        // Search Bar
+                        SearchBar(searchText: $viewModel.searchText)
+                            .opacity(contentAppeared ? 1 : 0)
+                            .offset(y: contentAppeared ? 0 : 20)
+                            .animation(OnLifeAnimation.elegant.delay(0.1), value: contentAppeared)
 
-                        TextField("Search by task...", text: $viewModel.searchText)
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textPrimary)
-
-                        if !viewModel.searchText.isEmpty {
-                            Button(action: {
-                                viewModel.searchText = ""
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .foregroundColor(AppColors.textTertiary)
-                            }
-                        }
-                    }
-                    .padding(Spacing.lg)
-                    .background(AppColors.lightSoil)
-                    .cornerRadius(CornerRadius.medium)
-                    .padding(.horizontal, Spacing.xl)
-
-                    // Sessions List
-                    if viewModel.filteredSessions.isEmpty {
-                        EmptyStateView(
-                            hasSearchText: !viewModel.searchText.isEmpty,
-                            hasGardenFilter: viewModel.selectedGardenId != nil
-                        )
-                    } else {
-                        ScrollView {
+                        // Sessions List or Empty State
+                        if viewModel.filteredSessions.isEmpty {
+                            HistoryEmptyStateView(
+                                hasSearchText: !viewModel.searchText.isEmpty,
+                                hasGardenFilter: viewModel.selectedGardenId != nil
+                            )
+                            .opacity(contentAppeared ? 1 : 0)
+                            .animation(OnLifeAnimation.elegant.delay(0.15), value: contentAppeared)
+                        } else {
                             LazyVStack(spacing: Spacing.md) {
-                                ForEach(viewModel.filteredSessions) { session in
+                                ForEach(Array(viewModel.filteredSessions.enumerated()), id: \.element.id) { index, session in
                                     SessionCard(
                                         session: session,
                                         gardenName: viewModel.gardenName(for: session.gardenId)
                                     ) {
-                                        viewModel.deleteSession(session)
+                                        sessionToDelete = session
                                     }
+                                    .opacity(contentAppeared ? 1 : 0)
+                                    .offset(y: contentAppeared ? 0 : 20)
+                                    .animation(
+                                        OnLifeAnimation.elegant.delay(0.15 + Double(index) * 0.03),
+                                        value: contentAppeared
+                                    )
                                 }
                             }
-                            .padding(.horizontal, Spacing.xl)
-                            .padding(.vertical, Spacing.lg)
                         }
                     }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.lg)
+                    .padding(.bottom, Spacing.xxl)
+                }
+                .refreshable {
+                    Haptics.light()
+                    viewModel.loadData()
                 }
             }
             .navigationTitle("Session History")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(OnLifeColors.deepForest, for: .navigationBar)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
         }
         .onAppear {
             viewModel.loadData()
+            withAnimation(OnLifeAnimation.elegant) {
+                contentAppeared = true
+            }
+        }
+        .confirmationDialog(
+            "Delete Session",
+            isPresented: Binding(
+                get: { sessionToDelete != nil },
+                set: { if !$0 { sessionToDelete = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let session = sessionToDelete {
+                    Haptics.warning()
+                    withAnimation(OnLifeAnimation.quick) {
+                        viewModel.deleteSession(session)
+                    }
+                }
+                sessionToDelete = nil
+            }
+            Button("Cancel", role: .cancel) {
+                sessionToDelete = nil
+            }
+        } message: {
+            Text("This action cannot be undone.")
         }
     }
 }
 
 // MARK: - Stats Header
+
 struct StatsHeader: View {
     let totalSessions: Int
     let totalFocusTime: String
 
     var body: some View {
-        HStack(spacing: Spacing.lg) {
+        HStack(spacing: Spacing.md) {
             StatBox(
                 icon: "clock.fill",
                 value: totalFocusTime,
@@ -126,122 +168,226 @@ struct StatBox: View {
     let icon: String
     let value: String
     let label: String
+    @State private var isPressed = false
 
     var body: some View {
-        CardView {
-            VStack(spacing: Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 24))
-                    .foregroundColor(AppColors.healthy)
+        VStack(spacing: Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 24))
+                .foregroundColor(OnLifeColors.sage)
 
-                Text(value)
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+            Text(value)
+                .font(OnLifeFont.heading1())
+                .foregroundColor(OnLifeColors.textPrimary)
 
-                Text(label)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textTertiary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(Spacing.lg)
+            Text(label)
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textSecondary)
         }
+        .frame(maxWidth: .infinity)
+        .padding(Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
+        .shadow(
+            color: Color.black.opacity(0.1),
+            radius: 8,
+            y: 4
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .onTapGesture {}
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 }
 
 // MARK: - Garden Filter Chip
+
 struct GardenFilterChip: View {
     let title: String
     let icon: String
     let isSelected: Bool
     let action: () -> Void
+    @State private var isPressed = false
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: Spacing.sm) {
                 Text(icon)
-                    .font(.system(size: 18))
+                    .font(.system(size: 16))
 
                 Text(title)
-                    .font(AppFont.body())
-                    .foregroundColor(isSelected ? AppColors.textPrimary : AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(isSelected ? OnLifeColors.deepForest : OnLifeColors.textSecondary)
             }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, Spacing.md)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
-            .cornerRadius(CornerRadius.medium)
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
         }
+        .buttonStyle(PlainButtonStyle())
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
+    }
+}
+
+// MARK: - Search Bar
+
+struct SearchBar: View {
+    @Binding var searchText: String
+
+    var body: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .foregroundColor(OnLifeColors.textTertiary)
+                .font(.system(size: 16))
+
+            TextField("Search by task...", text: $searchText)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textPrimary)
+
+            if !searchText.isEmpty {
+                Button(action: {
+                    Haptics.light()
+                    searchText = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(OnLifeColors.textTertiary)
+                        .font(.system(size: 16))
+                }
+            }
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
     }
 }
 
 // MARK: - Session Card
+
 struct SessionCard: View {
     let session: FocusSession
     let gardenName: String
     let onDelete: () -> Void
+    @State private var isPressed = false
+    @State private var deletePressed = false
 
     var body: some View {
-        CardView {
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                // Header: Task + Delete
-                HStack {
-                    Text(session.taskDescription)
-                        .font(AppFont.heading3())
-                        .foregroundColor(AppColors.textPrimary)
-                        .lineLimit(2)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            // Header: Task + Delete
+            HStack(alignment: .top) {
+                Text(session.taskDescription)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
+                    .lineLimit(2)
 
-                    Spacer()
+                Spacer()
 
-                    Button(action: onDelete) {
-                        Image(systemName: "trash")
-                            .font(.system(size: 16))
-                            .foregroundColor(AppColors.textTertiary)
-                    }
+                Button(action: onDelete) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 16))
+                        .foregroundColor(deletePressed ? OnLifeColors.terracotta : OnLifeColors.textTertiary)
                 }
-
-                // Date & Duration
-                HStack(spacing: Spacing.md) {
-                    Label(relativeDate(session.startTime), systemImage: "calendar")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
-
-                    Label(session.formattedDuration, systemImage: "clock")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                // Garden & Plant
-                HStack(spacing: Spacing.md) {
-                    HStack(spacing: Spacing.xs) {
-                        Text(plantEmoji(for: session.plantSpecies))
-                            .font(.system(size: 16))
-                        Text(session.plantSpecies.rawValue.capitalized)
-                            .font(AppFont.bodySmall())
-                            .foregroundColor(AppColors.textSecondary)
-                    }
-
-                    Text("•")
-                        .foregroundColor(AppColors.textTertiary)
-
-                    Text(gardenName)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
-                }
-
-                // Badges
-                HStack(spacing: Spacing.sm) {
-                    Badge(
-                        icon: session.environment.icon,
-                        text: session.environment.displayName
-                    )
-
-                    Badge(
-                        icon: timeOfDayIcon(session.timeOfDay),
-                        text: session.timeOfDay.rawValue.capitalized
-                    )
-                }
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            withAnimation(OnLifeAnimation.quick) { deletePressed = true }
+                        }
+                        .onEnded { _ in
+                            withAnimation(OnLifeAnimation.quick) { deletePressed = false }
+                        }
+                )
             }
-            .padding(Spacing.lg)
+
+            // Date & Duration
+            HStack(spacing: Spacing.md) {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 12))
+                    Text(relativeDate(session.startTime))
+                        .font(OnLifeFont.caption())
+                }
+                .foregroundColor(OnLifeColors.textSecondary)
+
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 12))
+                    Text(session.formattedDuration)
+                        .font(OnLifeFont.caption())
+                }
+                .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            // Garden & Plant
+            HStack(spacing: Spacing.sm) {
+                Text(plantEmoji(for: session.plantSpecies))
+                    .font(.system(size: 16))
+
+                Text(session.plantSpecies.rawValue.capitalized)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
+
+                Text("•")
+                    .foregroundColor(OnLifeColors.textTertiary)
+
+                Text(gardenName)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            // Badges
+            HStack(spacing: Spacing.sm) {
+                HistoryBadge(
+                    icon: session.environment.icon,
+                    text: session.environment.displayName
+                )
+
+                HistoryBadge(
+                    icon: timeOfDayIcon(session.timeOfDay),
+                    text: session.timeOfDay.rawValue.capitalized
+                )
+            }
         }
+        .padding(Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
+        .shadow(
+            color: Color.black.opacity(0.08),
+            radius: 6,
+            y: 3
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = true }
+                }
+                .onEnded { _ in
+                    withAnimation(OnLifeAnimation.quick) { isPressed = false }
+                }
+        )
     }
 
     func relativeDate(_ date: Date) -> String {
@@ -276,46 +422,57 @@ struct SessionCard: View {
     }
 }
 
-struct Badge: View {
+struct HistoryBadge: View {
     let icon: String
     let text: String
 
     var body: some View {
         HStack(spacing: Spacing.xs) {
             Image(systemName: icon)
-                .font(.system(size: 12))
+                .font(.system(size: 11))
             Text(text)
-                .font(AppFont.bodySmall())
+                .font(OnLifeFont.caption())
         }
-        .foregroundColor(AppColors.textTertiary)
-        .padding(.horizontal, Spacing.md)
+        .foregroundColor(OnLifeColors.textTertiary)
+        .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs)
-        .background(AppColors.lightSoil)
-        .cornerRadius(CornerRadius.small)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                .fill(OnLifeColors.surface)
+        )
     }
 }
 
 // MARK: - Empty State
-struct EmptyStateView: View {
+
+struct HistoryEmptyStateView: View {
     let hasSearchText: Bool
     let hasGardenFilter: Bool
+    @State private var bounce = false
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
             Spacer()
+                .frame(height: 60)
 
             Text(emptyIcon)
-                .font(.system(size: 60))
+                .font(.system(size: 56))
+                .scaleEffect(bounce ? 1.1 : 1.0)
+                .animation(
+                    Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+                    value: bounce
+                )
+                .onAppear { bounce = true }
 
             Text(emptyTitle)
-                .font(AppFont.heading2())
-                .foregroundColor(AppColors.textPrimary)
+                .font(OnLifeFont.heading2())
+                .foregroundColor(OnLifeColors.textPrimary)
 
             Text(emptyMessage)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textTertiary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, Spacing.xxxl)
+                .padding(.horizontal, Spacing.xl)
 
             Spacer()
         }
@@ -325,7 +482,7 @@ struct EmptyStateView: View {
         if hasSearchText || hasGardenFilter {
             return "🔍"
         }
-        return "⏱️"
+        return "🌱"
     }
 
     var emptyTitle: String {
@@ -343,11 +500,12 @@ struct EmptyStateView: View {
         } else if hasGardenFilter {
             return "No sessions recorded for this garden yet"
         }
-        return "Complete your first focus session to see it here!"
+        return "Start focusing to grow your history"
     }
 }
 
 // MARK: - ViewModel
+
 class SessionHistoryViewModel: ObservableObject {
     @Published var sessions: [FocusSession] = []
     @Published var gardens: [Garden] = []
@@ -369,7 +527,7 @@ class SessionHistoryViewModel: ObservableObject {
 
                 return true
             }
-            .sorted { $0.startTime > $1.startTime } // Most recent first
+            .sorted { $0.startTime > $1.startTime }
     }
 
     var totalFocusTime: String {
@@ -386,7 +544,6 @@ class SessionHistoryViewModel: ObservableObject {
     func loadData() {
         sessions = GardenDataManager.shared.loadSessions()
         gardens = GardenDataManager.shared.loadGardens()
-        print("📊 Loaded \(sessions.count) sessions and \(gardens.count) gardens")
     }
 
     func gardenName(for gardenId: UUID) -> String {
@@ -396,6 +553,5 @@ class SessionHistoryViewModel: ObservableObject {
     func deleteSession(_ session: FocusSession) {
         GardenDataManager.shared.deleteSession(session.id)
         loadData()
-        HapticManager.shared.impact(style: .medium)
     }
 }
