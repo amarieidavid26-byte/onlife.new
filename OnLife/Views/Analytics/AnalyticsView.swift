@@ -299,6 +299,8 @@ struct InsightCard: View {
             return OnLifeColors.amber.opacity(0.2)
         case .warning:
             return OnLifeColors.terracotta.opacity(0.2)
+        case .neutral:
+            return OnLifeColors.textTertiary.opacity(0.2)
         }
     }
 
@@ -310,6 +312,8 @@ struct InsightCard: View {
             return OnLifeColors.amber
         case .warning:
             return OnLifeColors.terracotta
+        case .neutral:
+            return OnLifeColors.textSecondary
         }
     }
 

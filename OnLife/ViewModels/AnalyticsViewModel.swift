@@ -523,7 +523,8 @@ class AnalyticsViewModel: ObservableObject {
 
     private func priorityValue(for type: Insight.InsightType) -> Int {
         switch type {
-        case .positive: return 3
+        case .positive: return 4
+        case .warning: return 3
         case .suggestion: return 2
         case .neutral: return 1
         }
@@ -568,13 +569,15 @@ struct Insight: Identifiable {
     enum InsightType {
         case positive
         case suggestion
+        case warning
         case neutral
 
         var color: Color {
             switch self {
-            case .positive: return AppColors.healthy
-            case .suggestion: return Color.orange
-            case .neutral: return AppColors.textSecondary
+            case .positive: return OnLifeColors.sage
+            case .suggestion: return OnLifeColors.amber
+            case .warning: return OnLifeColors.terracotta
+            case .neutral: return OnLifeColors.textSecondary
             }
         }
     }
@@ -596,13 +599,14 @@ struct Insight: Identifiable {
 
 extension Insight.InsightType: Codable {
     enum CodingKeys: String, CodingKey {
-        case positive, suggestion, neutral
+        case positive, suggestion, warning, neutral
     }
 
     init?(rawValue: String) {
         switch rawValue {
         case "positive": self = .positive
         case "suggestion": self = .suggestion
+        case "warning": self = .warning
         case "neutral": self = .neutral
         default: return nil
         }
@@ -612,6 +616,7 @@ extension Insight.InsightType: Codable {
         switch self {
         case .positive: return "positive"
         case .suggestion: return "suggestion"
+        case .warning: return "warning"
         case .neutral: return "neutral"
         }
     }

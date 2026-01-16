@@ -57,7 +57,7 @@ struct SessionInputView: View {
                         // Seed Type
                         sectionContainer(title: "SEED TYPE") {
                             HStack(spacing: Spacing.md) {
-                                SeedTypeCard(
+                                SessionSeedTypeCard(
                                     seedType: .oneTime,
                                     isSelected: viewModel.selectedSeedType == .oneTime
                                 ) {
@@ -67,7 +67,7 @@ struct SessionInputView: View {
                                     }
                                 }
 
-                                SeedTypeCard(
+                                SessionSeedTypeCard(
                                     seedType: .recurring,
                                     isSelected: viewModel.selectedSeedType == .recurring
                                 ) {
@@ -239,9 +239,9 @@ struct GardenSelectorChip: View {
     }
 }
 
-// MARK: - Seed Type Card
+// MARK: - Session Seed Type Card
 
-struct SeedTypeCard: View {
+struct SessionSeedTypeCard: View {
     let seedType: SeedType
     let isSelected: Bool
     let action: () -> Void
