@@ -7,17 +7,17 @@ struct CustomToggle: View {
     var body: some View {
         HStack {
             Text(label)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textPrimary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textPrimary)
 
             Spacer()
 
             Toggle("", isOn: $isOn)
                 .labelsHidden()
-                .tint(AppColors.healthy)
+                .tint(OnLifeColors.sage)
         }
         .padding(Spacing.lg)
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }

@@ -15,22 +15,22 @@ struct ProductLookupView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppColors.richSoil
+                OnLifeColors.deepForest
                     .ignoresSafeArea()
 
                 if isLoading {
                     VStack(spacing: Spacing.lg) {
                         ProgressView()
                             .scaleEffect(1.5)
-                            .tint(AppColors.healthy)
+                            .tint(OnLifeColors.sage)
 
                         Text("Looking up product...")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
 
                         Text(barcode)
-                            .font(AppFont.labelSmall())
-                            .foregroundColor(AppColors.textTertiary)
+                            .font(OnLifeFont.labelSmall())
+                            .foregroundColor(OnLifeColors.textTertiary)
                     }
                 } else if let product = product {
                     ProductDetailsView(
@@ -173,7 +173,7 @@ struct ProductDetailsView: View {
                             .cornerRadius(CornerRadius.medium)
                     } placeholder: {
                         Rectangle()
-                            .fill(AppColors.lightSoil.opacity(0.3))
+                            .fill(OnLifeColors.cardBackground.opacity(0.3))
                             .frame(height: 200)
                             .cornerRadius(CornerRadius.medium)
                             .overlay(
@@ -183,7 +183,7 @@ struct ProductDetailsView: View {
                 } else {
                     Image(systemName: "cup.and.saucer.fill")
                         .font(.system(size: 80))
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
                         .frame(height: 150)
                 }
 
@@ -191,23 +191,23 @@ struct ProductDetailsView: View {
                 VStack(spacing: Spacing.xs) {
                     if let brand = product.brand {
                         Text(brand)
-                            .font(AppFont.bodySmall())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
 
                     Text(product.productName)
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .multilineTextAlignment(.center)
                 }
 
                 // Category badge
                 Text(product.category.rawValue)
-                    .font(AppFont.labelSmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.labelSmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .padding(.horizontal, Spacing.md)
                     .padding(.vertical, Spacing.xs)
-                    .background(AppColors.darkSoil)
+                    .background(OnLifeColors.surface)
                     .cornerRadius(CornerRadius.small)
 
                 // Nutrition info
@@ -217,7 +217,7 @@ struct ProductDetailsView: View {
                             icon: "bolt.fill",
                             name: "Caffeine",
                             amount: "\(Int(caffeine))mg",
-                            color: AppColors.healthy
+                            color: OnLifeColors.sage
                         )
                     }
 
@@ -240,42 +240,42 @@ struct ProductDetailsView: View {
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
 
                 // Ingredients
                 if !product.ingredients.isEmpty {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text("Ingredients")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         ForEach(product.ingredients, id: \.self) { ingredient in
                             HStack {
                                 Circle()
-                                    .fill(AppColors.healthy)
+                                    .fill(OnLifeColors.sage)
                                     .frame(width: 6, height: 6)
 
                                 Text(ingredient)
-                                    .font(AppFont.body())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.body())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                             }
                         }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
-                    .background(AppColors.lightSoil)
+                    .background(OnLifeColors.cardBackground)
                     .cornerRadius(CornerRadius.medium)
                 }
 
                 // Source indicator
                 HStack {
                     Image(systemName: product.source == .localDatabase ? "internaldrive" : "globe")
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(OnLifeColors.textTertiary)
                     Text("Source: \(product.source.rawValue)")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
 
                 // Buttons
@@ -288,11 +288,11 @@ struct ProductDetailsView: View {
                             Image(systemName: "checkmark.circle.fill")
                             Text("Log This Product")
                         }
-                        .font(AppFont.button())
+                        .font(OnLifeFont.button())
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(AppColors.healthy)
+                        .background(OnLifeColors.sage)
                         .cornerRadius(CornerRadius.medium)
                     }
                     .buttonStyle(.plain)
@@ -300,14 +300,14 @@ struct ProductDetailsView: View {
 
                     Button(action: onCancel) {
                         Text("Cancel")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
             }
             .padding()
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -326,15 +326,15 @@ struct NutrientRow: View {
                 .frame(width: 24)
 
             Text(name)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
 
             Spacer()
 
             Text(amount)
-                .font(AppFont.body())
+                .font(OnLifeFont.body())
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(OnLifeColors.textPrimary)
         }
     }
 }
@@ -357,21 +357,21 @@ struct ProductNotFoundView: View {
 
             VStack(spacing: Spacing.sm) {
                 Text("Product Not Found")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("We couldn't find this product in our database or OpenFoodFacts")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
             }
 
             Text("Barcode: \(barcode)")
-                .font(AppFont.bodySmall())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.bodySmall())
+                .foregroundColor(OnLifeColors.textSecondary)
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.small)
 
             Spacer()
@@ -382,24 +382,24 @@ struct ProductNotFoundView: View {
                         Image(systemName: "pencil")
                         Text("Enter Manually")
                     }
-                    .font(AppFont.button())
+                    .font(OnLifeFont.button())
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppColors.healthy)
+                    .background(OnLifeColors.sage)
                     .foregroundColor(.white)
                     .cornerRadius(CornerRadius.medium)
                 }
 
                 Button(action: onCancel) {
                     Text("Cancel")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
             .padding(.horizontal)
         }
         .padding()
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -445,14 +445,14 @@ struct ManualProductEntryView: View {
                     Button("Cancel") {
                         dismiss()
                     }
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         saveProduct()
                     }
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
                     .disabled(productName.isEmpty || caffeineAmount.isEmpty)
                 }
             }

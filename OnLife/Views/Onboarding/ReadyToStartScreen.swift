@@ -13,12 +13,12 @@ struct ReadyToStartScreen: View {
                     .font(.system(size: 100))
 
                 Text("You're All Set!")
-                    .font(AppFont.heading1())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading1())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("Your \(viewModel.gardenName) garden is ready to grow")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
 

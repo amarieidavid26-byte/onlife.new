@@ -7,7 +7,7 @@ struct PlantDetailView: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppColors.richSoil
+                OnLifeColors.deepForest
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -18,13 +18,13 @@ struct PlantDetailView: View {
                                 .font(.system(size: 100))
 
                             Text(plant.species.rawValue.capitalized)
-                                .font(AppFont.heading2())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading2())
+                                .foregroundColor(OnLifeColors.textPrimary)
 
                             // Health indicator
                             HStack(spacing: Spacing.sm) {
                                 Text(healthStatusText)
-                                    .font(AppFont.label())
+                                    .font(OnLifeFont.label())
                                     .foregroundColor(healthStatusColor)
 
                                 Circle()
@@ -105,7 +105,7 @@ struct PlantDetailView: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
             }
@@ -126,11 +126,11 @@ struct PlantDetailView: View {
 
     private var healthStatusColor: Color {
         switch plant.healthStatus {
-        case .thriving: return AppColors.thriving
-        case .healthy: return AppColors.healthy
-        case .stressed: return AppColors.stressed
-        case .wilting: return AppColors.wilting
-        case .dead: return AppColors.dead
+        case .thriving: return OnLifeColors.thriving
+        case .healthy: return OnLifeColors.healthy
+        case .stressed: return OnLifeColors.stressed
+        case .wilting: return OnLifeColors.wilting
+        case .dead: return OnLifeColors.dead
         }
     }
 
@@ -185,17 +185,17 @@ struct StatCard: View {
             HStack {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.healthy)
                     .frame(width: 40)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(AppFont.label())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.label())
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     Text(value)
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                 }
 
                 Spacer()

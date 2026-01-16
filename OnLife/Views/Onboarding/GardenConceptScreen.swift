@@ -12,18 +12,18 @@ struct GardenConceptScreen: View {
                     .font(.system(size: 80))
 
                 Text("Your Focus Garden")
-                    .font(AppFont.heading1())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading1())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 VStack(spacing: Spacing.md) {
                     Text("Each garden represents a part of your life")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
 
                     Text("Work, Personal, Creative, Health...")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                         .multilineTextAlignment(.center)
                 }
             }

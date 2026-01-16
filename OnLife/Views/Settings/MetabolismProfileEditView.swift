@@ -82,35 +82,35 @@ struct MetabolismProfileEditView: View {
                     Text("Caffeine Half-Life")
                     Spacer()
                     Text(formatDuration(editedProfile.caffeineHalfLife()))
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 HStack {
                     Text("L-Theanine Half-Life")
                     Spacer()
                     Text(formatDuration(editedProfile.lTheanineHalfLife()))
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 HStack {
                     Text("Daily Caffeine Limit")
                     Spacer()
                     Text("\(Int(editedProfile.recommendedDailyCaffeineLimit))mg")
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 HStack {
                     Text("Metabolism Factor")
                     Spacer()
                     Text(String(format: "%.2fx", editedProfile.overallMetabolismMultiplier))
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 HStack {
                     Text("Profile Completeness")
                     Spacer()
                     Text("\(Int(editedProfile.profileCompleteness * 100))%")
-                        .foregroundColor(editedProfile.isComplete ? AppColors.healthy : .orange)
+                        .foregroundColor(editedProfile.isComplete ? OnLifeColors.sage : .orange)
                 }
             }
         }
@@ -121,7 +121,7 @@ struct MetabolismProfileEditView: View {
                 Button("Cancel") {
                     dismiss()
                 }
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(OnLifeColors.textSecondary)
             }
 
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -129,7 +129,7 @@ struct MetabolismProfileEditView: View {
                     profileManager.updateProfile(editedProfile)
                     dismiss()
                 }
-                .foregroundColor(AppColors.healthy)
+                .foregroundColor(OnLifeColors.sage)
             }
         }
     }

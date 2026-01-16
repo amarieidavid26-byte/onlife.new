@@ -32,7 +32,7 @@ struct EditGardenSheet: View {
     var body: some View {
         NavigationView {
             ZStack {
-                AppColors.richSoil
+                OnLifeColors.deepForest
                     .ignoresSafeArea()
 
                 ScrollView {
@@ -40,14 +40,14 @@ struct EditGardenSheet: View {
                         // Garden Name Input
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text("GARDEN NAME")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
+                                .font(OnLifeFont.label())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
                             TextField("Garden name", text: $gardenName)
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                                 .padding(Spacing.lg)
-                                .background(AppColors.lightSoil)
+                                .background(OnLifeColors.cardBackground)
                                 .cornerRadius(CornerRadius.medium)
                                 .onChange(of: gardenName) { _, _ in
                                     showError = false
@@ -58,7 +58,7 @@ struct EditGardenSheet: View {
                         // Error Message
                         if showError, let error = validationError {
                             Text(error)
-                                .font(AppFont.bodySmall())
+                                .font(OnLifeFont.bodySmall())
                                 .foregroundColor(.red)
                                 .padding(.horizontal, Spacing.xl)
                         }
@@ -66,8 +66,8 @@ struct EditGardenSheet: View {
                         // Icon Selector
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text("CHOOSE ICON")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
+                                .font(OnLifeFont.label())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 4), spacing: Spacing.md) {
                                 ForEach(availableIcons, id: \.self) { icon in
@@ -86,8 +86,8 @@ struct EditGardenSheet: View {
                         // Preview Card
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text("PREVIEW")
-                                .font(AppFont.label())
-                                .foregroundColor(AppColors.textTertiary)
+                                .font(OnLifeFont.label())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
                             CardView {
                                 HStack {
@@ -96,12 +96,12 @@ struct EditGardenSheet: View {
 
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(gardenName.isEmpty ? "My Garden" : gardenName)
-                                            .font(AppFont.heading3())
-                                            .foregroundColor(AppColors.textPrimary)
+                                            .font(OnLifeFont.heading3())
+                                            .foregroundColor(OnLifeColors.textPrimary)
 
                                         Text("\(gardenViewModel.plants(for: garden.id).count) plants")
-                                            .font(AppFont.bodySmall())
-                                            .foregroundColor(AppColors.textTertiary)
+                                            .font(OnLifeFont.bodySmall())
+                                            .foregroundColor(OnLifeColors.textTertiary)
                                     }
 
                                     Spacer()
@@ -138,7 +138,7 @@ struct EditGardenSheet: View {
                     Button("Cancel") {
                         isPresented = false
                     }
-                    .foregroundColor(AppColors.textSecondary)
+                    .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
         }

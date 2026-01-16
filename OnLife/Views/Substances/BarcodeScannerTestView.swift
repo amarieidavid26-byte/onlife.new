@@ -8,22 +8,22 @@ struct BarcodeScannerTestView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             VStack(spacing: Spacing.xl) {
                 VStack(spacing: Spacing.md) {
                     Image(systemName: "barcode.viewfinder")
                         .font(.system(size: 80))
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
 
                     Text("Barcode Scanner Test")
-                        .font(AppFont.heading1())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading1())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("Test the barcode scanning functionality")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
                         .padding(.horizontal)
                 }
@@ -31,14 +31,14 @@ struct BarcodeScannerTestView: View {
                 if let code = scannedCode {
                     VStack(spacing: Spacing.sm) {
                         Text("Scanned Code:")
-                            .font(AppFont.label())
-                            .foregroundColor(AppColors.textTertiary)
+                            .font(OnLifeFont.label())
+                            .foregroundColor(OnLifeColors.textTertiary)
 
                         Text(code)
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.healthy)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.sage)
                             .padding()
-                            .background(AppColors.lightSoil)
+                            .background(OnLifeColors.cardBackground)
                             .cornerRadius(CornerRadius.medium)
                     }
                     .padding()
@@ -51,11 +51,11 @@ struct BarcodeScannerTestView: View {
                         Image(systemName: "camera.fill")
                         Text("Scan Barcode")
                     }
-                    .font(AppFont.button())
+                    .font(OnLifeFont.button())
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
                     .padding()
-                    .background(AppColors.healthy)
+                    .background(OnLifeColors.sage)
                     .cornerRadius(CornerRadius.medium)
                 }
                 .padding(.horizontal)
@@ -65,11 +65,11 @@ struct BarcodeScannerTestView: View {
                         scannedCode = nil
                     }) {
                         Text("Reset")
-                            .font(AppFont.button())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.button())
+                            .foregroundColor(OnLifeColors.textSecondary)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(AppColors.lightSoil)
+                            .background(OnLifeColors.cardBackground)
                             .cornerRadius(CornerRadius.medium)
                     }
                     .padding(.horizontal)

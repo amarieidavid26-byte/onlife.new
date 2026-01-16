@@ -12,12 +12,12 @@ struct WelcomeScreen: View {
                     .font(.system(size: 100))
 
                 Text("Welcome to OnLife")
-                    .font(AppFont.heading1())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading1())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("Turn your focus into a thriving garden")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
 

@@ -6,7 +6,7 @@ struct OnboardingContainerView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {
@@ -21,7 +21,7 @@ struct OnboardingContainerView: View {
                             }) {
                                 Image(systemName: "chevron.left")
                                     .font(.system(size: 20, weight: .semibold))
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .foregroundColor(OnLifeColors.textPrimary)
                                     .frame(width: 44, height: 44)
                             }
                         } else {
@@ -80,11 +80,11 @@ struct OnboardingProgressBar: View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
                 Rectangle()
-                    .fill(AppColors.lightSoil)
+                    .fill(OnLifeColors.cardBackground)
                     .frame(height: 4)
 
                 Rectangle()
-                    .fill(AppColors.healthy)
+                    .fill(OnLifeColors.sage)
                     .frame(width: geometry.size.width * progress, height: 4)
                     .animation(.easeInOut, value: progress)
             }

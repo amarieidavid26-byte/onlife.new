@@ -9,12 +9,12 @@ struct DurationPreferencesScreen: View {
 
             VStack(spacing: Spacing.xl) {
                 Text("Typical Focus Duration")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("How long do you usually focus?")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
 
                 DurationChipSelector(selectedDuration: $viewModel.selectedDuration)
                     .padding(.horizontal, Spacing.xl)

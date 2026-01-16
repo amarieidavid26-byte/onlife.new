@@ -9,14 +9,14 @@ struct CreateGardenScreen: View {
 
             VStack(spacing: Spacing.xl) {
                 Text("Create Your First Garden")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 TextField("Garden Name", text: $viewModel.gardenName)
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
                     .padding(Spacing.lg)
-                    .background(AppColors.lightSoil)
+                    .background(OnLifeColors.cardBackground)
                     .cornerRadius(CornerRadius.medium)
                     .padding(.horizontal, Spacing.xl)
 
@@ -26,7 +26,7 @@ struct CreateGardenScreen: View {
                             Text(icon)
                                 .font(.system(size: 40))
                                 .frame(width: 60, height: 60)
-                                .background(viewModel.selectedIcon == icon ? AppColors.healthy : AppColors.lightSoil)
+                                .background(viewModel.selectedIcon == icon ? OnLifeColors.sage : OnLifeColors.cardBackground)
                                 .cornerRadius(CornerRadius.medium)
                         }
                     }

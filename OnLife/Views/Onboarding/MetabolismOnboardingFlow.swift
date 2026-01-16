@@ -79,40 +79,40 @@ struct MetabolismOnboardingFlow: View {
                     if currentStep > 0 {
                         Button(action: previousStep) {
                             Text("Back")
-                                .font(AppFont.button())
-                                .foregroundColor(AppColors.textSecondary)
+                                .font(OnLifeFont.button())
+                                .foregroundColor(OnLifeColors.textSecondary)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, Spacing.md)
                                 .background(
                                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                                        .fill(AppColors.lightSoil)
+                                        .fill(OnLifeColors.cardBackground)
                                 )
                         }
                     }
 
                     Button(action: nextStep) {
                         Text(currentStep == totalSteps - 1 ? "Complete" : (currentStep == 0 ? "Get Started" : "Continue"))
-                            .font(AppFont.button())
+                            .font(OnLifeFont.button())
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, Spacing.md)
                             .background(
                                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                                    .fill(canProceed ? AppColors.healthy : AppColors.lightSoil)
+                                    .fill(canProceed ? OnLifeColors.sage : OnLifeColors.cardBackground)
                             )
                     }
                     .disabled(!canProceed)
                 }
                 .padding()
-                .background(AppColors.darkSoil)
+                .background(OnLifeColors.surface)
             }
-            .background(AppColors.richSoil)
+            .background(OnLifeColors.deepForest)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark")
-                            .foregroundColor(AppColors.textSecondary)
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
             }
@@ -199,7 +199,7 @@ struct ProgressBar: View {
             HStack(spacing: Spacing.xs) {
                 ForEach(0..<totalSteps, id: \.self) { step in
                     Circle()
-                        .fill(step <= currentStep ? AppColors.healthy : AppColors.lightSoil)
+                        .fill(step <= currentStep ? OnLifeColors.sage : OnLifeColors.cardBackground)
                         .frame(width: 8, height: 8)
                 }
             }
@@ -208,11 +208,11 @@ struct ProgressBar: View {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Rectangle()
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                         .frame(height: 4)
 
                     Rectangle()
-                        .fill(AppColors.healthy)
+                        .fill(OnLifeColors.sage)
                         .frame(width: geometry.size.width * CGFloat(currentStep + 1) / CGFloat(totalSteps), height: 4)
                         .animation(.easeInOut, value: currentStep)
                 }
@@ -234,18 +234,18 @@ struct MetabolismWelcomeScreen: View {
                 // Icon
                 Image(systemName: "person.fill.checkmark")
                     .font(.system(size: 80))
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
 
                 // Title
                 VStack(spacing: Spacing.sm) {
                     Text("Personalize Your Experience")
-                        .font(AppFont.heading1())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading1())
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .multilineTextAlignment(.center)
 
                     Text("Help us understand your metabolism for accurate substance tracking")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.horizontal)
@@ -279,7 +279,7 @@ struct MetabolismWelcomeScreen: View {
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                 )
                 .padding(.horizontal)
 
@@ -298,18 +298,18 @@ struct MetabolismFeatureRow: View {
         HStack(spacing: Spacing.md) {
             Image(systemName: icon)
                 .font(.system(size: 24))
-                .foregroundColor(AppColors.healthy)
+                .foregroundColor(OnLifeColors.sage)
                 .frame(width: 40)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(title)
-                    .font(AppFont.body())
+                    .font(OnLifeFont.body())
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(description)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
             }
         }
     }
@@ -329,12 +329,12 @@ struct DemographicsScreen: View {
                 // Header
                 VStack(spacing: Spacing.sm) {
                     Text("Basic Demographics")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("This helps us calculate your personalized metabolism rate")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .padding(.top, Spacing.xl)
@@ -343,122 +343,122 @@ struct DemographicsScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "calendar")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Age")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     TextField("Enter your age", value: $profile.age, format: .number)
                         .keyboardType(.numberPad)
-                        .font(AppFont.bodyLarge())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.bodyLarge())
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: CornerRadius.small)
-                                .fill(AppColors.darkSoil)
+                                .fill(OnLifeColors.surface)
                         )
 
                     if let error = ageError {
                         Text(error)
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.bodySmall())
                             .foregroundColor(.red)
                     }
 
                     Text("Metabolism slows ~1-2% per decade after 30")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                 )
 
                 // Weight Input
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "scalemass")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Weight (kg)")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     TextField("Enter your weight", value: $profile.weight, format: .number)
                         .keyboardType(.decimalPad)
-                        .font(AppFont.bodyLarge())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.bodyLarge())
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: CornerRadius.small)
-                                .fill(AppColors.darkSoil)
+                                .fill(OnLifeColors.surface)
                         )
 
                     if let error = weightError {
                         Text(error)
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.bodySmall())
                             .foregroundColor(.red)
                     }
 
                     Text("Used for allometric scaling (metabolism ∝ mass^0.75)")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                 )
 
                 // Height Input (Optional)
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "ruler")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Height (cm) - Optional")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     TextField("Enter your height", value: $profile.height, format: .number)
                         .keyboardType(.decimalPad)
-                        .font(AppFont.bodyLarge())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.bodyLarge())
+                        .foregroundColor(OnLifeColors.textPrimary)
                         .padding()
                         .background(
                             RoundedRectangle(cornerRadius: CornerRadius.small)
-                                .fill(AppColors.darkSoil)
+                                .fill(OnLifeColors.surface)
                         )
 
                     if let error = heightError {
                         Text(error)
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.bodySmall())
                             .foregroundColor(.red)
                     }
 
                     Text("Used to calculate BMI for better insights")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                 )
 
                 // Sex Picker
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "person.2")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Biological Sex")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     Picker("Biological Sex", selection: $profile.sex) {
@@ -469,13 +469,13 @@ struct DemographicsScreen: View {
                     .pickerStyle(.segmented)
 
                     Text("Males typically have 10-15% faster basal metabolic rate")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium)
-                        .fill(AppColors.lightSoil)
+                        .fill(OnLifeColors.cardBackground)
                 )
 
                 Spacer()
@@ -496,12 +496,12 @@ struct HealthStatusScreen: View {
                 // Header
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text("Health Factors")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("These factors significantly affect caffeine metabolism and safety limits")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, Spacing.xl)
@@ -510,11 +510,11 @@ struct HealthStatusScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "smoke.fill")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Smoking Status")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     ForEach(SmokingStatus.allCases, id: \.self) { status in
@@ -528,11 +528,11 @@ struct HealthStatusScreen: View {
                     }
 
                     Text("Smoking significantly speeds up caffeine metabolism (1.67× faster)")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -541,26 +541,26 @@ struct HealthStatusScreen: View {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         HStack {
                             Image(systemName: "pills.fill")
-                                .foregroundColor(AppColors.healthy)
+                                .foregroundColor(OnLifeColors.sage)
                             Text("Hormonal Contraceptives")
-                                .font(AppFont.body())
+                                .font(OnLifeFont.body())
                                 .fontWeight(.semibold)
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
 
                         Toggle(isOn: $profile.usesHormonalContraceptives) {
                             Text("I use hormonal birth control")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
-                        .tint(AppColors.healthy)
+                        .tint(OnLifeColors.sage)
 
                         Text("Oral contraceptives nearly double caffeine half-life (1.7× longer)")
-                            .font(AppFont.bodySmall())
-                            .foregroundColor(AppColors.textTertiary)
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textTertiary)
                     }
                     .padding()
-                    .background(AppColors.lightSoil)
+                    .background(OnLifeColors.cardBackground)
                     .cornerRadius(CornerRadius.medium)
                     .padding(.horizontal)
                 }
@@ -570,24 +570,24 @@ struct HealthStatusScreen: View {
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         HStack {
                             Image(systemName: "heart.fill")
-                                .foregroundColor(AppColors.healthy)
+                                .foregroundColor(OnLifeColors.sage)
                             Text("Pregnancy Status")
-                                .font(AppFont.body())
+                                .font(OnLifeFont.body())
                                 .fontWeight(.semibold)
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
 
                         Toggle(isOn: $profile.isPregnant) {
                             Text("I am currently pregnant")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
-                        .tint(AppColors.healthy)
+                        .tint(OnLifeColors.sage)
 
                         if profile.isPregnant {
                             Text("Which trimester?")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textSecondary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textSecondary)
                                 .padding(.top, Spacing.xs)
 
                             ForEach(PregnancyTrimester.allCases, id: \.self) { trimester in
@@ -607,7 +607,7 @@ struct HealthStatusScreen: View {
                                 Image(systemName: "exclamationmark.triangle.fill")
                                     .foregroundColor(.orange)
                                 Text("ACOG/WHO recommends limiting caffeine to 200mg/day during pregnancy. Consult your healthcare provider.")
-                                    .font(AppFont.bodySmall())
+                                    .font(OnLifeFont.bodySmall())
                                     .foregroundColor(.orange)
                             }
                             .padding()
@@ -616,7 +616,7 @@ struct HealthStatusScreen: View {
                         }
                     }
                     .padding()
-                    .background(AppColors.lightSoil)
+                    .background(OnLifeColors.cardBackground)
                     .cornerRadius(CornerRadius.medium)
                     .padding(.horizontal)
                 }
@@ -625,24 +625,24 @@ struct HealthStatusScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "cross.case.fill")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Medications")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     Toggle(isOn: $profile.takesFluvoxamine) {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Fluvoxamine (Luvox)")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                             Text("SSRI antidepressant")
-                                .font(AppFont.bodySmall())
-                                .foregroundColor(AppColors.textSecondary)
+                                .font(OnLifeFont.bodySmall())
+                                .foregroundColor(OnLifeColors.textSecondary)
                         }
                     }
-                    .tint(AppColors.healthy)
+                    .tint(OnLifeColors.sage)
 
                     // Fluvoxamine warning
                     if profile.takesFluvoxamine {
@@ -650,7 +650,7 @@ struct HealthStatusScreen: View {
                             Image(systemName: "exclamationmark.octagon.fill")
                                 .foregroundColor(.red)
                             Text("⚠️ CRITICAL: Fluvoxamine increases caffeine half-life 5-6×. This is a severe interaction. Consult your healthcare provider before using this app.")
-                                .font(AppFont.bodySmall())
+                                .font(OnLifeFont.bodySmall())
                                 .foregroundColor(.red)
                         }
                         .padding()
@@ -659,11 +659,11 @@ struct HealthStatusScreen: View {
                     }
 
                     Text("Other medications that may interact: ciprofloxacin, clozapine, some antifungals")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -673,14 +673,14 @@ struct HealthStatusScreen: View {
                         Image(systemName: "lock.shield.fill")
                             .foregroundColor(.blue)
                         Text("Privacy Note")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     Text("This health information is stored only on your device and is never shared. You can skip any question by leaving it as default.")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding()
                 .background(Color.blue.opacity(0.1))
@@ -690,7 +690,7 @@ struct HealthStatusScreen: View {
                 Spacer()
             }
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -705,18 +705,18 @@ struct HealthStatusOption: View {
         Button(action: onSelect) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(isSelected ? .white : AppColors.healthy)
+                    .foregroundColor(isSelected ? .white : OnLifeColors.sage)
                     .frame(width: 24)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                        .foregroundColor(isSelected ? .white : OnLifeColors.textPrimary)
 
                     Text(subtitle)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : OnLifeColors.textSecondary)
                 }
 
                 Spacer()
@@ -728,7 +728,7 @@ struct HealthStatusOption: View {
             }
             .padding(.vertical, Spacing.xs)
             .padding(.horizontal, Spacing.sm)
-            .background(isSelected ? AppColors.healthy.opacity(0.8) : Color.clear)
+            .background(isSelected ? OnLifeColors.sage.opacity(0.8) : Color.clear)
             .cornerRadius(CornerRadius.small)
         }
         .buttonStyle(PlainButtonStyle())
@@ -745,12 +745,12 @@ struct CaffeineToleranceScreen: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text("Caffeine Consumption")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("This helps us understand your caffeine sensitivity (but doesn't affect metabolism speed)")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, Spacing.xl)
@@ -772,18 +772,18 @@ struct CaffeineToleranceScreen: View {
                         Image(systemName: "info.circle.fill")
                             .foregroundColor(.blue)
                         Text("What the science says")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     Text("Research shows caffeine tolerance affects how you feel caffeine's effects (sensitivity), but does NOT significantly change how fast your body metabolizes it. We use this to understand your subjective experience, not to adjust clearance rates.")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     Text("Source: PMC3715142")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                         .italic()
                 }
                 .padding()
@@ -794,7 +794,7 @@ struct CaffeineToleranceScreen: View {
                 Spacer()
             }
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -809,16 +809,16 @@ struct CaffeineToleranceOption: View {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack {
                         Image(systemName: level.icon)
-                            .foregroundColor(isSelected ? .white : AppColors.healthy)
+                            .foregroundColor(isSelected ? .white : OnLifeColors.sage)
                         Text(level.rawValue)
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                            .foregroundColor(isSelected ? .white : OnLifeColors.textPrimary)
                     }
 
                     Text(level.displayName)
-                        .font(AppFont.body())
-                        .foregroundColor(isSelected ? .white.opacity(0.9) : AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(isSelected ? .white.opacity(0.9) : OnLifeColors.textSecondary)
                 }
 
                 Spacer()
@@ -829,7 +829,7 @@ struct CaffeineToleranceOption: View {
                 }
             }
             .padding()
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
+            .background(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
             .cornerRadius(CornerRadius.medium)
         }
         .buttonStyle(PlainButtonStyle())
@@ -846,12 +846,12 @@ struct LifestyleScreen: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text("Lifestyle Factors")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("Sleep and exercise significantly affect metabolism")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, Spacing.xl)
@@ -860,11 +860,11 @@ struct LifestyleScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "moon.fill")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Average Sleep Quality")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     ForEach(SleepQuality.allCases, id: \.self) { quality in
@@ -878,7 +878,7 @@ struct LifestyleScreen: View {
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -886,11 +886,11 @@ struct LifestyleScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     HStack {
                         Image(systemName: "flame.fill")
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                         Text("Exercise Frequency")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     ForEach(ExerciseFrequency.allCases, id: \.self) { frequency in
@@ -904,14 +904,14 @@ struct LifestyleScreen: View {
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
                 Spacer()
             }
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -926,18 +926,18 @@ struct LifestyleOption: View {
         Button(action: onSelect) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(isSelected ? .white : AppColors.healthy)
+                    .foregroundColor(isSelected ? .white : OnLifeColors.sage)
                     .frame(width: 24)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                        .foregroundColor(isSelected ? .white : OnLifeColors.textPrimary)
 
                     Text(subtitle)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(isSelected ? .white.opacity(0.8) : AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(isSelected ? .white.opacity(0.8) : OnLifeColors.textSecondary)
                 }
 
                 Spacer()
@@ -949,7 +949,7 @@ struct LifestyleOption: View {
             }
             .padding(.vertical, Spacing.xs)
             .padding(.horizontal, Spacing.sm)
-            .background(isSelected ? AppColors.healthy.opacity(0.8) : Color.clear)
+            .background(isSelected ? OnLifeColors.sage.opacity(0.8) : Color.clear)
             .cornerRadius(CornerRadius.small)
         }
         .buttonStyle(PlainButtonStyle())
@@ -966,12 +966,12 @@ struct MetabolismSpeedScreen: View {
             VStack(alignment: .leading, spacing: Spacing.lg) {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Text("Your Metabolism")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("How would you describe your metabolism?")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, Spacing.xl)
@@ -993,9 +993,9 @@ struct MetabolismSpeedScreen: View {
                         Image(systemName: "questionmark.circle.fill")
                             .foregroundColor(.orange)
                         Text("Not sure?")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -1003,12 +1003,12 @@ struct MetabolismSpeedScreen: View {
                         Text("• Average: Typical response to substances, moderate energy")
                         Text("• Slow: Substances last longer, easier to gain weight, steady energy")
                     }
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
 
                     Text("\nDon't worry - we'll refine this over time based on your actual substance response!")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .italic()
                 }
                 .padding()
@@ -1019,7 +1019,7 @@ struct MetabolismSpeedScreen: View {
                 Spacer()
             }
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
     }
 }
 
@@ -1038,13 +1038,13 @@ struct MetabolismSpeedOption: View {
 
                     VStack(alignment: .leading, spacing: Spacing.xs) {
                         Text(speed.rawValue)
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(isSelected ? .white : AppColors.textPrimary)
+                            .foregroundColor(isSelected ? .white : OnLifeColors.textPrimary)
 
                         Text(speed.description)
-                            .font(AppFont.body())
-                            .foregroundColor(isSelected ? .white.opacity(0.9) : AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(isSelected ? .white.opacity(0.9) : OnLifeColors.textSecondary)
                     }
 
                     Spacer()
@@ -1057,7 +1057,7 @@ struct MetabolismSpeedOption: View {
                 }
             }
             .padding()
-            .background(isSelected ? colorForSpeed(speed) : AppColors.lightSoil)
+            .background(isSelected ? colorForSpeed(speed) : OnLifeColors.cardBackground)
             .cornerRadius(CornerRadius.medium)
         }
         .buttonStyle(PlainButtonStyle())
@@ -1066,7 +1066,7 @@ struct MetabolismSpeedOption: View {
     private func colorForSpeed(_ speed: MetabolismSpeed) -> Color {
         switch speed {
         case .slow: return .blue
-        case .average: return AppColors.healthy
+        case .average: return OnLifeColors.sage
         case .fast: return .orange
         }
     }
@@ -1086,15 +1086,15 @@ struct SummaryScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.sm) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 60))
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
 
                     Text("Profile Complete!")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("Here's your personalized metabolism profile")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
                 .padding(.horizontal)
                 .padding(.top, Spacing.xl)
@@ -1103,23 +1103,23 @@ struct SummaryScreen: View {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     HStack {
                         Text("Profile Completeness")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         Spacer()
 
                         Text("\(Int(profile.profileCompleteness * 100))%")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
                     }
 
                     ProgressView(value: profile.profileCompleteness)
-                        .tint(AppColors.healthy)
+                        .tint(OnLifeColors.sage)
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -1140,7 +1140,7 @@ struct SummaryScreen: View {
                     ProfileSummaryRow(icon: profile.metabolismSpeed.icon, label: "Metabolism", value: profile.metabolismSpeed.rawValue)
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -1150,9 +1150,9 @@ struct SummaryScreen: View {
                         Image(systemName: "sparkles")
                             .foregroundColor(.yellow)
                         Text("Your Personalized Parameters")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -1185,59 +1185,59 @@ struct SummaryScreen: View {
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
                 // Metabolism multiplier
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("Overall Metabolism Factor")
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     HStack {
                         Text(String(format: "%.2fx", profile.overallMetabolismMultiplier))
                             .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
 
                         Spacer()
 
                         VStack(alignment: .trailing, spacing: 2) {
                             if profile.overallMetabolismMultiplier > 1.1 {
                                 Text("Fast metabolizer")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                                 Text("Substances clear quickly")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                             } else if profile.overallMetabolismMultiplier < 0.9 {
                                 Text("Slow metabolizer")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                                 Text("Substances last longer")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                             } else {
                                 Text("Average metabolizer")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                                 Text("Typical clearance rate")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                             }
                         }
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
                 Spacer()
             }
         }
-        .background(AppColors.richSoil)
+        .background(OnLifeColors.deepForest)
         .sheet(isPresented: $showingCYP1A2Info) {
             CYP1A2InfoSheet(genotype: profile.cyp1a2Genotype)
         }
@@ -1269,19 +1269,19 @@ struct ProfileSummaryRow: View {
     var body: some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(AppColors.healthy)
+                .foregroundColor(OnLifeColors.sage)
                 .frame(width: 24)
 
             Text(label)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
 
             Spacer()
 
             Text(value)
-                .font(AppFont.body())
+                .font(OnLifeFont.body())
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(OnLifeColors.textPrimary)
         }
         .padding(.vertical, 4)
     }
@@ -1295,17 +1295,17 @@ struct SummaryInsightRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.sm) {
             Image(systemName: icon)
-                .foregroundColor(AppColors.healthy)
+                .foregroundColor(OnLifeColors.sage)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(text)
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(detail)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
             }
         }
         .padding(.vertical, 4)
@@ -1323,44 +1323,44 @@ struct CYP1A2InfoSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.md) {
                     Text("What is CYP1A2?")
-                        .font(AppFont.heading2())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("CYP1A2 is an enzyme in your liver responsible for metabolizing caffeine. Genetic variations in this enzyme can cause 3-4x differences in how quickly you process caffeine!")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text("Your Estimate: \(genotype.rawValue)")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
-                            .foregroundColor(AppColors.textPrimary)
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         Text(genotype.description)
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                     .padding()
-                    .background(AppColors.lightSoil)
+                    .background(OnLifeColors.cardBackground)
                     .cornerRadius(CornerRadius.medium)
 
                     Text("How we estimated this:")
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("We used your caffeine tolerance level and metabolism speed to estimate your likely genotype. As you use OnLife, we'll refine this estimate based on your actual caffeine response patterns.")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     Text("For a precise measurement, you would need a genetic test (like 23andMe) to determine your actual CYP1A2 genotype.")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .italic()
                 }
                 .padding()
             }
-            .background(AppColors.richSoil)
+            .background(OnLifeColors.deepForest)
             .navigationTitle("CYP1A2 Gene")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -1368,7 +1368,7 @@ struct CYP1A2InfoSheet: View {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
                 }
             }
         }
@@ -1389,34 +1389,34 @@ struct OptionCard: View {
             HStack(spacing: Spacing.md) {
                 Image(systemName: icon)
                     .font(.system(size: 24))
-                    .foregroundColor(isSelected ? AppColors.healthy : AppColors.textSecondary)
+                    .foregroundColor(isSelected ? OnLifeColors.sage : OnLifeColors.textSecondary)
                     .frame(width: 40)
 
                 VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text(description)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
 
                 Spacer()
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
                 }
             }
             .padding()
             .background(
                 RoundedRectangle(cornerRadius: CornerRadius.medium)
-                    .fill(isSelected ? AppColors.lightSoil : AppColors.darkSoil)
+                    .fill(isSelected ? OnLifeColors.cardBackground : OnLifeColors.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: CornerRadius.medium)
-                            .stroke(isSelected ? AppColors.healthy : Color.clear, lineWidth: 2)
+                            .stroke(isSelected ? OnLifeColors.sage : Color.clear, lineWidth: 2)
                     )
             )
         }

@@ -54,8 +54,14 @@ struct OnLifeColors {
     // MARK: Semantic - Plant Health States
     // Visual feedback for plant lifecycle
 
+    /// Thriving plant - brightest green (excellent health)
+    static let thriving = Color(hex: "90D890")
+
     /// Healthy plant - vibrant green (0-24h since last session)
     static let healthy = Color(hex: "7CB97C")
+
+    /// Stressed plant - yellow-green (needs attention)
+    static let stressed = Color(hex: "C4B176")
 
     /// Thirsty plant - yellow-green (24-48h decay)
     static let thirsty = Color(hex: "C4B176")
@@ -67,6 +73,9 @@ struct OnLifeColors {
     static let dormant = Color(hex: "8B7355")
 
     /// Dead plant - grey-brown (96h+ decay)
+    static let dead = Color(hex: "6B6158")
+
+    /// Withered plant - grey-brown (96h+ decay) - alias for dead
     static let withered = Color(hex: "6B6158")
 
     // MARK: Surface Colors

@@ -9,22 +9,22 @@ struct CompleteScanFlowTestView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             VStack(spacing: Spacing.xl) {
                 VStack(spacing: Spacing.md) {
                     Image(systemName: "camera.viewfinder")
                         .font(.system(size: 80))
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
 
                     Text("Complete Scan Flow Test")
-                        .font(AppFont.heading1())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.heading1())
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text("Test the entire barcode scanning workflow")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                         .multilineTextAlignment(.center)
                 }
 
@@ -32,28 +32,28 @@ struct CompleteScanFlowTestView: View {
                 VStack(spacing: Spacing.sm) {
                     HStack {
                         Text("Substance Logs:")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
                         Spacer()
                         Text("\(logsCount)")
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.healthy)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.sage)
                     }
 
                     if let barcode = scannedBarcode {
                         HStack {
                             Text("Last Scanned:")
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textSecondary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textSecondary)
                             Spacer()
                             Text(barcode)
-                                .font(AppFont.bodySmall())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.bodySmall())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
                     }
                 }
                 .padding()
-                .background(AppColors.lightSoil)
+                .background(OnLifeColors.cardBackground)
                 .cornerRadius(CornerRadius.medium)
                 .padding(.horizontal)
 
@@ -66,18 +66,18 @@ struct CompleteScanFlowTestView: View {
                             Image(systemName: "barcode.viewfinder")
                             Text("Start Barcode Scanner")
                         }
-                        .font(AppFont.button())
+                        .font(OnLifeFont.button())
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding()
-                        .background(AppColors.healthy)
+                        .background(OnLifeColors.sage)
                         .cornerRadius(CornerRadius.medium)
                     }
 
                     // Quick test buttons
                     Text("Or test with known barcodes:")
-                        .font(AppFont.label())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.label())
+                        .foregroundColor(OnLifeColors.textTertiary)
 
                     QuickTestButton(
                         title: "Monster Ultra (Local DB)",
@@ -104,8 +104,8 @@ struct CompleteScanFlowTestView: View {
                 // Reset button
                 Button(action: resetTest) {
                     Text("Reset Test")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
             .padding()
@@ -160,18 +160,18 @@ struct QuickTestButton: View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(title)
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                     Text(barcode)
-                        .font(AppFont.labelSmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.labelSmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 Spacer()
                 Image(systemName: "arrow.right.circle.fill")
-                    .foregroundColor(AppColors.healthy)
+                    .foregroundColor(OnLifeColors.sage)
             }
             .padding()
-            .background(AppColors.lightSoil)
+            .background(OnLifeColors.cardBackground)
             .cornerRadius(CornerRadius.medium)
         }
     }

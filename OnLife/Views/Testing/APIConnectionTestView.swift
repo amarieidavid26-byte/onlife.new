@@ -24,23 +24,23 @@ struct APIConnectionTestView: View {
                     VStack(spacing: Spacing.sm) {
                         Image(systemName: "network")
                             .font(.system(size: 60))
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
 
                         Text("API Connection Test")
-                            .font(AppFont.heading2())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading2())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         Text("Verify OpenFoodFacts API integration")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                     .padding(.top)
 
                     // Quick Tests Section
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         Text("Quick Tests")
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         Button(action: runAllTests) {
                             HStack {
@@ -52,10 +52,10 @@ struct APIConnectionTestView: View {
                                 }
                                 Text(isRunningTests ? "Running Tests..." : "Run All Tests")
                             }
-                            .font(AppFont.button())
+                            .font(OnLifeFont.button())
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(AppColors.healthy)
+                            .background(OnLifeColors.sage)
                             .foregroundColor(.white)
                             .cornerRadius(CornerRadius.medium)
                         }
@@ -66,22 +66,22 @@ struct APIConnectionTestView: View {
                                 HStack {
                                     VStack(alignment: .leading, spacing: 4) {
                                         Text(test.name)
-                                            .font(AppFont.body())
+                                            .font(OnLifeFont.body())
                                             .fontWeight(.semibold)
                                         Text(test.barcode)
-                                            .font(AppFont.bodySmall())
+                                            .font(OnLifeFont.bodySmall())
                                         Text("Expected: \(test.expectedSource)")
-                                            .font(AppFont.bodySmall())
-                                            .foregroundColor(AppColors.textSecondary)
+                                            .font(OnLifeFont.bodySmall())
+                                            .foregroundColor(OnLifeColors.textSecondary)
                                     }
 
                                     Spacer()
 
                                     Image(systemName: "arrow.right.circle")
                                 }
-                                .foregroundColor(AppColors.textPrimary)
+                                .foregroundColor(OnLifeColors.textPrimary)
                                 .padding()
-                                .background(AppColors.lightSoil)
+                                .background(OnLifeColors.cardBackground)
                                 .cornerRadius(CornerRadius.medium)
                             }
                             .disabled(isRunningTests)
@@ -92,21 +92,21 @@ struct APIConnectionTestView: View {
                     // Custom Barcode Test
                     VStack(alignment: .leading, spacing: Spacing.md) {
                         Text("Custom Barcode Test")
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         HStack {
                             TextField("Enter barcode", text: $selectedBarcode)
-                                .font(AppFont.body())
+                                .font(OnLifeFont.body())
                                 .keyboardType(.numberPad)
                                 .padding()
-                                .background(AppColors.lightSoil)
+                                .background(OnLifeColors.cardBackground)
                                 .cornerRadius(CornerRadius.small)
 
                             Button(action: { testSingleBarcode(selectedBarcode, name: "Custom") }) {
                                 Image(systemName: "play.circle.fill")
                                     .font(.system(size: 32))
-                                    .foregroundColor(AppColors.healthy)
+                                    .foregroundColor(OnLifeColors.sage)
                             }
                             .disabled(selectedBarcode.isEmpty || isRunningTests)
                         }
@@ -118,15 +118,15 @@ struct APIConnectionTestView: View {
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             HStack {
                                 Text("Test Results")
-                                    .font(AppFont.heading3())
-                                    .foregroundColor(AppColors.textPrimary)
+                                    .font(OnLifeFont.heading3())
+                                    .foregroundColor(OnLifeColors.textPrimary)
 
                                 Spacer()
 
                                 Button("Clear") {
                                     testResults.removeAll()
                                 }
-                                .font(AppFont.bodySmall())
+                                .font(OnLifeFont.bodySmall())
                                 .foregroundColor(.red)
                             }
 
@@ -141,8 +141,8 @@ struct APIConnectionTestView: View {
                     if let result = customTestResult {
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text("Detailed Result")
-                                .font(AppFont.heading3())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading3())
+                                .foregroundColor(OnLifeColors.textPrimary)
 
                             DetailedResultCard(result: result)
                         }
@@ -152,7 +152,7 @@ struct APIConnectionTestView: View {
                     Spacer(minLength: 50)
                 }
             }
-            .background(AppColors.richSoil)
+            .background(OnLifeColors.deepForest)
             .navigationTitle("API Test")
             .navigationBarTitleDisplayMode(.inline)
         }
@@ -338,49 +338,49 @@ struct TestResultCard: View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             HStack {
                 Text("\(result.statusEmoji) \(result.testName)")
-                    .font(AppFont.body())
+                    .font(OnLifeFont.body())
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Spacer()
 
                 Text("\(result.sourceEmoji) \(result.responseTimeFormatted)")
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
             }
 
             Text("Barcode: \(result.barcode)")
-                .font(AppFont.bodySmall())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.bodySmall())
+                .foregroundColor(OnLifeColors.textSecondary)
 
             if result.success {
                 if let name = result.productName {
                     Text("Product: \(name)")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                 }
 
                 if let caffeine = result.caffeineAmount {
                     Text("Caffeine: \(Int(caffeine))mg")
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .foregroundColor(.brown)
                 }
             } else {
                 if let error = result.errorMessage {
                     Text("Error: \(error)")
-                        .font(AppFont.bodySmall())
+                        .font(OnLifeFont.bodySmall())
                         .foregroundColor(.red)
                 }
             }
 
             Text(result.timestamp, style: .time)
-                .font(AppFont.bodySmall())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.bodySmall())
+                .foregroundColor(OnLifeColors.textSecondary)
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: CornerRadius.medium)
-                .fill(result.success ? AppColors.lightSoil : Color.red.opacity(0.1))
+                .fill(result.success ? OnLifeColors.cardBackground : Color.red.opacity(0.1))
         )
     }
 }
@@ -399,17 +399,17 @@ struct DetailedResultCard: View {
 
                 VStack(alignment: .leading) {
                     Text(result.success ? "SUCCESS" : "FAILED")
-                        .font(AppFont.heading3())
+                        .font(OnLifeFont.heading3())
                         .foregroundColor(result.success ? .green : .red)
 
                     Text(result.testName)
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
 
             Divider()
-                .background(AppColors.darkSoil)
+                .background(OnLifeColors.surface)
 
             // Details
             VStack(alignment: .leading, spacing: Spacing.sm) {
@@ -429,37 +429,37 @@ struct DetailedResultCard: View {
                 if let error = result.errorMessage {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Error:")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .fontWeight(.semibold)
                             .foregroundColor(.red)
                         Text(error)
-                            .font(AppFont.bodySmall())
+                            .font(OnLifeFont.bodySmall())
                             .foregroundColor(.red)
                     }
                 }
             }
 
             Divider()
-                .background(AppColors.darkSoil)
+                .background(OnLifeColors.surface)
 
             // Raw Response
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text("Raw Response:")
-                    .font(AppFont.body())
+                    .font(OnLifeFont.body())
                     .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textPrimary)
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(result.rawResponse)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(AppColors.darkSoil)
+                    .background(OnLifeColors.surface)
                     .cornerRadius(CornerRadius.small)
             }
         }
         .padding()
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }
@@ -471,15 +471,15 @@ struct DetailRow: View {
     var body: some View {
         HStack {
             Text("\(label):")
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textSecondary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
 
             Spacer()
 
             Text(value)
-                .font(AppFont.body())
+                .font(OnLifeFont.body())
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(OnLifeColors.textPrimary)
         }
     }
 }

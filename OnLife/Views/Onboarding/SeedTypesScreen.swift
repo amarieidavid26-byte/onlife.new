@@ -9,8 +9,8 @@ struct SeedTypesScreen: View {
 
             VStack(spacing: Spacing.xl) {
                 Text("Two Types of Seeds")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 VStack(spacing: Spacing.md) {
                     SeedTypeCard(seedType: .oneTime)
@@ -40,19 +40,19 @@ struct SeedTypeCard: View {
 
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 Text(seedType.displayName)
-                    .font(AppFont.heading3())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(seedType.description)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
             Spacer()
         }
         .padding(Spacing.lg)
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }

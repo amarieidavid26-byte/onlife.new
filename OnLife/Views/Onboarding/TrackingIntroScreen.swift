@@ -12,8 +12,8 @@ struct TrackingIntroScreen: View {
                     .font(.system(size: 80))
 
                 Text("Track Your Growth")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 VStack(spacing: Spacing.md) {
                     FeatureRow(icon: "📈", text: "See your focus patterns")
@@ -44,13 +44,13 @@ struct FeatureRow: View {
                 .font(.system(size: 30))
 
             Text(text)
-                .font(AppFont.body())
-                .foregroundColor(AppColors.textPrimary)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textPrimary)
 
             Spacer()
         }
         .padding(Spacing.lg)
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }

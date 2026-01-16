@@ -62,7 +62,7 @@ struct BarcodeScannerView: View {
 
                     // Status message
                     Text(statusMessage)
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
                         .padding(.horizontal)
@@ -75,7 +75,7 @@ struct BarcodeScannerView: View {
                     // Show barcode if scanned
                     if case .lookingUp(let code) = lookupState {
                         Text(code)
-                            .font(AppFont.labelSmall())
+                            .font(OnLifeFont.labelSmall())
                             .foregroundColor(.white.opacity(0.7))
                     }
                 }
@@ -86,7 +86,7 @@ struct BarcodeScannerView: View {
                 if case .notFound(let code) = lookupState {
                     VStack(spacing: Spacing.md) {
                         Text("Product not found")
-                            .font(AppFont.body())
+                            .font(OnLifeFont.body())
                             .foregroundColor(.white)
 
                         Button(action: {
@@ -95,10 +95,10 @@ struct BarcodeScannerView: View {
                             dismiss()
                         }) {
                             Text("Enter Manually")
-                                .font(AppFont.button())
+                                .font(OnLifeFont.button())
                                 .padding(.horizontal, Spacing.xl)
                                 .padding(.vertical, Spacing.sm)
-                                .background(AppColors.healthy)
+                                .background(OnLifeColors.sage)
                                 .foregroundColor(.white)
                                 .cornerRadius(CornerRadius.medium)
                         }
@@ -111,7 +111,7 @@ struct BarcodeScannerView: View {
                             viewModel.startScanning()
                         }) {
                             Text("Scan Again")
-                                .font(AppFont.body())
+                                .font(OnLifeFont.body())
                                 .foregroundColor(.white.opacity(0.8))
                         }
                     }
@@ -123,7 +123,7 @@ struct BarcodeScannerView: View {
                     .padding()
                 } else if case .scanning = lookupState {
                     Text("Align barcode within the frame")
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .foregroundColor(.white)
                         .padding()
                         .background(

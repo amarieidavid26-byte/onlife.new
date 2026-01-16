@@ -9,12 +9,12 @@ struct PlantSpeciesScreen: View {
 
             VStack(spacing: Spacing.xl) {
                 Text("Choose Your Plant")
-                    .font(AppFont.heading2())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Text("Each species has its own personality")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
 
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: Spacing.md) {
                     ForEach(PlantSpecies.allCases, id: \.self) { species in
@@ -49,12 +49,12 @@ struct PlantSpeciesButton: View {
                     .font(.system(size: 40))
 
                 Text(species.displayName)
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textPrimary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
             }
             .frame(maxWidth: .infinity)
             .padding(Spacing.lg)
-            .background(isSelected ? AppColors.healthy : AppColors.lightSoil)
+            .background(isSelected ? OnLifeColors.sage : OnLifeColors.cardBackground)
             .cornerRadius(CornerRadius.medium)
         }
     }

@@ -33,43 +33,57 @@ struct HomeView: View {
                     // MARK: - Content
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: Spacing.lg) {
-                            if let garden = gardenViewModel.selectedGarden {
-                                // Garden Card
-                                GardenCard(
-                                    garden: garden,
-                                    plantCount: gardenViewModel.plantCount,
-                                    totalFocusTime: gardenViewModel.totalFocusTime,
-                                    onEdit: {
+                            if gardenViewModel.gardens.isEmpty {
+                                // No gardens - show empty state
+                                EmptyGardensCarouselView(onCreateGarden: {
+                                    showCreateGarden = true
+                                })
+                            } else {
+                                // Garden Carousel
+                                GardenCarouselView(
+                                    gardens: gardenViewModel.gardens,
+                                    selectedGarden: Binding(
+                                        get: { gardenViewModel.selectedGarden },
+                                        set: { garden in
+                                            if let garden = garden {
+                                                gardenViewModel.selectGarden(id: garden.id)
+                                            }
+                                        }
+                                    ),
+                                    gardenViewModel: gardenViewModel,
+                                    onEdit: { garden in
                                         editingGarden = garden
                                         Haptics.light()
                                     },
-                                    onDelete: {
-                                        if gardenViewModel.gardens.count > 1 {
-                                            gardenToDelete = garden
-                                            showDeleteAlert = true
-                                            Haptics.light()
-                                        }
+                                    onDelete: { garden in
+                                        gardenToDelete = garden
+                                        showDeleteAlert = true
+                                        Haptics.light()
                                     }
                                 )
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .top).combined(with: .opacity),
-                                    removal: .opacity
-                                ))
+                                .padding(.horizontal, -Spacing.lg) // Allow full bleed for carousel
 
                                 // Plants Section
-                                if !gardenViewModel.plants.isEmpty {
-                                    PlantsGridView(
-                                        plants: gardenViewModel.plants,
-                                        selectedPlant: $selectedPlant
-                                    )
-                                    .padding(.top, Spacing.md)
-                                } else {
-                                    emptyGardenView
-                                        .padding(.top, Spacing.xxl)
+                                if let selectedGarden = gardenViewModel.selectedGarden {
+                                    let plants = gardenViewModel.plants(for: selectedGarden.id)
+                                    if !plants.isEmpty {
+                                        PlantsGridView(
+                                            plants: plants,
+                                            gardenName: selectedGarden.name,
+                                            selectedPlant: $selectedPlant
+                                        )
+                                        .padding(.top, Spacing.sm)
+                                    } else {
+                                        EmptyGardenPlantsView(
+                                            gardenName: selectedGarden.name,
+                                            onStartSession: {
+                                                showSessionInput = true
+                                            }
+                                        )
+                                        .frame(minHeight: 300)
+                                        .padding(.top, Spacing.md)
+                                    }
                                 }
-                            } else {
-                                // No garden selected state
-                                noGardenView
                             }
                         }
                         .padding(.horizontal, Spacing.lg)
@@ -215,82 +229,6 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
-    // MARK: - Empty Garden View
-
-    private var emptyGardenView: some View {
-        VStack(spacing: Spacing.lg) {
-            Text("🌱")
-                .font(.system(size: 72))
-                .symbolEffect(.bounce, options: .repeating.speed(0.3))
-
-            VStack(spacing: Spacing.sm) {
-                Text("Your garden is waiting to grow")
-                    .font(OnLifeFont.heading3())
-                    .foregroundColor(OnLifeColors.textPrimary)
-
-                Text("Start a focus session to plant your first seed!")
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button(action: {
-                Haptics.impact(.medium)
-                showSessionInput = true
-            }) {
-                Text("Plant Your First Seed")
-                    .font(OnLifeFont.button())
-                    .foregroundColor(OnLifeColors.textPrimary)
-                    .padding(.horizontal, Spacing.xl)
-                    .padding(.vertical, Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                            .fill(OnLifeColors.amber)
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-            .padding(.top, Spacing.md)
-        }
-        .padding(Spacing.xl)
-    }
-
-    // MARK: - No Garden View
-
-    private var noGardenView: some View {
-        VStack(spacing: Spacing.lg) {
-            Text("🏡")
-                .font(.system(size: 72))
-
-            VStack(spacing: Spacing.sm) {
-                Text("Create Your First Garden")
-                    .font(OnLifeFont.heading2())
-                    .foregroundColor(OnLifeColors.textPrimary)
-
-                Text("Gardens help you organize your focus sessions and track your growth.")
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textSecondary)
-                    .multilineTextAlignment(.center)
-            }
-
-            Button(action: {
-                Haptics.impact(.medium)
-                showCreateGarden = true
-            }) {
-                Text("Create Garden")
-                    .font(OnLifeFont.button())
-                    .foregroundColor(OnLifeColors.textPrimary)
-                    .padding(.horizontal, Spacing.xl)
-                    .padding(.vertical, Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                            .fill(OnLifeColors.amber)
-                    )
-            }
-            .buttonStyle(PlainButtonStyle())
-        }
-        .padding(Spacing.xl)
-        .padding(.top, Spacing.xxl)
-    }
 }
 
 // MARK: - Garden Card
@@ -376,105 +314,36 @@ struct GardenCard: View {
 
 struct PlantsGridView: View {
     let plants: [Plant]
+    var gardenName: String = "Your"
     @Binding var selectedPlant: Plant?
+
+    private let columns = [
+        GridItem(.flexible(), spacing: Spacing.md),
+        GridItem(.flexible(), spacing: Spacing.md)
+    ]
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             // Section header
-            Text("Your Plants")
+            Text("Plants in \(gardenName)")
                 .font(OnLifeFont.heading2())
                 .foregroundColor(OnLifeColors.textPrimary)
                 .padding(.leading, Spacing.xs)
 
-            // Grid
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: Spacing.md), count: 3),
-                spacing: Spacing.md
-            ) {
+            // Grid with 2 columns
+            LazyVGrid(columns: columns, spacing: Spacing.md) {
                 ForEach(Array(plants.enumerated()), id: \.element.id) { index, plant in
-                    PlantGridItem(plant: plant, index: index)
-                        .onTapGesture {
-                            Haptics.selection()
-                            selectedPlant = plant
-                        }
+                    PlantGridCard(plant: plant) {
+                        selectedPlant = plant
+                    }
+                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
+                    .animation(
+                        .spring(response: 0.4, dampingFraction: 0.8).delay(Double(index) * 0.05),
+                        value: plants.count
+                    )
                 }
             }
         }
     }
 }
 
-// MARK: - Plant Grid Item
-
-struct PlantGridItem: View {
-    let plant: Plant
-    let index: Int
-
-    @State private var scale: CGFloat = 0.8
-    @State private var opacity: Double = 0
-
-    var body: some View {
-        VStack(spacing: Spacing.sm) {
-            // Plant emoji
-            Text(plantEmoji(for: plant.species))
-                .font(.system(size: 44))
-
-            // Plant name
-            Text(plant.species.rawValue.capitalized)
-                .font(OnLifeFont.label())
-                .foregroundColor(OnLifeColors.textPrimary)
-                .lineLimit(1)
-
-            // Health indicator dot
-            Circle()
-                .fill(healthColor(for: plant.healthStatus))
-                .frame(width: 10, height: 10)
-                .shadow(color: healthColor(for: plant.healthStatus).opacity(0.5), radius: 4)
-        }
-        .padding(Spacing.md)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.large, style: .continuous)
-                .fill(OnLifeColors.cardBackgroundElevated)
-        )
-        .scaleEffect(scale)
-        .opacity(opacity)
-        .onAppear {
-            // Staggered animation
-            let delay = Double(index) * 0.05
-            withAnimation(OnLifeAnimation.standard.delay(delay)) {
-                scale = 1.0
-                opacity = 1.0
-            }
-        }
-    }
-
-    // MARK: - Helpers
-
-    func plantEmoji(for species: PlantSpecies) -> String {
-        switch species {
-        case .oak: return "🌳"
-        case .rose: return "🌹"
-        case .cactus: return "🌵"
-        case .sunflower: return "🌻"
-        case .fern: return "🌿"
-        case .bamboo: return "🎋"
-        case .lavender: return "💜"
-        case .bonsai: return "🪴"
-        }
-    }
-
-    func healthColor(for status: HealthStatus) -> Color {
-        switch status {
-        case .thriving:
-            return OnLifeColors.healthy
-        case .healthy:
-            return OnLifeColors.healthy
-        case .stressed:
-            return OnLifeColors.thirsty
-        case .wilting:
-            return OnLifeColors.wilting
-        case .dead:
-            return OnLifeColors.dormant
-        }
-    }
-}

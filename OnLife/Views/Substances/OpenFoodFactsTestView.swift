@@ -9,7 +9,7 @@ struct OpenFoodFactsTestView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             ScrollView {
@@ -17,25 +17,25 @@ struct OpenFoodFactsTestView: View {
                     VStack(spacing: Spacing.md) {
                         Image(systemName: "globe")
                             .font(.system(size: 80))
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
 
                         Text("OpenFoodFacts Test")
-                            .font(AppFont.heading1())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading1())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         Text("Test API integration with fallback lookup")
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textSecondary)
                             .multilineTextAlignment(.center)
                     }
 
                     // Barcode input
                     VStack(spacing: Spacing.md) {
                         TextField("Enter barcode", text: $barcode)
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textPrimary)
                             .padding()
-                            .background(AppColors.lightSoil)
+                            .background(OnLifeColors.cardBackground)
                             .cornerRadius(CornerRadius.medium)
                             .keyboardType(.numberPad)
 
@@ -49,11 +49,11 @@ struct OpenFoodFactsTestView: View {
                                 }
                                 Text(isLoading ? "Searching..." : "Search with Fallback")
                             }
-                            .font(AppFont.button())
+                            .font(OnLifeFont.button())
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .padding()
-                            .background(AppColors.healthy)
+                            .background(OnLifeColors.sage)
                             .cornerRadius(CornerRadius.medium)
                         }
                         .disabled(isLoading || barcode.isEmpty)
@@ -66,11 +66,11 @@ struct OpenFoodFactsTestView: View {
                             Image(systemName: "exclamationmark.triangle.fill")
                                 .foregroundColor(.orange)
                             Text(error)
-                                .font(AppFont.body())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
                         .padding()
-                        .background(AppColors.lightSoil)
+                        .background(OnLifeColors.cardBackground)
                         .cornerRadius(CornerRadius.medium)
                         .padding(.horizontal)
                     }
@@ -79,21 +79,21 @@ struct OpenFoodFactsTestView: View {
                     if let product = foundProduct {
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             Text("Found Product")
-                                .font(AppFont.heading3())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading3())
+                                .foregroundColor(OnLifeColors.textPrimary)
 
                             ProductDetailCard(product: product)
 
                             // Source badge
                             HStack {
                                 Image(systemName: product.source == .localDatabase ? "internaldrive" : "globe")
-                                    .foregroundColor(product.source == .localDatabase ? AppColors.healthy : .blue)
+                                    .foregroundColor(product.source == .localDatabase ? OnLifeColors.sage : .blue)
                                 Text("Source: \(product.source.rawValue)")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textSecondary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textSecondary)
                             }
                             .padding()
-                            .background(AppColors.lightSoil)
+                            .background(OnLifeColors.cardBackground)
                             .cornerRadius(CornerRadius.medium)
                         }
                         .padding()
@@ -102,8 +102,8 @@ struct OpenFoodFactsTestView: View {
                     // Example barcodes
                     VStack(alignment: .leading, spacing: Spacing.sm) {
                         Text("Try these barcodes:")
-                            .font(AppFont.label())
-                            .foregroundColor(AppColors.textTertiary)
+                            .font(OnLifeFont.label())
+                            .foregroundColor(OnLifeColors.textTertiary)
 
                         ExampleBarcodeRow(
                             barcode: "070847811800",
@@ -156,38 +156,38 @@ struct ProductDetailCard: View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
             // Title
             Text(product.displayName)
-                .font(AppFont.body())
+                .font(OnLifeFont.body())
                 .fontWeight(.semibold)
-                .foregroundColor(AppColors.textPrimary)
+                .foregroundColor(OnLifeColors.textPrimary)
 
             // Barcode
             HStack {
                 Image(systemName: "barcode")
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(OnLifeColors.textTertiary)
                 Text(product.barcode)
-                    .font(AppFont.bodySmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
             }
 
             Divider()
-                .background(AppColors.darkSoil)
+                .background(OnLifeColors.surface)
 
             // Caffeine info
             if let caffeine = product.caffeineAmount {
                 HStack {
                     Image(systemName: "bolt.fill")
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
                     Text("Caffeine: \(Int(caffeine))mg")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                 }
             } else {
                 HStack {
                     Image(systemName: "bolt.slash")
-                        .foregroundColor(AppColors.textTertiary)
+                        .foregroundColor(OnLifeColors.textTertiary)
                     Text("No caffeine data")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
 
@@ -197,8 +197,8 @@ struct ProductDetailCard: View {
                     Image(systemName: "leaf.fill")
                         .foregroundColor(.green)
                     Text("L-Theanine: \(Int(theanine))mg")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                 }
             }
 
@@ -208,44 +208,44 @@ struct ProductDetailCard: View {
                     Image(systemName: "drop.fill")
                         .foregroundColor(.blue)
                     Text("Volume: \(Int(volume))ml")
-                        .font(AppFont.body())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
                 }
             }
 
             // Category
             HStack {
                 Image(systemName: "tag.fill")
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(OnLifeColors.textTertiary)
                 Text("Category: \(product.category.rawValue)")
-                    .font(AppFont.body())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
             }
 
             // Ingredients
             if !product.ingredients.isEmpty {
                 Divider()
-                    .background(AppColors.darkSoil)
+                    .background(OnLifeColors.surface)
 
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("Ingredients:")
-                        .font(AppFont.bodySmall())
+                        .font(OnLifeFont.bodySmall())
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textSecondary)
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     ForEach(product.ingredients, id: \.self) { ingredient in
                         HStack {
                             Text("•")
                             Text(ingredient)
                         }
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
             }
         }
         .padding()
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }
@@ -260,20 +260,20 @@ struct ExampleBarcodeRow: View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(label)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textPrimary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textPrimary)
                     Text(barcode)
-                        .font(AppFont.labelSmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.labelSmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(AppColors.textTertiary)
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
             .padding(.vertical, Spacing.sm)
             .padding(.horizontal)
-            .background(AppColors.lightSoil)
+            .background(OnLifeColors.cardBackground)
             .cornerRadius(CornerRadius.small)
         }
     }

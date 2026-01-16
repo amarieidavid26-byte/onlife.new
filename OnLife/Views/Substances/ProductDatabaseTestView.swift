@@ -9,7 +9,7 @@ struct ProductDatabaseTestView: View {
 
     var body: some View {
         ZStack {
-            AppColors.richSoil
+            OnLifeColors.deepForest
                 .ignoresSafeArea()
 
             ScrollView {
@@ -17,18 +17,18 @@ struct ProductDatabaseTestView: View {
                     VStack(spacing: Spacing.md) {
                         Image(systemName: "cylinder.split.1x2.fill")
                             .font(.system(size: 80))
-                            .foregroundColor(AppColors.healthy)
+                            .foregroundColor(OnLifeColors.sage)
 
                         Text("Product Database Test")
-                            .font(AppFont.heading1())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading1())
+                            .foregroundColor(OnLifeColors.textPrimary)
                     }
 
                     // Statistics
                     VStack(spacing: Spacing.sm) {
                         Text("Database Statistics")
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         HStack(spacing: Spacing.md) {
                             DatabaseStatCard(label: "Local", value: "\(stats.local)")
@@ -41,23 +41,23 @@ struct ProductDatabaseTestView: View {
                     // Barcode lookup test
                     VStack(spacing: Spacing.md) {
                         Text("Barcode Lookup Test")
-                            .font(AppFont.heading3())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.heading3())
+                            .foregroundColor(OnLifeColors.textPrimary)
 
                         TextField("Enter barcode", text: $testBarcode)
-                            .font(AppFont.body())
-                            .foregroundColor(AppColors.textPrimary)
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textPrimary)
                             .padding()
-                            .background(AppColors.lightSoil)
+                            .background(OnLifeColors.cardBackground)
                             .cornerRadius(CornerRadius.medium)
 
                         Button(action: searchBarcode) {
                             Text("Search")
-                                .font(AppFont.button())
+                                .font(OnLifeFont.button())
                                 .foregroundColor(.white)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(AppColors.healthy)
+                                .background(OnLifeColors.sage)
                                 .cornerRadius(CornerRadius.medium)
                         }
 
@@ -71,25 +71,25 @@ struct ProductDatabaseTestView: View {
                     VStack(spacing: Spacing.md) {
                         HStack {
                             Text("All Products (\(allProducts.count))")
-                                .font(AppFont.heading3())
-                                .foregroundColor(AppColors.textPrimary)
+                                .font(OnLifeFont.heading3())
+                                .foregroundColor(OnLifeColors.textPrimary)
 
                             Spacer()
 
                             Button(action: loadAllProducts) {
                                 Image(systemName: "arrow.clockwise")
-                                    .foregroundColor(AppColors.healthy)
+                                    .foregroundColor(OnLifeColors.sage)
                             }
                         }
 
                         if allProducts.isEmpty {
                             Button(action: loadAllProducts) {
                                 Text("Load All Products")
-                                    .font(AppFont.button())
+                                    .font(OnLifeFont.button())
                                     .foregroundColor(.white)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(AppColors.healthy)
+                                    .background(OnLifeColors.sage)
                                     .cornerRadius(CornerRadius.medium)
                             }
                         } else {
@@ -99,8 +99,8 @@ struct ProductDatabaseTestView: View {
 
                             if allProducts.count > 10 {
                                 Text("... and \(allProducts.count - 10) more")
-                                    .font(AppFont.bodySmall())
-                                    .foregroundColor(AppColors.textTertiary)
+                                    .font(OnLifeFont.bodySmall())
+                                    .foregroundColor(OnLifeColors.textTertiary)
                             }
                         }
                     }
@@ -130,16 +130,16 @@ struct DatabaseStatCard: View {
     var body: some View {
         VStack(spacing: Spacing.xs) {
             Text(value)
-                .font(AppFont.heading2())
-                .foregroundColor(AppColors.healthy)
+                .font(OnLifeFont.heading2())
+                .foregroundColor(OnLifeColors.sage)
 
             Text(label)
-                .font(AppFont.label())
-                .foregroundColor(AppColors.textTertiary)
+                .font(OnLifeFont.label())
+                .foregroundColor(OnLifeColors.textTertiary)
         }
         .frame(maxWidth: .infinity)
         .padding()
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }
@@ -152,40 +152,40 @@ struct ProductCard: View {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(product.displayName)
-                        .font(AppFont.body())
+                        .font(OnLifeFont.body())
                         .fontWeight(.semibold)
-                        .foregroundColor(AppColors.textPrimary)
+                        .foregroundColor(OnLifeColors.textPrimary)
 
                     Text(product.barcode)
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textTertiary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textTertiary)
                 }
 
                 Spacer()
 
                 Text(product.category.rawValue)
-                    .font(AppFont.labelSmall())
-                    .foregroundColor(AppColors.textSecondary)
+                    .font(OnLifeFont.labelSmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.xs)
-                    .background(AppColors.darkSoil)
+                    .background(OnLifeColors.surface)
                     .cornerRadius(CornerRadius.small)
             }
 
             if let caffeine = product.caffeineAmount {
                 HStack {
                     Image(systemName: "bolt.fill")
-                        .foregroundColor(AppColors.healthy)
+                        .foregroundColor(OnLifeColors.sage)
                     Text("\(Int(caffeine))mg caffeine")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
 
                     if let volume = product.volumeAmount {
                         Text("•")
-                            .foregroundColor(AppColors.textTertiary)
+                            .foregroundColor(OnLifeColors.textTertiary)
                         Text("\(Int(volume))ml")
-                            .font(AppFont.bodySmall())
-                            .foregroundColor(AppColors.textSecondary)
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
             }
@@ -195,13 +195,13 @@ struct ProductCard: View {
                     Image(systemName: "leaf.fill")
                         .foregroundColor(.green)
                     Text("\(Int(theanine))mg L-theanine")
-                        .font(AppFont.bodySmall())
-                        .foregroundColor(AppColors.textSecondary)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
                 }
             }
         }
         .padding()
-        .background(AppColors.lightSoil)
+        .background(OnLifeColors.cardBackground)
         .cornerRadius(CornerRadius.medium)
     }
 }
