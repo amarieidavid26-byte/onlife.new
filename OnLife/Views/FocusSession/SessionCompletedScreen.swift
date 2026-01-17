@@ -5,6 +5,8 @@ struct SessionCompletedScreen: View {
     @State private var plantScale: CGFloat = 0.8
     @State private var showConfetti: Bool = false
     @State private var showSparkles: Bool = false
+    @State private var showRewards: Bool = false
+    @State private var orbsAnimated: Int = 0
 
     var body: some View {
         ZStack {
@@ -32,6 +34,23 @@ struct SessionCompletedScreen: View {
                     Text("Session Complete!")
                         .font(OnLifeFont.heading1())
                         .foregroundColor(OnLifeColors.textPrimary)
+
+                    // Flow Score Display
+                    if viewModel.averageFlowScore > 0 {
+                        HStack(spacing: Spacing.xs) {
+                            Text("🧠")
+                                .font(.system(size: 20))
+                            Text("Flow Score: \(Int(viewModel.averageFlowScore))%")
+                                .font(OnLifeFont.heading3())
+                                .foregroundColor(viewModel.averageFlowScore >= 70 ? OnLifeColors.sage : OnLifeColors.textSecondary)
+                        }
+                    }
+
+                // Rewards Section (NEW)
+                if showRewards, let reward = viewModel.sessionReward {
+                    rewardsSection(reward: reward)
+                        .transition(.opacity.combined(with: .scale))
+                }
 
                 VStack(spacing: Spacing.md) {
                     StatRow(label: "Task", value: viewModel.taskDescription)
@@ -79,6 +98,119 @@ struct SessionCompletedScreen: View {
             // 5. Heavy haptic sequence
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 HapticManager.shared.impact(style: .heavy)
+            }
+
+            // 6. Show rewards with animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+                withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                    showRewards = true
+                }
+                // Animate orbs counter
+                animateOrbsCounter()
+            }
+        }
+    }
+
+    // MARK: - Rewards Section
+
+    @ViewBuilder
+    private func rewardsSection(reward: SessionRewardResult) -> some View {
+        VStack(spacing: Spacing.md) {
+            // Orbs Earned
+            HStack(spacing: Spacing.sm) {
+                Text("✨")
+                    .font(.system(size: 24))
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("+\(orbsAnimated) orbs")
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.amber)
+
+                    if reward.hasBonus {
+                        Text("Includes \(reward.bonusOrbs) bonus!")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.sage)
+                    }
+                }
+
+                Spacer()
+            }
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .fill(OnLifeColors.amber.opacity(0.1))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .stroke(OnLifeColors.amber.opacity(0.3), lineWidth: 1)
+            )
+
+            // Special Rewards (if any)
+            if !reward.specialRewards.isEmpty {
+                ForEach(reward.specialRewards, id: \.self) { rewardType in
+                    specialRewardCard(type: rewardType)
+                }
+            }
+
+            // Celebration Message (if any)
+            if let message = reward.celebrationMessage {
+                Text(message)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.top, Spacing.sm)
+            }
+        }
+        .padding(.horizontal, Spacing.xl)
+    }
+
+    @ViewBuilder
+    private func specialRewardCard(type: RewardType) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Text(type.icon)
+                .font(.system(size: 24))
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(type.title)
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
+
+                Text(type.description)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.sage.opacity(0.1))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(OnLifeColors.sage.opacity(0.3), lineWidth: 1)
+        )
+    }
+
+    private func animateOrbsCounter() {
+        guard let reward = viewModel.sessionReward else { return }
+        let targetOrbs = reward.totalOrbs
+        let duration: Double = 1.0
+        let steps = 20
+        let interval = duration / Double(steps)
+
+        for step in 0...steps {
+            DispatchQueue.main.asyncAfter(deadline: .now() + interval * Double(step)) {
+                let progress = Double(step) / Double(steps)
+                // Ease-out curve
+                let easedProgress = 1 - pow(1 - progress, 3)
+                orbsAnimated = Int(Double(targetOrbs) * easedProgress)
+
+                // Subtle haptic on orb increments
+                if step % 5 == 0 && step > 0 {
+                    HapticManager.shared.impact(style: .light)
+                }
             }
         }
     }

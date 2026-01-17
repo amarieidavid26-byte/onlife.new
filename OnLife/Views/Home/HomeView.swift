@@ -4,6 +4,11 @@ struct HomeView: View {
     @StateObject private var sessionViewModel = FocusSessionViewModel()
     @StateObject private var gardenViewModel = GardenViewModel()
     @StateObject private var decayManager = PlantDecayManager.shared
+
+    // Algorithm Engine Integrations
+    private let gamificationEngine = GamificationEngine.shared
+    @ObservedObject private var fatigueEngine = FatigueDetectionEngine.shared
+
     @State private var showSessionInput = false
     @State private var selectedPlant: Plant? = nil
     @State private var showCreateGarden = false
@@ -11,6 +16,7 @@ struct HomeView: View {
     @State private var showDeleteAlert = false
     @State private var gardenToDelete: Garden? = nil
     @State private var headerAppeared = false
+    @State private var currentInsight: String? = nil
 
     var body: some View {
         NavigationView {
@@ -33,6 +39,20 @@ struct HomeView: View {
                     // MARK: - Content
                     ScrollView(showsIndicators: false) {
                         VStack(spacing: Spacing.lg) {
+                            // MARK: - Stats & Streak Section
+                            statsSection
+                                .padding(.horizontal, Spacing.lg)
+
+                            // MARK: - AI Insight Card (if available)
+                            if let insight = currentInsight {
+                                InsightCardView(insight: insight)
+                                    .padding(.horizontal, Spacing.lg)
+                            }
+
+                            // MARK: - Flow Readiness Indicator
+                            flowReadinessSection
+                                .padding(.horizontal, Spacing.lg)
+
                             if gardenViewModel.gardens.isEmpty {
                                 // No gardens - show empty state
                                 EmptyGardensCarouselView(onCreateGarden: {
@@ -229,6 +249,135 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
+    // MARK: - Stats Section (Streak & Orbs)
+
+    private var statsSection: some View {
+        HStack(spacing: Spacing.md) {
+            // Streak Card
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(spacing: Spacing.xs) {
+                    Text("🔥")
+                        .font(.system(size: 20))
+                    Text("\(gamificationEngine.stats.currentStreak)")
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+                Text("day streak")
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .fill(OnLifeColors.cardBackground)
+            )
+
+            // Orbs Card
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(spacing: Spacing.xs) {
+                    Text("✨")
+                        .font(.system(size: 20))
+                    Text("\(gamificationEngine.stats.totalLifeOrbs)")
+                        .font(OnLifeFont.heading2())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+                Text("orbs earned")
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .fill(OnLifeColors.cardBackground)
+            )
+        }
+    }
+
+    // MARK: - Flow Readiness Section
+
+    private var flowReadinessSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Flow Readiness")
+                .font(OnLifeFont.heading3())
+                .foregroundColor(OnLifeColors.textPrimary)
+
+            HStack(spacing: Spacing.md) {
+                // Fatigue indicator
+                if let fatigue = fatigueEngine.currentFatigueLevel {
+                    HStack(spacing: Spacing.xs) {
+                        Text(fatigue.level.icon)
+                            .font(.system(size: 16))
+                        Text(fatigue.level.rawValue)
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
+                } else {
+                    HStack(spacing: Spacing.xs) {
+                        Text("⚡️")
+                            .font(.system(size: 16))
+                        Text("Ready to focus")
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
+                }
+
+                Spacer()
+
+                // Caffeine indicator from pharmacokinetics
+                let caffeine = CorrectedPharmacokineticsEngine.shared.calculateActiveLevel(for: .caffeine)
+                if caffeine > 0 {
+                    HStack(spacing: Spacing.xs) {
+                        Text("☕️")
+                            .font(.system(size: 16))
+                        Text("\(Int(caffeine))mg")
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
+                }
+            }
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .fill(OnLifeColors.cardBackground)
+            )
+        }
+    }
+
+}
+
+// MARK: - Insight Card View
+
+struct InsightCardView: View {
+    let insight: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Text("💡")
+                    .font(.system(size: 18))
+                Text("Insight")
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
+                Spacer()
+            }
+
+            Text(insight)
+                .font(OnLifeFont.body())
+                .foregroundColor(OnLifeColors.textSecondary)
+                .lineLimit(3)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(OnLifeColors.sage.opacity(0.1))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(OnLifeColors.sage.opacity(0.3), lineWidth: 1)
+        )
+    }
 }
 
 // MARK: - Garden Card

@@ -102,6 +102,78 @@ enum RewardType: Codable {
             throw DecodingError.dataCorruptedError(forKey: .type, in: container, debugDescription: "Unknown reward type")
         }
     }
+
+    // MARK: - Display Properties
+
+    var icon: String {
+        switch self {
+        case .lifeOrbs: return "✨"
+        case .bonusMultiplier: return "🎯"
+        case .rarePlant: return "🌿"
+        case .achievement: return "🏆"
+        case .streakFreeze: return "❄️"
+        case .identityMilestone: return "⭐"
+        }
+    }
+
+    var title: String {
+        switch self {
+        case .lifeOrbs(let amount): return "+\(amount) Life Orbs"
+        case .bonusMultiplier(let multiplier): return "\(multiplier)× Bonus!"
+        case .rarePlant(let plantId): return "Rare Plant: \(plantId)"
+        case .achievement(let achievementId): return "Achievement: \(achievementId)"
+        case .streakFreeze: return "Streak Freeze"
+        case .identityMilestone(let title): return title
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .lifeOrbs: return "Earned from your focus session"
+        case .bonusMultiplier(let multiplier): return "Your session earned a \(multiplier)× multiplier!"
+        case .rarePlant: return "A rare plant has been discovered!"
+        case .achievement: return "You've unlocked a new achievement!"
+        case .streakFreeze: return "Protects your streak for one day"
+        case .identityMilestone: return "You're becoming who you want to be"
+        }
+    }
+}
+
+// MARK: - Hashable conformance for RewardType
+extension RewardType: Hashable {
+    static func == (lhs: RewardType, rhs: RewardType) -> Bool {
+        switch (lhs, rhs) {
+        case (.lifeOrbs(let a), .lifeOrbs(let b)): return a == b
+        case (.bonusMultiplier(let a), .bonusMultiplier(let b)): return a == b
+        case (.rarePlant(let a), .rarePlant(let b)): return a == b
+        case (.achievement(let a), .achievement(let b)): return a == b
+        case (.streakFreeze, .streakFreeze): return true
+        case (.identityMilestone(let a), .identityMilestone(let b)): return a == b
+        default: return false
+        }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .lifeOrbs(let amount):
+            hasher.combine("lifeOrbs")
+            hasher.combine(amount)
+        case .bonusMultiplier(let multiplier):
+            hasher.combine("bonusMultiplier")
+            hasher.combine(multiplier)
+        case .rarePlant(let plantId):
+            hasher.combine("rarePlant")
+            hasher.combine(plantId)
+        case .achievement(let achievementId):
+            hasher.combine("achievement")
+            hasher.combine(achievementId)
+        case .streakFreeze:
+            hasher.combine("streakFreeze")
+        case .identityMilestone(let title):
+            hasher.combine("identityMilestone")
+            hasher.combine(title)
+        }
+    }
 }
 
 // MARK: - Rare Plants
