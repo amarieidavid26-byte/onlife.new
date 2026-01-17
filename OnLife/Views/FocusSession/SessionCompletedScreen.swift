@@ -109,6 +109,7 @@ struct StatRow: View {
 // MARK: - Sparkle Effect
 struct SparkleEffect: View {
     @State private var opacity: Double = 0
+    @State private var isVisible = false
 
     var body: some View {
         ZStack {
@@ -121,7 +122,28 @@ struct SparkleEffect: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 1.5).repeatForever()) {
+            isVisible = true
+            startSparkleAnimation()
+        }
+        .onDisappear {
+            isVisible = false
+            opacity = 0
+        }
+    }
+
+    private func startSparkleAnimation() {
+        Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { timer in
+            guard isVisible else {
+                timer.invalidate()
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.5)) {
+                opacity = opacity == 0 ? 1.0 : 0
+            }
+        }
+        // Initial fade in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 1.5)) {
                 opacity = 1.0
             }
         }

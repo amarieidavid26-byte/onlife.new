@@ -406,6 +406,7 @@ struct HistoryEmptyStateView: View {
     let hasSearchText: Bool
     let hasGardenFilter: Bool
     @State private var bounce = false
+    @State private var isVisible = false
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -414,12 +415,19 @@ struct HistoryEmptyStateView: View {
 
             Text(emptyIcon)
                 .font(.system(size: 56))
-                .scaleEffect(bounce ? 1.1 : 1.0)
+                .scaleEffect(bounce ? 1.05 : 1.0)
                 .animation(
-                    Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+                    .easeInOut(duration: 1.2),
                     value: bounce
                 )
-                .onAppear { bounce = true }
+                .onAppear {
+                    isVisible = true
+                    startBounceAnimation()
+                }
+                .onDisappear {
+                    isVisible = false
+                    bounce = false
+                }
 
             Text(emptyTitle)
                 .font(OnLifeFont.heading2())
@@ -458,6 +466,25 @@ struct HistoryEmptyStateView: View {
             return "No sessions recorded for this garden yet"
         }
         return "Start focusing to grow your history"
+    }
+
+    private func startBounceAnimation() {
+        // Use a timer-based approach instead of repeatForever to avoid animation conflicts
+        Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { timer in
+            guard isVisible else {
+                timer.invalidate()
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.2)) {
+                bounce.toggle()
+            }
+        }
+        // Trigger initial bounce
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 1.2)) {
+                bounce = true
+            }
+        }
     }
 }
 

@@ -112,18 +112,22 @@ struct EmptyGardensCarouselView: View {
     let onCreateGarden: () -> Void
 
     @State private var bouncing = false
+    @State private var isVisible = false
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
             Text("🏡")
                 .font(.system(size: 64))
-                .scaleEffect(bouncing ? 1.1 : 1.0)
-                .animation(
-                    .spring(duration: 0.8, bounce: 0.5)
-                    .repeatForever(autoreverses: true),
-                    value: bouncing
-                )
-                .onAppear { bouncing = true }
+                .scaleEffect(bouncing ? 1.05 : 1.0)
+                .animation(.easeInOut(duration: 0.8), value: bouncing)
+                .onAppear {
+                    isVisible = true
+                    startBounceAnimation()
+                }
+                .onDisappear {
+                    isVisible = false
+                    bouncing = false
+                }
 
             VStack(spacing: Spacing.sm) {
                 Text("Create Your First Garden")
@@ -161,5 +165,23 @@ struct EmptyGardensCarouselView: View {
         }
         .padding(Spacing.xl)
         .padding(.vertical, Spacing.lg)
+    }
+
+    private func startBounceAnimation() {
+        Timer.scheduledTimer(withTimeInterval: 1.6, repeats: true) { timer in
+            guard isVisible else {
+                timer.invalidate()
+                return
+            }
+            withAnimation(.easeInOut(duration: 0.8)) {
+                bouncing.toggle()
+            }
+        }
+        // Initial bounce
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 0.8)) {
+                bouncing = true
+            }
+        }
     }
 }

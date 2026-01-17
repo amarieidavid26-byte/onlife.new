@@ -173,9 +173,6 @@ struct SessionInputView: View {
                     contentAppeared = true
                 }
             }
-            .onTapGesture {
-                isTaskFieldFocused = false
-            }
         }
     }
 

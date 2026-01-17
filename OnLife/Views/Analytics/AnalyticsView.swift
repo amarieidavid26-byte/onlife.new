@@ -39,8 +39,8 @@ struct AnalyticsView: View {
                             .offset(y: appeared ? 0 : 20)
 
                         // Smart Insights Section
-                        if !viewModel.insights.isEmpty {
-                            InsightsSection(insights: viewModel.insights, appeared: appeared)
+                        if !viewModel.cachedInsights.isEmpty {
+                            InsightsSection(insights: viewModel.cachedInsights, appeared: appeared)
                                 .padding(.horizontal, Spacing.lg)
                         }
 
@@ -89,7 +89,7 @@ struct AnalyticsView: View {
             }
         }
         .onAppear {
-            viewModel.loadData()
+            // Note: loadData() is already called in ViewModel init(), no need to call again
             withAnimation(OnLifeAnimation.elegant) {
                 appeared = true
             }
@@ -716,14 +716,16 @@ struct EmptyAnalyticsView: View {
 
             Text("🌱")
                 .font(.system(size: 72))
-                .scaleEffect(bouncing ? 1.1 : 1.0)
+                .scaleEffect(bouncing ? 1.05 : 1.0)
                 .animation(
-                    .spring(duration: 0.6, bounce: 0.4)
-                    .repeatForever(autoreverses: true),
+                    .easeInOut(duration: 1.2),
                     value: bouncing
                 )
                 .onAppear {
-                    bouncing = true
+                    startBounceAnimation()
+                }
+                .onDisappear {
+                    bouncing = false
                 }
 
             VStack(spacing: Spacing.sm) {
@@ -749,6 +751,25 @@ struct EmptyAnalyticsView: View {
         .onAppear {
             withAnimation(OnLifeAnimation.elegant) {
                 appeared = true
+            }
+        }
+    }
+
+    private func startBounceAnimation() {
+        // Use a timer-based approach instead of repeatForever to avoid animation conflicts
+        Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { timer in
+            guard appeared else {
+                timer.invalidate()
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.2)) {
+                bouncing.toggle()
+            }
+        }
+        // Trigger initial bounce
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 1.2)) {
+                bouncing = true
             }
         }
     }

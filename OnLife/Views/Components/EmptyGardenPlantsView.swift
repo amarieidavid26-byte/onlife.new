@@ -6,6 +6,7 @@ struct EmptyGardenPlantsView: View {
 
     @State private var isAnimating = false
     @State private var appeared = false
+    @State private var isVisible = false
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -34,12 +35,9 @@ struct EmptyGardenPlantsView: View {
                 // Seed waiting to grow
                 Text("🌱")
                     .font(.system(size: 56))
-                    .scaleEffect(isAnimating ? 1.1 : 1.0)
-                    .offset(y: isAnimating ? -4 : 0)
-                    .animation(
-                        .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
-                        value: isAnimating
-                    )
+                    .scaleEffect(isAnimating ? 1.05 : 1.0)
+                    .offset(y: isAnimating ? -3 : 0)
+                    .animation(.easeInOut(duration: 1.0), value: isAnimating)
             }
             .opacity(appeared ? 1 : 0)
             .scaleEffect(appeared ? 1 : 0.8)
@@ -95,9 +93,32 @@ struct EmptyGardenPlantsView: View {
         }
         .frame(maxWidth: .infinity)
         .onAppear {
-            isAnimating = true
+            isVisible = true
+            startSeedAnimation()
             withAnimation(OnLifeAnimation.elegant) {
                 appeared = true
+            }
+        }
+        .onDisappear {
+            isVisible = false
+            isAnimating = false
+        }
+    }
+
+    private func startSeedAnimation() {
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: true) { timer in
+            guard isVisible else {
+                timer.invalidate()
+                return
+            }
+            withAnimation(.easeInOut(duration: 1.0)) {
+                isAnimating.toggle()
+            }
+        }
+        // Initial animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            withAnimation(.easeInOut(duration: 1.0)) {
+                isAnimating = true
             }
         }
     }

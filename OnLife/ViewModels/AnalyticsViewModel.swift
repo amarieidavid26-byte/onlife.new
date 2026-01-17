@@ -26,6 +26,8 @@ class AnalyticsViewModel: ObservableObject {
     func loadData() {
         sessions = GardenDataManager.shared.loadSessions()
         gardens = GardenDataManager.shared.loadGardens()
+        // Refresh cached insights after loading data
+        refreshInsights()
     }
 
     func refreshInsights() {
