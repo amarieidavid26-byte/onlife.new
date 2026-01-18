@@ -1,6 +1,7 @@
 
 # API Keys (never commit)
 OnLife/Config/APIKeys.swift
+Config.xcconfig
 
 # Firebase
 GoogleService-Info.plist
