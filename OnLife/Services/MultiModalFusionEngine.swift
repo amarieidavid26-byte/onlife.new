@@ -285,7 +285,7 @@ class MultiModalFusionEngine: ObservableObject {
                          (contextualScore * 100 * weights.contextual)
         }
 
-        let preFatigueScore = fusedScore
+        let _ = fusedScore  // Store pre-fatigue score for debugging if needed
 
         // === 4. FATIGUE ADJUSTMENT ===
         let fatigueLevel = fatigueEngine.detectFatigue(

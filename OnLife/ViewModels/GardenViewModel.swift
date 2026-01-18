@@ -31,17 +31,26 @@ class GardenViewModel: ObservableObject {
         print("🌳 GardenViewModel.loadGardens() called")
         isLoading = true
 
+        // Remember current selection before reloading
+        let previousSelectedId = selectedGarden?.id
+
         gardens = GardenDataManager.shared.loadGardens()
         print("🌳 Loaded \(gardens.count) gardens")
 
-        // Select first garden
-        selectedGarden = gardens.first
-        print("🌳 Selected garden: \(selectedGarden?.name ?? "none")")
+        // Restore previous selection if it still exists, otherwise select first
+        if let previousId = previousSelectedId,
+           let previousGarden = gardens.first(where: { $0.id == previousId }) {
+            selectedGarden = previousGarden
+            print("🌳 Restored selected garden: \(previousGarden.name)")
+        } else {
+            selectedGarden = gardens.first
+            print("🌳 Selected first garden: \(selectedGarden?.name ?? "none")")
+        }
 
         // Load plants for selected garden
         if let garden = selectedGarden {
             plants = garden.plants
-            print("🌳 Loaded \(plants.count) plants")
+            print("🌳 Loaded \(plants.count) plants for \(garden.name)")
         }
 
         isLoading = false

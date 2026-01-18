@@ -468,9 +468,9 @@ extension WatchDataBridge: WCSessionDelegate {
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         // Handle background context updates (baseline sync, etc.)
         if let baselineData = applicationContext["baseline"] as? Data {
-            if let baseline = try? JSONDecoder().decode(BiometricBaseline.self, from: baselineData) {
+            if let _ = try? JSONDecoder().decode(BiometricBaseline.self, from: baselineData) {
                 print("⌚ [WatchBridge] Received baseline update from Watch")
-                // Update local baseline if needed
+                // TODO: Update local baseline if needed
             }
         }
     }

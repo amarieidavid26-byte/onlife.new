@@ -130,6 +130,12 @@ struct HomeView: View {
         .fullScreenCover(isPresented: $sessionViewModel.isSessionActive) {
             FocusSessionView(viewModel: sessionViewModel)
         }
+        .fullScreenCover(isPresented: $sessionViewModel.showBreathingExercise) {
+            GuidedBreathingView(
+                onComplete: { sessionViewModel.onBreathingComplete() },
+                onSkip: { sessionViewModel.onBreathingSkipped() }
+            )
+        }
         .sheet(item: $selectedPlant) { plant in
             PlantDetailView(plant: plant)
         }

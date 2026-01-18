@@ -1,4 +1,5 @@
 import Foundation
+import Combine
 
 // MARK: - Research Citations
 /*
@@ -484,9 +485,12 @@ struct IdentityMilestone {
 
 /// Research-based gamification engine using variable reward schedules
 /// Implements Skinner's variable ratio principles for optimal engagement
-class GamificationEngine {
+class GamificationEngine: ObservableObject {
 
     static let shared = GamificationEngine()
+
+    // MARK: - Persistence Keys
+    private let statsKey = "gamification_stats"
 
     // MARK: - Reward Schedule Constants (Skinner Research)
 
@@ -529,17 +533,54 @@ class GamificationEngine {
 
     // MARK: - State
 
-    private(set) var stats: UserGamificationStats
+    @Published private(set) var stats: UserGamificationStats
 
     // MARK: - Initialization
 
-    init(stats: UserGamificationStats = UserGamificationStats()) {
-        self.stats = stats
+    init(stats: UserGamificationStats? = nil) {
+        // Load from storage first, then override if provided
+        if let providedStats = stats {
+            self.stats = providedStats
+        } else {
+            self.stats = UserGamificationStats()
+            loadStatsFromStorage()
+        }
+        print("🎮 [Gamification] Initialized with \(self.stats.totalLifeOrbs) orbs, \(self.stats.currentStreak) day streak")
     }
 
-    /// Load stats from storage
+    // MARK: - Persistence
+
+    /// Load stats from UserDefaults
+    private func loadStatsFromStorage() {
+        guard let data = UserDefaults.standard.data(forKey: statsKey) else {
+            print("🎮 [Gamification] No saved stats found, using defaults")
+            return
+        }
+
+        do {
+            let loadedStats = try JSONDecoder().decode(UserGamificationStats.self, from: data)
+            self.stats = loadedStats
+            print("🎮 [Gamification] Loaded stats: \(loadedStats.totalLifeOrbs) orbs, \(loadedStats.currentStreak) streak")
+        } catch {
+            print("❌ [Gamification] Failed to decode stats: \(error)")
+        }
+    }
+
+    /// Save stats to UserDefaults
+    private func saveStats() {
+        do {
+            let data = try JSONEncoder().encode(stats)
+            UserDefaults.standard.set(data, forKey: statsKey)
+            print("💾 [Gamification] Saved stats: \(stats.totalLifeOrbs) orbs")
+        } catch {
+            print("❌ [Gamification] Failed to encode stats: \(error)")
+        }
+    }
+
+    /// Load stats from external source (for migration/testing)
     func loadStats(_ stats: UserGamificationStats) {
         self.stats = stats
+        saveStats()
     }
 
     // MARK: - Session Reward Calculation
@@ -663,6 +704,9 @@ class GamificationEngine {
         // === UPDATE TOTAL ORBS ===
         stats.totalLifeOrbs += totalOrbs
 
+        // === PERSIST IMMEDIATELY ===
+        saveStats()
+
         print("🎮 [Gamification] Session reward: \(totalOrbs) orbs (base: \(baseSessionOrbs), bonus: \(bonusOrbs))")
 
         return RewardResult(
@@ -746,6 +790,7 @@ class GamificationEngine {
             if stats.currentStreak % 7 == 0 {
                 weeklyBonus = weeklyStreakBonus
                 stats.totalLifeOrbs += weeklyBonus
+                saveStats()
             }
 
             return StreakResult(
@@ -776,6 +821,7 @@ class GamificationEngine {
         if stats.currentStreak >= freezeProtectionThreshold && stats.freezesRemaining > 0 && daysMissed == 1 {
             stats.freezesRemaining -= 1
             stats.lastActiveDate = date
+            saveStats()
 
             return StreakResult(
                 currentStreak: stats.currentStreak,
@@ -793,6 +839,7 @@ class GamificationEngine {
         stats.currentStreak = 0
         stats.dailyGoalStreakDays = 0
         stats.lastActiveDate = date
+        saveStats()
 
         // Check for comeback achievement opportunity
         let message: String?
@@ -931,11 +978,13 @@ class GamificationEngine {
             if monthsSinceReset >= 1 {
                 stats.freezesRemaining = freezesPerMonth
                 stats.lastFreezeReset = now
+                saveStats()
                 print("🎮 [Gamification] Monthly freeze reset: \(freezesPerMonth) freezes available")
             }
         } else {
             stats.freezesRemaining = freezesPerMonth
             stats.lastFreezeReset = now
+            saveStats()
         }
     }
 
@@ -943,6 +992,7 @@ class GamificationEngine {
     func resetDailyStats() {
         stats.sessionsToday = 0
         stats.dailyGoalMetToday = false
+        saveStats()
     }
 
     // MARK: - Utility

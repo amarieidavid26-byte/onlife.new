@@ -70,13 +70,27 @@ class GeminiService {
     static let shared = GeminiService()
 
     // Configuration
-    // TODO: Get real API key from https://makersuite.google.com/app/apikey
-    // Add to Config.xcconfig: GEMINI_API_KEY = your_key_here
+    // API key loaded from APIKeys.swift, environment, or UserDefaults
     private var apiKey: String {
-        if let key = ProcessInfo.processInfo.environment["GEMINI_API_KEY"], !key.isEmpty {
+        // 1. Try environment variable (Xcode scheme)
+        if let key = ProcessInfo.processInfo.environment["GEMINI_API_KEY"],
+           !key.isEmpty, key != "PLACEHOLDER_KEY" {
             return key
         }
-        // Fallback for development
+
+        // 2. Try UserDefaults (user-configured)
+        if let key = UserDefaults.standard.string(forKey: "gemini_api_key"),
+           !key.isEmpty, key != "PLACEHOLDER_KEY" {
+            return key
+        }
+
+        // 3. Try compiled APIKeys.swift
+        let compiledKey = APIKeys.geminiAPIKey
+        if !compiledKey.isEmpty && compiledKey != "PLACEHOLDER_KEY" {
+            return compiledKey
+        }
+
+        // 4. Fallback
         return "PLACEHOLDER_KEY"
     }
 

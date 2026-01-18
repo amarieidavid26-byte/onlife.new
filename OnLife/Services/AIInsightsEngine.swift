@@ -234,12 +234,23 @@ class AIInsightsEngine: ObservableObject {
     }
 
     private func loadAPIKey() {
+        // 1. Check UserDefaults (user-configured)
         geminiAPIKey = UserDefaults.standard.string(forKey: "gemini_api_key")
-        // Also check environment
+
+        // 2. Check environment variable (Xcode scheme)
         if geminiAPIKey == nil || geminiAPIKey?.isEmpty == true {
             if let envKey = ProcessInfo.processInfo.environment["GEMINI_API_KEY"],
                !envKey.isEmpty, envKey != "PLACEHOLDER_KEY" {
                 geminiAPIKey = envKey
+            }
+        }
+
+        // 3. Check compiled APIKeys (from APIKeys.swift)
+        if geminiAPIKey == nil || geminiAPIKey?.isEmpty == true {
+            let compiledKey = APIKeys.geminiAPIKey
+            if !compiledKey.isEmpty && compiledKey != "PLACEHOLDER_KEY" {
+                geminiAPIKey = compiledKey
+                print("🔑 [AIInsights] Loaded API key from APIKeys.swift")
             }
         }
     }

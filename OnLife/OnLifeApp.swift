@@ -1,11 +1,30 @@
 import SwiftUI
 import FirebaseCore
 import WatchConnectivity
+import GoogleSignIn
+
+// MARK: - App Delegate for Firebase
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        // Configure Firebase
+        FirebaseApp.configure()
+        print("✅ [Firebase] Configured in AppDelegate")
+        return true
+    }
+}
+
+// MARK: - Main App
 
 @main
 struct OnLifeApp: App {
+    // Register app delegate for Firebase setup
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @StateObject private var decayManager = PlantDecayManager.shared
+    @StateObject private var authManager = AuthenticationManager.shared
 
     // CRITICAL: Force WatchConnectivityManager initialization at app launch
     // This MUST be a stored property (not computed) to trigger init
@@ -14,7 +33,7 @@ struct OnLifeApp: App {
     init() {
         print("📱📱📱 [OnLifeApp] init() STARTING 📱📱📱")
         print("   Thread: \(Thread.isMainThread ? "MAIN" : "BACKGROUND")")
-        
+
         // CRITICAL: Force WatchConnectivity initialization on MAIN THREAD
         // WCSession.delegate MUST be set on main thread
         if !Thread.isMainThread {
@@ -27,7 +46,7 @@ struct OnLifeApp: App {
             _ = WatchConnectivityManager.shared
             print("📱 [OnLifeApp] WatchConnectivityManager initialized (already on main)")
         }
-        
+
         // Verify WCSession is supported and print detailed status
         if WCSession.isSupported() {
             let session = WCSession.default
@@ -45,16 +64,23 @@ struct OnLifeApp: App {
         // Check for decay on app launch
         PlantDecayManager.shared.forceDecayCheck()
         print("🌱 PlantDecayManager initialized and initial decay check performed")
-        
+
         print("📱📱📱 [OnLifeApp] init() COMPLETE 📱📱📱\n")
     }
 
     var body: some Scene {
         WindowGroup {
-            if hasCompletedOnboarding {
-                MainTabView()
-            } else {
-                OnboardingContainerView()
+            Group {
+                if !hasCompletedOnboarding {
+                    OnboardingContainerView()
+                } else if !authManager.isAuthenticated {
+                    SignInView()
+                } else {
+                    MainTabView()
+                }
+            }
+            .onOpenURL { url in
+                GIDSignIn.sharedInstance.handle(url)
             }
         }
     }

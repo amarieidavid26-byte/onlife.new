@@ -8,10 +8,11 @@ struct GardenCarouselView: View {
     let onDelete: (Garden) -> Void
 
     @State private var appeared = false
+    @State private var screenWidth: CGFloat = 393  // Default iPhone width
 
     // Calculate card width for peek effect (screen width - 80pt for 40pt peek on each side)
     private var cardWidth: CGFloat {
-        UIScreen.main.bounds.width - 80
+        screenWidth - 80
     }
 
     var body: some View {
@@ -69,9 +70,22 @@ struct GardenCarouselView: View {
             appeared = true
             // Auto-select first garden if none selected
             if selectedGarden == nil, let first = gardens.first {
-                selectedGarden = first
+                Task { @MainActor in
+                    selectedGarden = first
+                }
             }
         }
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        screenWidth = geometry.size.width
+                    }
+                    .onChange(of: geometry.size.width) { _, newWidth in
+                        screenWidth = newWidth
+                    }
+            }
+        )
     }
 
     // MARK: - Page Indicator

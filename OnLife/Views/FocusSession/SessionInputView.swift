@@ -136,7 +136,8 @@ struct SessionInputView: View {
                         ) {
                             Haptics.impact(.medium)
                             dismiss()
-                            viewModel.startSession()
+                            // Show breathing exercise before starting session
+                            viewModel.initiateSessionWithBreathing()
                         }
                         .padding(.top, Spacing.md)
                         .padding(.bottom, Spacing.xxl)

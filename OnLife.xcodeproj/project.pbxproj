@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		63118A652F157899007AFB3B /* OnLife Watch App Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 63FF4C1C2F0D80F200E83F13 /* OnLife Watch App Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		63A661C82F1D5A8A003A44EE /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 63A661C72F1D5A8A003A44EE /* GoogleSignIn */; };
+		63A661CA2F1D5A8A003A44EE /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 63A661C92F1D5A8A003A44EE /* GoogleSignInSwift */; };
 		63E8BA102EC72D7500A9EF7F /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */; };
 		63E8BA122EC72D7500A9EF7F /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA112EC72D7500A9EF7F /* FirebaseAuth */; };
 		63E8BA142EC72D7500A9EF7F /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 63E8BA132EC72D7500A9EF7F /* FirebaseFirestore */; };
@@ -50,6 +52,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		63A661CC2F1D5AEE003A44EE /* Exceptions for "OnLife" folder in "OnLife" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 63E8B9DA2EC7064400A9EF7F /* OnLife */;
+		};
 		63FF4C3D2F0D837B00E83F13 /* Exceptions for "OnLife" folder in "OnLife Watch App Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -80,6 +89,7 @@
 		63E8B9DD2EC7064400A9EF7F /* OnLife */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
+				63A661CC2F1D5AEE003A44EE /* Exceptions for "OnLife" folder in "OnLife" target */,
 				63FF4C3D2F0D837B00E83F13 /* Exceptions for "OnLife" folder in "OnLife Watch App Watch App" target */,
 			);
 			path = OnLife;
@@ -100,7 +110,9 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				63A661CA2F1D5A8A003A44EE /* GoogleSignInSwift in Frameworks */,
 				63E8BA102EC72D7500A9EF7F /* FirebaseAnalytics in Frameworks */,
+				63A661C82F1D5A8A003A44EE /* GoogleSignIn in Frameworks */,
 				63E8BA122EC72D7500A9EF7F /* FirebaseAuth in Frameworks */,
 				63E8BA142EC72D7500A9EF7F /* FirebaseFirestore in Frameworks */,
 			);
@@ -168,6 +180,8 @@
 				63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */,
 				63E8BA112EC72D7500A9EF7F /* FirebaseAuth */,
 				63E8BA132EC72D7500A9EF7F /* FirebaseFirestore */,
+				63A661C72F1D5A8A003A44EE /* GoogleSignIn */,
+				63A661C92F1D5A8A003A44EE /* GoogleSignInSwift */,
 			);
 			productName = OnLife;
 			productReference = 63E8B9DB2EC7064400A9EF7F /* OnLife.app */;
@@ -224,6 +238,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				63A661C62F1D5A8A003A44EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 63E8B9DC2EC7064400A9EF7F /* Products */;
@@ -414,6 +429,7 @@
 				DEVELOPMENT_TEAM = 5KQL289534;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OnLife/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
 				INFOPLIST_KEY_NSCameraUsageDescription = "OnLife needs camera access to scan product barcodes for quick substance logging. Scan energy drinks, coffee, and supplements to automatically track caffeine intake.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses your health data including heart rate, HRV, and sleep to detect flow states and optimize your focus sessions.";
@@ -423,6 +439,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.onlife.OnLife.watchkitapp;
 				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife.watchkitapp;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -452,6 +469,7 @@
 				DEVELOPMENT_TEAM = 5KQL289534;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OnLife/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OnLife;
 				INFOPLIST_KEY_NSCameraUsageDescription = "OnLife needs camera access to scan product barcodes for quick substance logging. Scan energy drinks, coffee, and supplements to automatically track caffeine intake.";
 				INFOPLIST_KEY_NSHealthShareUsageDescription = "OnLife uses your health data including heart rate, HRV, and sleep to detect flow states and optimize your focus sessions.";
@@ -461,6 +479,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.onlife.OnLife.watchkitapp;
 				"INFOPLIST_KEY_WKCompanionAppBundleIdentifier[sdk=*]" = com.onlife.OnLife.watchkitapp;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -586,6 +605,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		63A661C62F1D5A8A003A44EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 9.1.0;
+			};
+		};
 		63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
@@ -597,6 +624,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		63A661C72F1D5A8A003A44EE /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63A661C62F1D5A8A003A44EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		63A661C92F1D5A8A003A44EE /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 63A661C62F1D5A8A003A44EE /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
 		63E8BA0F2EC72D7500A9EF7F /* FirebaseAnalytics */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 63E8BA0E2EC72D7500A9EF7F /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

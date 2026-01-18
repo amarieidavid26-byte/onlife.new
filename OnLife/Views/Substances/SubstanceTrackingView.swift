@@ -71,6 +71,7 @@ struct SubstanceTrackingView: View {
                         activeLevels: tracker.activeLevels,
                         warningLevel: tracker.getCaffeineWarningLevel(),
                         todaysCaffeine: tracker.getTodaysTotalCaffeine(),
+                        todaysLTheanine: tracker.getTodaysTotalLTheanine(),
                         dailyLimit: MetabolismProfileManager.shared.profile.recommendedDailyCaffeineLimit,
                         synergyMultiplier: tracker.calculateSynergy()
                     )
@@ -150,6 +151,7 @@ struct ActiveSubstancesCard: View {
     let activeLevels: [SubstanceType: Double]
     let warningLevel: SubstanceTracker.CaffeineWarningLevel
     let todaysCaffeine: Double
+    let todaysLTheanine: Double
     let dailyLimit: Double
     let synergyMultiplier: Double
 
@@ -165,20 +167,52 @@ struct ActiveSubstancesCard: View {
                     .foregroundColor(OnLifeColors.textPrimary)
 
                 Spacer()
+            }
 
-                // Show daily caffeine progress
+            // Daily totals row
+            HStack(spacing: Spacing.md) {
+                // Caffeine total with limit
                 if todaysCaffeine > 0 {
                     HStack(spacing: 4) {
+                        Image(systemName: "cup.and.saucer.fill")
+                            .foregroundColor(colorForWarningLevel(warningLevel))
+                            .font(.caption)
                         if warningLevel != .safe {
                             Image(systemName: warningLevel.icon)
                                 .foregroundColor(colorForWarningLevel(warningLevel))
-                                .font(.caption)
+                                .font(.caption2)
                         }
                         Text("\(Int(todaysCaffeine))/\(Int(dailyLimit))mg")
                             .font(OnLifeFont.caption())
                             .foregroundColor(colorForWarningLevel(warningLevel))
                     }
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                            .fill(colorForWarningLevel(warningLevel).opacity(0.1))
+                    )
                 }
+
+                // L-Theanine total (no limit)
+                if todaysLTheanine > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "leaf.fill")
+                            .foregroundColor(OnLifeColors.sage)
+                            .font(.caption)
+                        Text("\(Int(todaysLTheanine))mg")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.sage)
+                    }
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, 4)
+                    .background(
+                        RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                            .fill(OnLifeColors.sage.opacity(0.1))
+                    )
+                }
+
+                Spacer()
             }
 
             // SYNERGY INDICATOR

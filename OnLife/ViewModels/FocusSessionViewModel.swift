@@ -13,6 +13,11 @@ class FocusSessionViewModel: ObservableObject {
     @Published var isPaused = false
     @Published var sessionPhase: SessionPhase = .input
 
+    // MARK: - Breathing Exercise State
+
+    @Published var showBreathingExercise = false
+    @Published var didCompleteBreathing = false
+
     // MARK: - Session Configuration
 
     @Published var taskDescription: String = ""
@@ -121,6 +126,36 @@ class FocusSessionViewModel: ObservableObject {
     }
 
     // MARK: - Session Lifecycle
+
+    /// Initiates session with optional breathing exercise first
+    /// Call this instead of startSession() to include pre-session breathing
+    func initiateSessionWithBreathing() {
+        showBreathingExercise = true
+        didCompleteBreathing = false
+        print("🌬️ [Session] Showing breathing exercise before session")
+    }
+
+    /// Called when breathing exercise is completed (5+ minutes)
+    func onBreathingComplete() {
+        showBreathingExercise = false
+        didCompleteBreathing = true
+        print("🌬️ [Session] Breathing complete - starting session")
+
+        // Start the actual session after a brief transition
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.startSession()
+        }
+    }
+
+    /// Called when breathing exercise is skipped
+    func onBreathingSkipped() {
+        showBreathingExercise = false
+        didCompleteBreathing = false
+        print("🌬️ [Session] Breathing skipped - starting session anyway")
+
+        // Start session immediately
+        startSession()
+    }
 
     func startSession() {
         sessionPhase = .planting

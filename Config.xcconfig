@@ -12,4 +12,4 @@
 // This file is ignored by git (.gitignore) to keep your API key secure.
 
 // Gemini API Key (for AI-powered insights)
-GEMINI_API_KEY = PLACEHOLDER_KEY
+GEMINI_API_KEY = AIzaSyA1y-eV8lodKDwZKIBBlNZwV2ORlsX8I-8

@@ -223,6 +223,15 @@ class SubstanceTracker: ObservableObject {
             .reduce(0.0) { $0 + $1.amount }
     }
 
+    /// Get total L-theanine consumed today
+    /// - Returns: Total L-theanine in mg from all today's logs
+    func getTodaysTotalLTheanine() -> Double {
+        let todayLogs = getTodayLogs()
+        return todayLogs
+            .filter { $0.substanceType == .lTheanine }
+            .reduce(0.0) { $0 + $1.amount }
+    }
+
     // MARK: - Warning System
 
     /// Caffeine intake warning levels based on evidence-based thresholds

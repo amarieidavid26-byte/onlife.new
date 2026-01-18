@@ -122,6 +122,14 @@ struct MetabolismOnboardingFlow: View {
     // MARK: - Navigation Logic
 
     func nextStep() {
+        // Update error messages for current step before proceeding
+        if currentStep == 1 {
+            updateDemographicsErrors()
+        }
+
+        // Only proceed if validation passes
+        guard canProceed else { return }
+
         if currentStep == totalSteps - 1 {
             // Complete onboarding
             profileManager.updateProfile(profile)
@@ -142,7 +150,7 @@ struct MetabolismOnboardingFlow: View {
     var canProceed: Bool {
         switch currentStep {
         case 0: return true // Welcome screen
-        case 1: return validateDemographics() // Demographics
+        case 1: return isDemographicsValid() // Demographics - pure validation, no state modification
         case 2: return true // Health status
         case 3: return true // Caffeine tolerance
         case 4: return true // Lifestyle
@@ -152,13 +160,23 @@ struct MetabolismOnboardingFlow: View {
         }
     }
 
-    func validateDemographics() -> Bool {
-        var isValid = true
+    // MARK: - Pure Validation (no state modification)
 
+    /// Pure validation function - safe to call during view body computation
+    func isDemographicsValid() -> Bool {
+        let ageValid = profile.age >= 13 && profile.age <= 120
+        let weightValid = profile.weight >= 30 && profile.weight <= 300
+        let heightValid = profile.height == nil || (profile.height! >= 100 && profile.height! <= 250)
+        return ageValid && weightValid && heightValid
+    }
+
+    // MARK: - Error State Updates (call on user action only)
+
+    /// Updates error messages - call this on button tap or onChange, NOT during body computation
+    func updateDemographicsErrors() {
         // Age validation
         if profile.age < 13 || profile.age > 120 {
             ageError = "Age must be between 13 and 120"
-            isValid = false
         } else {
             ageError = nil
         }
@@ -166,7 +184,6 @@ struct MetabolismOnboardingFlow: View {
         // Weight validation
         if profile.weight < 30 || profile.weight > 300 {
             weightError = "Weight must be between 30 and 300 kg"
-            isValid = false
         } else {
             weightError = nil
         }
@@ -175,15 +192,12 @@ struct MetabolismOnboardingFlow: View {
         if let height = profile.height {
             if height < 100 || height > 250 {
                 heightError = "Height must be between 100 and 250 cm"
-                isValid = false
             } else {
                 heightError = nil
             }
         } else {
             heightError = nil
         }
-
-        return isValid
     }
 }
 
