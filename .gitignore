@@ -4,3 +4,7 @@ OnLife/Config/APIKeys.swift
 
 # Firebase
 GoogleService-Info.plist
+
+# Xcode user-specific files
+*.xcuserstate
+xcuserdata/
