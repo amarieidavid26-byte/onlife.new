@@ -17,6 +17,8 @@ final class HealthKitManager: ObservableObject {
     @Published var authorizationError: Error?
     @Published var latestHeartRate: Double?
     @Published var latestRMSSD: Double?
+    @Published var lastNightSleep: SleepAnalysisResult?
+    @Published var isLoadingSleep = false
 
     // MARK: - HealthKit Types
 
@@ -126,6 +128,31 @@ final class HealthKitManager: ObservableObject {
         }
 
         return samples.map { ($0.startDate, $0.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))) }
+    }
+
+    /// Fetch and update last night's sleep data (updates published property)
+    func fetchLastNightSleep() {
+        isLoadingSleep = true
+
+        Task {
+            do {
+                let result = try await querySleepAnalysis()
+                await MainActor.run {
+                    self.lastNightSleep = result
+                    self.isLoadingSleep = false
+                    print("💤 [Sleep] Loaded sleep data:")
+                    print("   Duration: \(String(format: "%.1f", result.totalHours))h")
+                    print("   Quality: \(Int(result.score))/100 (\(result.qualityDescription))")
+                    print("   Deep: \(String(format: "%.0f", result.deepSleepPercent))%")
+                    print("   REM: \(String(format: "%.0f", result.remSleepPercent))%")
+                }
+            } catch {
+                await MainActor.run {
+                    self.isLoadingSleep = false
+                    print("⚠️ [Sleep] Failed to load: \(error.localizedDescription)")
+                }
+            }
+        }
     }
 
     /// Query sleep analysis for previous night
@@ -323,4 +350,44 @@ struct SleepAnalysisResult: Codable {
     let deepSleepPercent: Double
     let remSleepPercent: Double
     let score: Double  // 0-100
+
+    var qualityDescription: String {
+        if score >= 80 {
+            return "Excellent"
+        } else if score >= 65 {
+            return "Good"
+        } else if score >= 50 {
+            return "Fair"
+        } else if score > 0 {
+            return "Poor"
+        } else {
+            return "No data"
+        }
+    }
+
+    var qualityEmoji: String {
+        if score >= 80 {
+            return "😴"
+        } else if score >= 65 {
+            return "🙂"
+        } else if score >= 50 {
+            return "😐"
+        } else if score > 0 {
+            return "😵‍💫"
+        } else {
+            return "💤"
+        }
+    }
+
+    var qualityColor: String {
+        if score >= 80 {
+            return "green"
+        } else if score >= 65 {
+            return "blue"
+        } else if score >= 50 {
+            return "orange"
+        } else {
+            return "red"
+        }
+    }
 }

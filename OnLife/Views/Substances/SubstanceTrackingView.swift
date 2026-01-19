@@ -36,6 +36,20 @@ struct SubstanceTrackingView: View {
 
             ScrollView(showsIndicators: false) {
                 VStack(spacing: Spacing.lg) {
+                    // MARK: - Header
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Track & Optimize")
+                            .font(OnLifeFont.bodySmall())
+                            .foregroundColor(OnLifeColors.textSecondary)
+
+                        Text("Substances")
+                            .font(OnLifeFont.display())
+                            .foregroundColor(OnLifeColors.textPrimary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .opacity(contentAppeared ? 1 : 0)
+                    .offset(y: contentAppeared ? 0 : -10)
+
                     // SAFETY WARNINGS - Display at top when present
                     let warnings = tracker.getAllWarnings()
                     if !warnings.isEmpty {
@@ -44,6 +58,15 @@ struct SubstanceTrackingView: View {
                             warningLevel: tracker.getCaffeineWarningLevel()
                         )
                         .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    // SYNERGY INDICATOR - Prominent display when active
+                    if tracker.calculateSynergy() > 1.0 {
+                        SynergyIndicatorCard()
+                            .opacity(contentAppeared ? 1 : 0)
+                            .offset(y: contentAppeared ? 0 : 20)
+                            .transition(.scale.combined(with: .opacity))
+                            .animation(.spring(response: 0.4, dampingFraction: 0.7), value: tracker.calculateSynergy())
                     }
 
                     // Feature explanation card
@@ -103,8 +126,12 @@ struct SubstanceTrackingView: View {
                 .padding(.bottom, Spacing.xxl)
             }
         }
-        .navigationTitle("Substances")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .principal) {
+                EmptyView()
+            }
+        }
         .toolbarBackground(OnLifeColors.deepForest, for: .navigationBar)
         .toolbarBackground(.visible, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -689,6 +716,99 @@ struct WarningBannerView: View {
             return OnLifeColors.terracotta
         }
         return OnLifeColors.amber
+    }
+}
+
+// MARK: - Synergy Indicator Card
+
+struct SynergyIndicatorCard: View {
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            // Animated sparkle icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [Color.purple.opacity(0.2), Color.blue.opacity(0.2)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 56, height: 56)
+
+                Image(systemName: "sparkles")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [.purple, .blue],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+            }
+
+            // Text content
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(spacing: Spacing.xs) {
+                    Text("Synergy Active")
+                        .font(OnLifeFont.heading3())
+                        .foregroundColor(OnLifeColors.textPrimary)
+
+                    Text("+15%")
+                        .font(OnLifeFont.caption())
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, 2)
+                        .background(
+                            Capsule()
+                                .fill(
+                                    LinearGradient(
+                                        colors: [.purple, .blue],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                        )
+                }
+
+                Text("Caffeine + L-theanine working together")
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            Spacer()
+
+            // Checkmark indicator
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.green)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            Color.purple.opacity(0.08),
+                            Color.blue.opacity(0.08)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [.purple.opacity(0.3), .blue.opacity(0.3)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+        )
     }
 }
 

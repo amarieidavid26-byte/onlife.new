@@ -8,11 +8,13 @@ class OnboardingViewModel: ObservableObject {
     @Published var selectedIcon: String = "🌻"
     @Published var selectedPlantSpecies: PlantSpecies = .oak
     @Published var selectedDuration: Int = 30
+    @Published var wakeTime: Date = Calendar.current.date(from: DateComponents(hour: 7, minute: 0)) ?? Date()
+    @Published var sleepTime: Date = Calendar.current.date(from: DateComponents(hour: 23, minute: 0)) ?? Date()
 
     let availableIcons = ["🌻", "🌿", "🌳", "🌺", "🌸", "🌼", "🌷", "🌹", "🪴", "💐", "🌾", "🌱"]
 
     var progress: Double {
-        let total = 8.0
+        let total = 10.0
         let current = Double(currentScreen.rawValue + 1)
         return current / total
     }
@@ -40,6 +42,10 @@ class OnboardingViewModel: ObservableObject {
         // Save it using GardenDataManager
         GardenDataManager.shared.saveGarden(newGarden)
 
+        // Save wake/sleep times for chronotype inference
+        UserDefaults.standard.set(wakeTime, forKey: "userWakeTime")
+        UserDefaults.standard.set(sleepTime, forKey: "userBedtime")
+
         // Mark onboarding as complete
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
@@ -48,6 +54,8 @@ class OnboardingViewModel: ObservableObject {
         print("   Garden ID: \(newGarden.id)")
         print("   Default plant: \(selectedPlantSpecies.rawValue)")
         print("   Default duration: \(selectedDuration) min")
+        print("   Wake time: \(wakeTime)")
+        print("   Bedtime: \(sleepTime)")
     }
 }
 
@@ -59,5 +67,7 @@ enum OnboardingScreen: Int, CaseIterable {
     case plantSpecies = 4
     case durationPreferences = 5
     case trackingIntro = 6
-    case readyToStart = 7
+    case wakeSleepTime = 7
+    case healthKitPermission = 8
+    case readyToStart = 9
 }

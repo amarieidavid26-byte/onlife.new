@@ -67,6 +67,10 @@ struct OnboardingContainerView: View {
             DurationPreferencesScreen(viewModel: viewModel)
         case .trackingIntro:
             TrackingIntroScreen(viewModel: viewModel)
+        case .wakeSleepTime:
+            WakeSleepTimeScreen(viewModel: viewModel)
+        case .healthKitPermission:
+            HealthKitPermissionScreen(viewModel: viewModel)
         case .readyToStart:
             ReadyToStartScreen(viewModel: viewModel, hasCompletedOnboarding: $hasCompletedOnboarding)
         }

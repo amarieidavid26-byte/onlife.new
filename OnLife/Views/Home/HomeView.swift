@@ -8,6 +8,7 @@ struct HomeView: View {
     // Algorithm Engine Integrations
     private let gamificationEngine = GamificationEngine.shared
     @ObservedObject private var fatigueEngine = FatigueDetectionEngine.shared
+    @ObservedObject private var healthKitManager = HealthKitManager.shared
 
     @State private var showSessionInput = false
     @State private var selectedPlant: Plant? = nil
@@ -17,6 +18,7 @@ struct HomeView: View {
     @State private var gardenToDelete: Garden? = nil
     @State private var headerAppeared = false
     @State private var currentInsight: String? = nil
+    @State private var flowReadiness: Int = 0
 
     var body: some View {
         NavigationView {
@@ -166,9 +168,19 @@ struct HomeView: View {
             gardenViewModel.refreshGardens()
             sessionViewModel.currentGarden = gardenViewModel.selectedGarden
 
+            // Fetch sleep data from HealthKit
+            healthKitManager.fetchLastNightSleep()
+
+            // Calculate initial flow readiness
+            calculateFlowReadiness()
+
             withAnimation(OnLifeAnimation.elegant) {
                 headerAppeared = true
             }
+        }
+        .onChange(of: healthKitManager.lastNightSleep?.score) { _, _ in
+            // Recalculate when sleep data loads
+            calculateFlowReadiness()
         }
         .onChange(of: sessionViewModel.sessionPhase) { oldValue, newValue in
             if newValue == .input {
@@ -305,42 +317,93 @@ struct HomeView: View {
 
     private var flowReadinessSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Flow Readiness")
-                .font(OnLifeFont.heading3())
-                .foregroundColor(OnLifeColors.textPrimary)
-
-            HStack(spacing: Spacing.md) {
-                // Fatigue indicator
-                if let fatigue = fatigueEngine.currentFatigueLevel {
-                    HStack(spacing: Spacing.xs) {
-                        Text(fatigue.level.icon)
-                            .font(.system(size: 16))
-                        Text(fatigue.level.rawValue)
-                            .font(OnLifeFont.bodySmall())
-                            .foregroundColor(OnLifeColors.textSecondary)
-                    }
-                } else {
-                    HStack(spacing: Spacing.xs) {
-                        Text("⚡️")
-                            .font(.system(size: 16))
-                        Text("Ready to focus")
-                            .font(OnLifeFont.bodySmall())
-                            .foregroundColor(OnLifeColors.textSecondary)
-                    }
-                }
+            HStack {
+                Text("Flow Readiness")
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
                 Spacer()
 
-                // Caffeine indicator from pharmacokinetics
-                let caffeine = CorrectedPharmacokineticsEngine.shared.calculateActiveLevel(for: .caffeine)
-                if caffeine > 0 {
-                    HStack(spacing: Spacing.xs) {
-                        Text("☕️")
-                            .font(.system(size: 16))
-                        Text("\(Int(caffeine))mg")
+                // Score badge
+                Text("\(flowReadiness)%")
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(flowReadinessColor)
+            }
+
+            VStack(spacing: Spacing.sm) {
+                // Main readiness indicator
+                HStack(spacing: Spacing.md) {
+                    Text(flowReadinessEmoji)
+                        .font(.system(size: 28))
+
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text(flowReadinessTitle)
+                            .font(OnLifeFont.body())
+                            .fontWeight(.semibold)
+                            .foregroundColor(flowReadinessColor)
+
+                        Text(flowReadinessSubtitle)
                             .font(OnLifeFont.bodySmall())
                             .foregroundColor(OnLifeColors.textSecondary)
                     }
+
+                    Spacer()
+                }
+
+                Divider()
+                    .background(OnLifeColors.textTertiary.opacity(0.3))
+
+                // Contributing factors row
+                HStack(spacing: Spacing.md) {
+                    // Sleep quality indicator
+                    if let sleep = healthKitManager.lastNightSleep, sleep.totalHours > 0 {
+                        HStack(spacing: Spacing.xs) {
+                            Text(sleep.qualityEmoji)
+                                .font(.system(size: 14))
+                            Text("\(Int(sleep.score))")
+                                .font(OnLifeFont.caption())
+                                .foregroundColor(OnLifeColors.textSecondary)
+                        }
+                    } else {
+                        HStack(spacing: Spacing.xs) {
+                            Text("💤")
+                                .font(.system(size: 14))
+                            Text("--")
+                                .font(OnLifeFont.caption())
+                                .foregroundColor(OnLifeColors.textTertiary)
+                        }
+                    }
+
+                    // Fatigue indicator
+                    if let fatigue = fatigueEngine.currentFatigueLevel {
+                        HStack(spacing: Spacing.xs) {
+                            Text(fatigue.level.icon)
+                                .font(.system(size: 14))
+                            Text(fatigue.level.rawValue)
+                                .font(OnLifeFont.caption())
+                                .foregroundColor(OnLifeColors.textSecondary)
+                        }
+                    } else {
+                        HStack(spacing: Spacing.xs) {
+                            Text("⚡️")
+                                .font(.system(size: 14))
+                            Text("Fresh")
+                                .font(OnLifeFont.caption())
+                                .foregroundColor(OnLifeColors.textSecondary)
+                        }
+                    }
+
+                    // Caffeine level
+                    let caffeine = CorrectedPharmacokineticsEngine.shared.calculateActiveLevel(for: .caffeine)
+                    HStack(spacing: Spacing.xs) {
+                        Text("☕️")
+                            .font(.system(size: 14))
+                        Text(caffeine > 0 ? "\(Int(caffeine))mg" : "0mg")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
+
+                    Spacer()
                 }
             }
             .padding(Spacing.md)
@@ -348,6 +411,152 @@ struct HomeView: View {
                 RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                     .fill(OnLifeColors.cardBackground)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                    .stroke(flowReadinessColor.opacity(0.3), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Flow Readiness Calculation
+
+    private func calculateFlowReadiness() {
+        var score = 0.0
+
+        // 1. Sleep Quality (0-40 points) - 40% weight
+        if let sleep = healthKitManager.lastNightSleep, sleep.totalHours > 0 {
+            let sleepScore = sleep.score * 0.40
+            score += sleepScore
+            print("🎯 [FlowReadiness] Sleep: \(Int(sleep.score))/100 -> \(String(format: "%.1f", sleepScore)) points")
+        } else {
+            // Default moderate score if no sleep data
+            score += 25.0
+            print("🎯 [FlowReadiness] Sleep: No data -> 25 points (default)")
+        }
+
+        // 2. Fatigue Level (0-30 points) - 30% weight
+        let fatigueScore: Double
+        if let fatigue = fatigueEngine.currentFatigueLevel {
+            switch fatigue.level {
+            case .fresh:
+                fatigueScore = 30.0
+            case .mild:
+                fatigueScore = 25.0
+            case .moderate:
+                fatigueScore = 15.0
+            case .high:
+                fatigueScore = 8.0
+            case .severe:
+                fatigueScore = 3.0
+            }
+        } else {
+            // No fatigue detected = fresh
+            fatigueScore = 30.0
+        }
+        score += fatigueScore
+        print("🎯 [FlowReadiness] Fatigue: \(fatigueEngine.currentFatigueLevel?.level.rawValue ?? "Fresh") -> \(String(format: "%.1f", fatigueScore)) points")
+
+        // 3. Caffeine Timing (0-20 points) - 20% weight
+        let caffeineLevel = CorrectedPharmacokineticsEngine.shared.calculateActiveLevel(for: .caffeine)
+        let caffeineScore: Double
+        if caffeineLevel >= 50 && caffeineLevel <= 150 {
+            // Peak window - optimal
+            caffeineScore = 20.0
+        } else if caffeineLevel > 0 && caffeineLevel < 50 {
+            // Building up
+            caffeineScore = 12.0
+        } else if caffeineLevel > 150 && caffeineLevel <= 300 {
+            // Slightly too much
+            caffeineScore = 12.0
+        } else if caffeineLevel > 300 {
+            // Too much - jitters
+            caffeineScore = 5.0
+        } else {
+            // No caffeine is fine
+            caffeineScore = 15.0
+        }
+        score += caffeineScore
+        print("🎯 [FlowReadiness] Caffeine: \(Int(caffeineLevel))mg -> \(String(format: "%.1f", caffeineScore)) points")
+
+        // 4. Time of Day (0-10 points) - 10% weight
+        let calendar = Calendar.current
+        let currentHour = calendar.component(.hour, from: Date())
+        let timeScore: Double
+        if currentHour >= 9 && currentHour <= 11 {
+            // Morning peak
+            timeScore = 10.0
+        } else if currentHour >= 14 && currentHour <= 16 {
+            // Afternoon peak
+            timeScore = 10.0
+        } else if currentHour >= 12 && currentHour <= 13 {
+            // Post-lunch dip
+            timeScore = 5.0
+        } else if currentHour >= 7 && currentHour < 9 {
+            // Early morning warmup
+            timeScore = 7.0
+        } else if currentHour >= 17 && currentHour <= 19 {
+            // Evening wind-down
+            timeScore = 6.0
+        } else if currentHour >= 20 || currentHour <= 6 {
+            // Late night/early morning
+            timeScore = 3.0
+        } else {
+            timeScore = 7.0
+        }
+        score += timeScore
+        print("🎯 [FlowReadiness] Time: \(currentHour):00 -> \(String(format: "%.1f", timeScore)) points")
+
+        flowReadiness = Int(min(100, max(0, score)))
+        print("🎯 [FlowReadiness] TOTAL: \(flowReadiness)/100")
+    }
+
+    // MARK: - Flow Readiness Display Properties
+
+    private var flowReadinessEmoji: String {
+        if flowReadiness >= 80 {
+            return "⚡️"
+        } else if flowReadiness >= 60 {
+            return "🟢"
+        } else if flowReadiness >= 40 {
+            return "🟡"
+        } else {
+            return "🔴"
+        }
+    }
+
+    private var flowReadinessTitle: String {
+        if flowReadiness >= 80 {
+            return "Peak Performance"
+        } else if flowReadiness >= 60 {
+            return "Ready to Focus"
+        } else if flowReadiness >= 40 {
+            return "Moderate Readiness"
+        } else {
+            return "Recovery Recommended"
+        }
+    }
+
+    private var flowReadinessSubtitle: String {
+        if flowReadiness >= 80 {
+            return "Optimal conditions for deep work"
+        } else if flowReadiness >= 60 {
+            return "Good time to start a focus session"
+        } else if flowReadiness >= 40 {
+            return "Consider a caffeine boost or short break"
+        } else {
+            return "Rest or light tasks recommended"
+        }
+    }
+
+    private var flowReadinessColor: Color {
+        if flowReadiness >= 80 {
+            return OnLifeColors.sage
+        } else if flowReadiness >= 60 {
+            return .blue
+        } else if flowReadiness >= 40 {
+            return OnLifeColors.amber
+        } else {
+            return OnLifeColors.terracotta
         }
     }
 

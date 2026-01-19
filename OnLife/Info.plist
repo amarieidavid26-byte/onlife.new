@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSHealthShareUsageDescription</key>
+	<string>OnLife reads your sleep data to calculate optimal focus times and your heart rate to detect flow states during sessions.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>OnLife saves your focus sessions as mindful sessions in HealthKit.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
