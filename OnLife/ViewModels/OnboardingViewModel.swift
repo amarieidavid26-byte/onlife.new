@@ -14,7 +14,7 @@ class OnboardingViewModel: ObservableObject {
     let availableIcons = ["🌻", "🌿", "🌳", "🌺", "🌸", "🌼", "🌷", "🌹", "🪴", "💐", "🌾", "🌱"]
 
     var progress: Double {
-        let total = 10.0
+        let total = 11.0
         let current = Double(currentScreen.rawValue + 1)
         return current / total
     }
@@ -69,5 +69,6 @@ enum OnboardingScreen: Int, CaseIterable {
     case trackingIntro = 6
     case wakeSleepTime = 7
     case healthKitPermission = 8
-    case readyToStart = 9
+    case notificationPermission = 9
+    case readyToStart = 10
 }

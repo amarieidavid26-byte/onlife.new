@@ -71,6 +71,8 @@ struct OnboardingContainerView: View {
             WakeSleepTimeScreen(viewModel: viewModel)
         case .healthKitPermission:
             HealthKitPermissionScreen(viewModel: viewModel)
+        case .notificationPermission:
+            NotificationPermissionScreen(viewModel: viewModel)
         case .readyToStart:
             ReadyToStartScreen(viewModel: viewModel, hasCompletedOnboarding: $hasCompletedOnboarding)
         }
