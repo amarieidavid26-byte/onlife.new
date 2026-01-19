@@ -5,6 +5,7 @@ struct SessionHistoryView: View {
     @StateObject private var viewModel = SessionHistoryViewModel()
     @State private var contentAppeared = false
     @State private var sessionToDelete: FocusSession?
+    @State private var selectedSession: FocusSession?
 
     var body: some View {
         NavigationView {
@@ -84,6 +85,10 @@ struct SessionHistoryView: View {
                                     ) {
                                         sessionToDelete = session
                                     }
+                                    .onTapGesture {
+                                        Haptics.selection()
+                                        selectedSession = session
+                                    }
                                     .opacity(contentAppeared ? 1 : 0)
                                     .offset(y: contentAppeared ? 0 : 20)
                                     .animation(
@@ -137,6 +142,12 @@ struct SessionHistoryView: View {
             }
         } message: {
             Text("This action cannot be undone.")
+        }
+        .sheet(item: $selectedSession) { session in
+            SessionDetailView(
+                session: session,
+                gardenName: viewModel.gardenName(for: session.gardenId)
+            )
         }
     }
 }

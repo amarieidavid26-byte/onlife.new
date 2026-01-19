@@ -2,6 +2,7 @@ import SwiftUI
 
 struct FocusSessionView: View {
     @ObservedObject var viewModel: FocusSessionViewModel
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         ZStack {
@@ -20,6 +21,19 @@ struct FocusSessionView: View {
                 SessionCompletedScreen(viewModel: viewModel)
             case .abandoned:
                 SessionAbandonedScreen(viewModel: viewModel)
+            }
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            // Track app backgrounding/foregrounding during focus sessions
+            guard viewModel.sessionPhase == .focusing else { return }
+
+            switch newPhase {
+            case .background:
+                BehavioralFeatureCollector.shared.recordBackground()
+            case .active:
+                BehavioralFeatureCollector.shared.recordForeground()
+            default:
+                break
             }
         }
     }
@@ -53,6 +67,26 @@ struct SessionAbandonedScreen: View {
                     StatRow(label: "Goal", value: "\(viewModel.selectedDuration) min")
                 }
                 .padding(.horizontal, Spacing.xl)
+
+                // Screen Activity Summary (if any distractions)
+                let screenSummary = BehavioralFeatureCollector.shared.getScreenActivitySummary()
+                if screenSummary.significantDistractions > 0 {
+                    ScreenActivityCompactIndicator(
+                        summary: screenSummary,
+                        sessionDuration: viewModel.elapsedTime
+                    )
+                    .padding(.horizontal, Spacing.xl)
+                }
+
+                // App Switch Summary (if any switches)
+                let appSwitchAnalysis = BehavioralFeatureCollector.shared.getAppSwitchAnalysis()
+                if appSwitchAnalysis.totalSwitches > 0 {
+                    AppSwitchCompactIndicator(
+                        analysis: appSwitchAnalysis,
+                        sessionDuration: viewModel.elapsedTime
+                    )
+                    .padding(.horizontal, Spacing.xl)
+                }
             }
 
             Spacer()

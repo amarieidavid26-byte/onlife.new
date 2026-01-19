@@ -7,6 +7,9 @@ struct DurationChipSelector: View {
 
     let presetDurations = [15, 30, 45, 60]
 
+    /// Optional completion pattern for showing personalized recommendations
+    var completionPattern: CompletionPattern?
+
     private var isCustomSelected: Bool {
         showCustomDurationPicker || !presetDurations.contains(selectedDuration)
     }
@@ -51,6 +54,39 @@ struct DurationChipSelector: View {
                     insertion: .move(edge: .top).combined(with: .opacity),
                     removal: .opacity
                 ))
+            }
+
+            // Completion prediction (shows when pattern data is available)
+            if let pattern = completionPattern {
+                VStack(spacing: Spacing.sm) {
+                    HStack {
+                        DurationRecommendationBadge(
+                            requestedDuration: TimeInterval(selectedDuration * 60),
+                            pattern: pattern
+                        )
+
+                        Spacer()
+
+                        SweetSpotIndicator(
+                            selectedDuration: selectedDuration,
+                            pattern: pattern
+                        )
+                    }
+
+                    // Show recommendation text only when not in sweet spot
+                    let optimalMinutes = Int(pattern.optimalDuration / 60)
+                    if abs(selectedDuration - optimalMinutes) > 5 {
+                        Text(CompletionPatternAnalyzer.shared.generateRecommendation(
+                            requestedDuration: TimeInterval(selectedDuration * 60),
+                            pattern: pattern
+                        ))
+                        .font(OnLifeFont.caption())
+                        .foregroundColor(OnLifeColors.textSecondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .transition(.opacity)
+                    }
+                }
+                .animation(OnLifeAnimation.quick, value: selectedDuration)
             }
         }
         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: showCustomDurationPicker)
@@ -243,13 +279,50 @@ struct QuickAdjustButton: View {
 // MARK: - Preview
 
 #Preview {
-    ZStack {
+    let mockPattern = CompletionPattern(
+        optimalDuration: 30 * 60,
+        optimalHourOfDay: 9,
+        completionRateByDuration: [
+            .short: 0.85,
+            .medium: 0.72,
+            .long: 0.60,
+            .extended: 0.45
+        ],
+        completionRateByHour: [9: 0.88],
+        totalSessions: 45,
+        overallCompletionRate: 0.72,
+        confidence: 0.45
+    )
+
+    return ZStack {
         OnLifeColors.deepForest
             .ignoresSafeArea()
 
-        VStack {
+        VStack(spacing: Spacing.xl) {
+            Text("Without Pattern")
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textTertiary)
+
             DurationChipSelector(selectedDuration: .constant(30))
-                .padding()
+
+            Text("With Pattern (30 min - Sweet Spot)")
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textTertiary)
+
+            DurationChipSelector(
+                selectedDuration: .constant(30),
+                completionPattern: mockPattern
+            )
+
+            Text("With Pattern (60 min - Not Sweet Spot)")
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textTertiary)
+
+            DurationChipSelector(
+                selectedDuration: .constant(60),
+                completionPattern: mockPattern
+            )
         }
+        .padding()
     }
 }

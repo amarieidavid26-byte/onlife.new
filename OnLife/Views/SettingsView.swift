@@ -93,6 +93,16 @@ struct SettingsView: View {
                         .offset(y: contentAppeared ? 0 : 20)
                         .animation(OnLifeAnimation.elegant.delay(0.1), value: contentAppeared)
 
+                        // CHRONOTYPE Section
+                        if let chronotypeResult = ChronotypeInferenceEngine.shared.storedResult {
+                            SettingsSection(title: "YOUR CHRONOTYPE") {
+                                ChronotypeDisplayCard(result: chronotypeResult)
+                            }
+                            .opacity(contentAppeared ? 1 : 0)
+                            .offset(y: contentAppeared ? 0 : 20)
+                            .animation(OnLifeAnimation.elegant.delay(0.12), value: contentAppeared)
+                        }
+
                         // ACCOUNT Section
                         SettingsSection(title: "ACCOUNT") {
                             VStack(spacing: 0) {
@@ -465,5 +475,106 @@ struct SettingsRowButtonStyle: ButtonStyle {
         configuration.label
             .background(configuration.isPressed ? OnLifeColors.surface : Color.clear)
             .animation(OnLifeAnimation.quick, value: configuration.isPressed)
+    }
+}
+
+// MARK: - Chronotype Display Card
+
+struct ChronotypeDisplayCard: View {
+    let result: ChronotypeInferenceResult
+
+    var body: some View {
+        VStack(spacing: Spacing.md) {
+            // Main chronotype display
+            HStack(spacing: Spacing.md) {
+                Text(result.chronotype.icon)
+                    .font(.system(size: 48))
+
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    HStack(spacing: Spacing.sm) {
+                        Text(result.chronotype.shortName)
+                            .font(OnLifeFont.heading2())
+                            .foregroundColor(OnLifeColors.textPrimary)
+
+                        // Confidence badge
+                        Text(result.confidence.rawValue)
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(confidenceColor)
+                            .padding(.horizontal, Spacing.sm)
+                            .padding(.vertical, 2)
+                            .background(
+                                RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                                    .fill(confidenceColor.opacity(0.15))
+                            )
+                    }
+
+                    Text(result.chronotype.description)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
+                Spacer()
+            }
+            .padding(Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                    .fill(OnLifeColors.surface.opacity(0.5))
+            )
+
+            // Peak performance time
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "clock.fill")
+                    .foregroundColor(OnLifeColors.sage)
+                    .font(.system(size: 14))
+
+                Text("Peak Performance: \(formatHourRange(result.chronotype.peakWindow))")
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
+
+                Spacer()
+            }
+
+            // Circadian dip warning
+            HStack(spacing: Spacing.sm) {
+                Image(systemName: "moon.zzz.fill")
+                    .foregroundColor(OnLifeColors.amber)
+                    .font(.system(size: 14))
+
+                Text("Energy Dip: \(formatHourRange(result.chronotype.circadianDip))")
+                    .font(OnLifeFont.bodySmall())
+                    .foregroundColor(OnLifeColors.textSecondary)
+
+                Spacer()
+            }
+
+            // Recommendation
+            if !result.recommendation.isEmpty {
+                Text(result.recommendation)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textTertiary)
+                    .padding(.top, Spacing.xs)
+            }
+        }
+        .padding(Spacing.md)
+    }
+
+    private var confidenceColor: Color {
+        switch result.confidence {
+        case .low: return OnLifeColors.amber
+        case .medium: return OnLifeColors.sage
+        case .high: return .green
+        }
+    }
+
+    private func formatHourRange(_ range: (start: Int, end: Int)) -> String {
+        return "\(formatHour(range.start)) - \(formatHour(range.end))"
+    }
+
+    private func formatHour(_ hour: Int) -> String {
+        if hour == 0 { return "12 AM" }
+        if hour == 12 { return "12 PM" }
+        if hour < 12 { return "\(hour) AM" }
+        return "\(hour - 12) PM"
     }
 }

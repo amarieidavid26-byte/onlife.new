@@ -7,12 +7,24 @@ struct SessionCompletedScreen: View {
     @State private var showSparkles: Bool = false
     @State private var showRewards: Bool = false
     @State private var orbsAnimated: Int = 0
+    @State private var showBonusAnimation: Bool = false
+    @State private var variableRewardResult: VariableRewardSystem.VariableRewardResult?
 
     var body: some View {
         ZStack {
             // Confetti layer
             if showConfetti {
                 ConfettiView()
+            }
+
+            // Bonus reward celebration overlay
+            if showBonusAnimation, let result = variableRewardResult, result.wasBonus {
+                BonusRewardAnimation(result: result) {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        showBonusAnimation = false
+                    }
+                }
+                .zIndex(100) // Ensure it's above everything
             }
 
             VStack(spacing: Spacing.xxxl) {
@@ -50,6 +62,30 @@ struct SessionCompletedScreen: View {
                 if showRewards, let reward = viewModel.sessionReward {
                     rewardsSection(reward: reward)
                         .transition(.opacity.combined(with: .scale))
+                }
+
+                // Screen Activity Summary
+                if showRewards {
+                    let screenSummary = BehavioralFeatureCollector.shared.getScreenActivitySummary()
+                    if screenSummary.totalScreenOffEvents > 0 {
+                        ScreenActivityCompactIndicator(
+                            summary: screenSummary,
+                            sessionDuration: viewModel.elapsedTime
+                        )
+                        .padding(.horizontal, Spacing.xl)
+                        .transition(.opacity.combined(with: .scale))
+                    }
+
+                    // App Switch Summary
+                    let appSwitchAnalysis = BehavioralFeatureCollector.shared.getAppSwitchAnalysis()
+                    if appSwitchAnalysis.totalSwitches > 0 {
+                        AppSwitchCompactIndicator(
+                            analysis: appSwitchAnalysis,
+                            sessionDuration: viewModel.elapsedTime
+                        )
+                        .padding(.horizontal, Spacing.xl)
+                        .transition(.opacity.combined(with: .scale))
+                    }
                 }
 
                 VStack(spacing: Spacing.md) {
@@ -107,8 +143,66 @@ struct SessionCompletedScreen: View {
                 }
                 // Animate orbs counter
                 animateOrbsCounter()
+
+                // Check for variable reward bonus
+                checkForBonusReward()
+
+                // Revive all plants in the garden (Loss Aversion mechanic)
+                reviveGardenPlants()
+
+                // Record streak (Duolingo-inspired freeze mechanics)
+                recordStreak()
             }
         }
+    }
+
+    // MARK: - Plant Health Revival
+
+    private func reviveGardenPlants() {
+        // Revive all tracked plants when completing a session
+        // This is the "soft" loss aversion - plants can always be rescued
+        PlantHealthManager.shared.careForAllPlants()
+    }
+
+    // MARK: - Streak Recording
+
+    private func recordStreak() {
+        // Record session completion for streak tracking
+        // Auto-uses freeze if missed a day (Duolingo research: 18% better retention)
+        StreakManager.shared.recordSession()
+    }
+
+    // MARK: - Variable Reward Integration
+
+    private func checkForBonusReward() {
+        guard let reward = viewModel.sessionReward else { return }
+
+        // Convert to VariableRewardResult for celebration display
+        let result = VariableRewardSystem.VariableRewardResult(
+            baseOrbs: reward.baseOrbs,
+            bonusOrbs: reward.bonusOrbs,
+            multiplier: extractMultiplier(from: reward),
+            specialRewards: reward.specialRewards,
+            celebrationMessage: reward.celebrationMessage
+        )
+
+        variableRewardResult = result
+
+        // Show bonus animation if bonus was triggered
+        if result.wasBonus {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                showBonusAnimation = true
+            }
+        }
+    }
+
+    private func extractMultiplier(from reward: SessionRewardResult) -> Double? {
+        for specialReward in reward.specialRewards {
+            if case .bonusMultiplier(let mult) = specialReward {
+                return mult
+            }
+        }
+        return reward.hasBonus ? 1.5 : nil // Default multiplier if bonus but no specific multiplier
     }
 
     // MARK: - Rewards Section

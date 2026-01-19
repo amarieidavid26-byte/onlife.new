@@ -46,6 +46,19 @@ class OnboardingViewModel: ObservableObject {
         UserDefaults.standard.set(wakeTime, forKey: "userWakeTime")
         UserDefaults.standard.set(sleepTime, forKey: "userBedtime")
 
+        // Infer and save chronotype from wake/sleep times
+        let wakeHour = Calendar.current.component(.hour, from: wakeTime)
+        let sleepHour = Calendar.current.component(.hour, from: sleepTime)
+
+        let quickAssessment = ChronotypeQuickAssessment(
+            preferredWakeTime: wakeHour,
+            preferredSleepTime: sleepHour,
+            selfPerceivedType: inferSelfPerception(wakeHour: wakeHour),
+            bestFocusTime: inferFocusTimePref(wakeHour: wakeHour)
+        )
+
+        let chronotypeResult = ChronotypeInferenceEngine.shared.inferFromQuickAssessment(quickAssessment)
+
         // Mark onboarding as complete
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
 
@@ -56,6 +69,28 @@ class OnboardingViewModel: ObservableObject {
         print("   Default duration: \(selectedDuration) min")
         print("   Wake time: \(wakeTime)")
         print("   Bedtime: \(sleepTime)")
+        print("   Chronotype: \(chronotypeResult.chronotype.rawValue) \(chronotypeResult.chronotype.icon)")
+    }
+
+    // MARK: - Chronotype Helpers
+
+    private func inferSelfPerception(wakeHour: Int) -> ChronotypeQuickAssessment.SelfPerception {
+        if wakeHour <= 6 {
+            return .morning
+        } else if wakeHour >= 9 {
+            return .evening
+        }
+        return .neither
+    }
+
+    private func inferFocusTimePref(wakeHour: Int) -> ChronotypeQuickAssessment.FocusTimePref {
+        if wakeHour <= 6 {
+            return .morning
+        } else if wakeHour <= 8 {
+            return .afternoon
+        } else {
+            return .evening
+        }
     }
 }
 

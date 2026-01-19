@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Combine
+import UIKit
 
 // MARK: - Focus Session ViewModel
 /// Manages focus session state with integrated flow detection, biometrics, and gamification
@@ -82,6 +83,10 @@ class FocusSessionViewModel: ObservableObject {
 
     private var flowScoreHistory: [Double] = []
 
+    // MARK: - Screen Activity Tracking
+
+    private var screenActivityObservers: [NSObjectProtocol] = []
+
     // MARK: - Initialization
 
     init() {
@@ -123,6 +128,51 @@ class FocusSessionViewModel: ObservableObject {
                 self?.isWatchConnected = status.isUsable
             }
             .store(in: &cancellables)
+    }
+
+    // MARK: - Screen Activity Tracking
+
+    /// Setup observers to track screen lock/unlock events during session
+    /// Research: Screen-off >30 seconds correlates with loss of flow state
+    private func setupScreenActivityTracking() {
+        let notificationCenter = NotificationCenter.default
+
+        // Screen locked (protected data will become unavailable)
+        let lockObserver = notificationCenter.addObserver(
+            forName: UIApplication.protectedDataWillBecomeUnavailableNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard self?.isSessionActive == true else { return }
+            BehavioralFeatureCollector.shared.recordScreenOff()
+        }
+
+        // Screen unlocked (protected data became available)
+        let unlockObserver = notificationCenter.addObserver(
+            forName: UIApplication.protectedDataDidBecomeAvailableNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard self?.isSessionActive == true else { return }
+            BehavioralFeatureCollector.shared.recordScreenOn()
+        }
+
+        screenActivityObservers = [lockObserver, unlockObserver]
+
+        print("📱 [Session] Screen activity tracking enabled")
+    }
+
+    /// Remove screen activity observers when session ends
+    private func removeScreenActivityTracking() {
+        let notificationCenter = NotificationCenter.default
+
+        for observer in screenActivityObservers {
+            notificationCenter.removeObserver(observer)
+        }
+
+        screenActivityObservers.removeAll()
+
+        print("📱 [Session] Screen activity tracking disabled")
     }
 
     // MARK: - Session Lifecycle
@@ -183,6 +233,14 @@ class FocusSessionViewModel: ObservableObject {
         flowScoreHistory = []
 
         AudioManager.shared.play(.growthTick, volume: 0.4)
+
+        // Start behavioral tracking
+        let sessions = GardenDataManager.shared.loadSessions()
+        behavioralCollector.loadHistoricalContext(from: sessions)
+        behavioralCollector.startSession(targetDuration: plannedDuration)
+
+        // Start screen activity tracking for distraction detection
+        setupScreenActivityTracking()
 
         // Start Watch session for biometrics
         watchBridge.startWatchSession(duration: plannedDuration)
@@ -365,6 +423,9 @@ class FocusSessionViewModel: ObservableObject {
         timer = nil
         HapticManager.shared.impact(style: .medium)
 
+        // Track behavioral pause
+        behavioralCollector.pauseSession()
+
         print("⏸️ [Session] Paused (count: \(pauseCount))")
     }
 
@@ -376,6 +437,9 @@ class FocusSessionViewModel: ObservableObject {
             totalPauseTime += Date().timeIntervalSince(pauseStart)
         }
         pauseStartTime = nil
+
+        // Track behavioral resume
+        behavioralCollector.resumeSession()
 
         startTimer()
         HapticManager.shared.impact(style: .medium)
@@ -393,6 +457,13 @@ class FocusSessionViewModel: ObservableObject {
 
         // Stop Watch session
         watchBridge.stopWatchSession()
+
+        // Stop screen activity tracking
+        removeScreenActivityTracking()
+
+        // End behavioral tracking
+        let completed = elapsedTime >= plannedDuration * 0.8
+        let _ = behavioralCollector.endSession(completed: completed)
 
         if elapsedTime >= plannedDuration * 0.8 {
             // Session was successful
@@ -555,6 +626,9 @@ class FocusSessionViewModel: ObservableObject {
         flowScoreHistory = []
         pauseCount = 0
         totalPauseTime = 0
+
+        // Reset all behavioral tracking (screen, app switches)
+        behavioralCollector.resetAllTracking()
 
         timer?.invalidate()
         timer = nil

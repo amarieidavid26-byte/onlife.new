@@ -3,6 +3,10 @@ import SwiftUI
 struct AnalyticsView: View {
     @StateObject private var viewModel = AnalyticsViewModel()
     @State private var appeared = false
+    @State private var peakWindows: [PerformanceAnalyzer.PerformanceWindow] = []
+    @State private var chronotypeAlignment: ChronotypeAlignment?
+    @State private var completionPattern: CompletionPattern?
+    @State private var earlyQuitAnalysis: EarlyQuitAnalysis?
 
     var body: some View {
         ZStack {
@@ -32,11 +36,40 @@ struct AnalyticsView: View {
                         StatsGridView(viewModel: viewModel, appeared: appeared)
                             .padding(.horizontal, Spacing.lg)
 
+                        // Flow Score History Chart
+                        FlowScoreChartView(sessions: viewModel.sessions)
+                            .padding(.horizontal, Spacing.lg)
+                            .opacity(appeared ? 1 : 0)
+                            .offset(y: appeared ? 0 : 20)
+                            .animation(OnLifeAnimation.elegant.delay(0.08), value: appeared)
+
+                        // Weekly Stats Dashboard
+                        WeeklyStatsSummary(sessions: viewModel.sessions, appeared: appeared)
+                            .padding(.horizontal, Spacing.lg)
+
                         // AI Insight Card
                         AIInsightCardView(viewModel: viewModel)
                             .padding(.horizontal, Spacing.lg)
                             .opacity(appeared ? 1 : 0)
                             .offset(y: appeared ? 0 : 20)
+
+                        // Peak Performance Windows
+                        PeakPerformanceCard(
+                            windows: peakWindows,
+                            alignment: chronotypeAlignment
+                        )
+                        .padding(.horizontal, Spacing.lg)
+                        .opacity(appeared ? 1 : 0)
+                        .offset(y: appeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.12), value: appeared)
+
+                        // Completion Pattern Analysis
+                        CompletionPatternCard(
+                            pattern: completionPattern,
+                            earlyQuitAnalysis: earlyQuitAnalysis,
+                            appeared: appeared
+                        )
+                        .padding(.horizontal, Spacing.lg)
 
                         // Smart Insights Section
                         if !viewModel.cachedInsights.isEmpty {
@@ -93,7 +126,37 @@ struct AnalyticsView: View {
             withAnimation(OnLifeAnimation.elegant) {
                 appeared = true
             }
+            analyzePeakPerformance()
+            analyzeCompletionPatterns()
         }
+    }
+
+    // MARK: - Peak Performance Analysis
+
+    private func analyzePeakPerformance() {
+        peakWindows = PerformanceAnalyzer.shared.identifyPeakWindows(
+            sessions: viewModel.sessions
+        )
+
+        // Get stored chronotype and compare
+        if let chronotypeResult = ChronotypeInferenceEngine.shared.storedResult {
+            chronotypeAlignment = PerformanceAnalyzer.shared.compareToChronotype(
+                peakWindows: peakWindows,
+                chronotype: chronotypeResult.chronotype
+            )
+        }
+    }
+
+    // MARK: - Completion Pattern Analysis
+
+    private func analyzeCompletionPatterns() {
+        completionPattern = CompletionPatternAnalyzer.shared.analyzeCompletionPatterns(
+            sessions: viewModel.sessions
+        )
+
+        earlyQuitAnalysis = CompletionPatternAnalyzer.shared.identifyEarlyQuitPattern(
+            sessions: viewModel.sessions
+        )
     }
 }
 
@@ -701,6 +764,242 @@ struct GardenBarRow: View {
             }
             .frame(height: 8)
         }
+    }
+}
+
+// MARK: - Weekly Stats Summary
+
+struct WeeklyStatsSummary: View {
+    @StateObject private var viewModel = SessionAnalyticsViewModel()
+    let sessions: [FocusSession]
+    let appeared: Bool
+    @State private var sectionAppeared = false
+
+    var body: some View {
+        VStack(spacing: Spacing.md) {
+            // Header with period selector
+            HStack {
+                Text("Detailed Stats")
+                    .font(OnLifeFont.heading2())
+                    .foregroundColor(OnLifeColors.textPrimary)
+
+                Spacer()
+
+                Picker("Period", selection: $viewModel.selectedPeriod) {
+                    ForEach(SessionAnalyticsViewModel.AnalyticsPeriod.allCases, id: \.self) { period in
+                        Text(periodShortLabel(period)).tag(period)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .frame(width: 180)
+            }
+            .opacity(sectionAppeared ? 1 : 0)
+            .offset(y: sectionAppeared ? 0 : 10)
+
+            if let stats = viewModel.stats {
+                // Streaks row
+                HStack(spacing: Spacing.md) {
+                    StreakMiniCard(
+                        value: stats.currentStreak,
+                        label: "Current Streak",
+                        icon: "flame.fill",
+                        color: OnLifeColors.amber
+                    )
+
+                    StreakMiniCard(
+                        value: stats.longestStreak,
+                        label: "Best Streak",
+                        icon: "trophy.fill",
+                        color: OnLifeColors.sage
+                    )
+                }
+                .opacity(sectionAppeared ? 1 : 0)
+                .offset(y: sectionAppeared ? 0 : 10)
+                .animation(OnLifeAnimation.elegant.delay(0.05), value: sectionAppeared)
+
+                // Best times row
+                HStack(spacing: Spacing.md) {
+                    BestTimeMiniCard(
+                        value: stats.bestDayOfWeek,
+                        label: "Best Day",
+                        icon: "calendar",
+                        color: .yellow
+                    )
+
+                    BestTimeMiniCard(
+                        value: formatHour(stats.bestHourOfDay),
+                        label: "Peak Hour",
+                        icon: "clock.fill",
+                        color: .green
+                    )
+                }
+                .opacity(sectionAppeared ? 1 : 0)
+                .offset(y: sectionAppeared ? 0 : 10)
+                .animation(OnLifeAnimation.elegant.delay(0.1), value: sectionAppeared)
+
+                // Completion & flow row
+                HStack(spacing: Spacing.md) {
+                    StatsCard(
+                        icon: "percent",
+                        title: "Completion",
+                        value: stats.completionRatePercentage,
+                        subtitle: "\(stats.completedSessions)/\(stats.totalSessions)",
+                        color: stats.completionRate >= 0.7 ? .green : OnLifeColors.amber
+                    )
+
+                    StatsCard(
+                        icon: "waveform.path.ecg",
+                        title: "Avg Flow",
+                        value: stats.averageFlowScoreFormatted,
+                        subtitle: flowLabel(stats.averageFlowScore),
+                        color: flowColor(stats.averageFlowScore)
+                    )
+                }
+                .opacity(sectionAppeared ? 1 : 0)
+                .offset(y: sectionAppeared ? 0 : 10)
+                .animation(OnLifeAnimation.elegant.delay(0.15), value: sectionAppeared)
+
+                // Day of week heatmap
+                if !stats.dayOfWeekDistribution.isEmpty {
+                    DayOfWeekHeatmap(distribution: stats.dayOfWeekDistribution)
+                        .opacity(sectionAppeared ? 1 : 0)
+                        .offset(y: sectionAppeared ? 0 : 10)
+                        .animation(OnLifeAnimation.elegant.delay(0.2), value: sectionAppeared)
+                }
+
+                // Time of day heatmap
+                if !stats.timeOfDayDistribution.isEmpty {
+                    TimeOfDayHeatmap(distribution: stats.timeOfDayDistribution)
+                        .opacity(sectionAppeared ? 1 : 0)
+                        .offset(y: sectionAppeared ? 0 : 10)
+                        .animation(OnLifeAnimation.elegant.delay(0.25), value: sectionAppeared)
+                }
+            }
+        }
+        .onAppear {
+            viewModel.calculateStats(from: sessions)
+            withAnimation(OnLifeAnimation.elegant.delay(0.1)) {
+                sectionAppeared = true
+            }
+        }
+        .onChange(of: viewModel.selectedPeriod) { _, _ in
+            viewModel.calculateStats(from: sessions)
+        }
+    }
+
+    private func periodShortLabel(_ period: SessionAnalyticsViewModel.AnalyticsPeriod) -> String {
+        switch period {
+        case .week: return "7d"
+        case .month: return "30d"
+        case .allTime: return "All"
+        }
+    }
+
+    private func formatHour(_ hour: Int) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h a"
+        let date = Calendar.current.date(bySettingHour: hour, minute: 0, second: 0, of: Date()) ?? Date()
+        return formatter.string(from: date)
+    }
+
+    private func flowColor(_ score: Double) -> Color {
+        switch score {
+        case 80...100: return .green
+        case 60..<80: return OnLifeColors.sage
+        case 40..<60: return OnLifeColors.amber
+        default: return OnLifeColors.terracotta
+        }
+    }
+
+    private func flowLabel(_ score: Double) -> String {
+        switch score {
+        case 80...100: return "Excellent"
+        case 60..<80: return "Good"
+        case 40..<60: return "Fair"
+        default: return "Building"
+        }
+    }
+}
+
+// MARK: - Streak Mini Card
+
+struct StreakMiniCard: View {
+    let value: Int
+    let label: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(color)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(value)")
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .foregroundColor(OnLifeColors.textPrimary)
+                Text(label)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
+    }
+}
+
+// MARK: - Best Time Mini Card
+
+struct BestTimeMiniCard: View {
+    let value: String
+    let label: String
+    let icon: String
+    let color: Color
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 44, height: 44)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20))
+                    .foregroundColor(color)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(OnLifeColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                Text(label)
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(Spacing.md)
+        .frame(maxWidth: .infinity)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
     }
 }
 

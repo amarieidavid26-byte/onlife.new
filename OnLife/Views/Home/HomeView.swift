@@ -9,8 +9,11 @@ struct HomeView: View {
     private let gamificationEngine = GamificationEngine.shared
     @ObservedObject private var fatigueEngine = FatigueDetectionEngine.shared
     @ObservedObject private var healthKitManager = HealthKitManager.shared
+    @ObservedObject private var plantHealthManager = PlantHealthManager.shared
+    @ObservedObject private var streakManager = StreakManager.shared
 
     @State private var showSessionInput = false
+    @State private var showRescueSheet = false
     @State private var selectedPlant: Plant? = nil
     @State private var showCreateGarden = false
     @State private var editingGarden: Garden? = nil
@@ -19,6 +22,7 @@ struct HomeView: View {
     @State private var headerAppeared = false
     @State private var currentInsight: String? = nil
     @State private var flowReadiness: Int = 0
+    @State private var behavioralAssessment: BehavioralFlowDetector.ReadinessAssessment?
 
     var body: some View {
         NavigationView {
@@ -44,6 +48,15 @@ struct HomeView: View {
                             // MARK: - Stats & Streak Section
                             statsSection
                                 .padding(.horizontal, Spacing.lg)
+
+                            // MARK: - Garden Health Card (Loss Aversion)
+                            if plantHealthManager.gardenHealthSummary != nil {
+                                GardenHealthCard(onTapRescue: {
+                                    showRescueSheet = true
+                                    Haptics.warning()
+                                })
+                                .padding(.horizontal, Spacing.lg)
+                            }
 
                             // MARK: - AI Insight Card (if available)
                             if let insight = currentInsight {
@@ -154,6 +167,31 @@ struct HomeView: View {
                 )
             )
         }
+        .sheet(isPresented: $showRescueSheet) {
+            PlantRescueView(
+                plantsToRescue: plantHealthManager.getCriticalPlants(),
+                onStartSession: {
+                    showSessionInput = true
+                }
+            )
+        }
+        .overlay {
+            // Streak saved alert (freeze used)
+            if streakManager.showStreakSavedAlert {
+                StreakSavedAlert(
+                    isPresented: $streakManager.showStreakSavedAlert,
+                    freezesRemaining: streakManager.streakData.freezesAvailable,
+                    currentStreak: streakManager.streakData.currentStreak
+                )
+            }
+
+            // Streak milestone celebration
+            if let milestone = streakManager.recentMilestone {
+                StreakMilestoneAlert(milestone: milestone) {
+                    streakManager.recentMilestone = nil
+                }
+            }
+        }
         .alert("Delete Garden", isPresented: $showDeleteAlert, presenting: gardenToDelete) { garden in
             Button("Cancel", role: .cancel) { }
             Button("Delete", role: .destructive) {
@@ -173,6 +211,14 @@ struct HomeView: View {
 
             // Calculate initial flow readiness
             calculateFlowReadiness()
+            updateBehavioralAssessment()
+
+            // Update plant health tracking
+            syncPlantHealthTracking()
+            plantHealthManager.updateAllPlantHealth()
+
+            // Check for streak freeze refresh (monthly)
+            streakManager.checkMonthlyRefresh()
 
             withAnimation(OnLifeAnimation.elegant) {
                 headerAppeared = true
@@ -181,6 +227,7 @@ struct HomeView: View {
         .onChange(of: healthKitManager.lastNightSleep?.score) { _, _ in
             // Recalculate when sleep data loads
             calculateFlowReadiness()
+            updateBehavioralAssessment()
         }
         .onChange(of: sessionViewModel.sessionPhase) { oldValue, newValue in
             if newValue == .input {
@@ -415,6 +462,18 @@ struct HomeView: View {
                 RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                     .stroke(flowReadinessColor.opacity(0.3), lineWidth: 1)
             )
+
+            // Optimal Focus Time Card (if chronotype available)
+            if let chronotypeResult = ChronotypeInferenceEngine.shared.storedResult {
+                OptimalFocusTimeCard(chronotypeResult: chronotypeResult)
+            }
+
+            // Behavioral Flow Insights (for users building history)
+            if let assessment = behavioralAssessment,
+               BehavioralFeatureCollector.shared.currentFeatures.consecutiveDays > 0 ||
+               BehavioralFeatureCollector.shared.currentFeatures.completionRateLast7Days > 0 {
+                BehavioralInsightRow(assessment: assessment, features: BehavioralFeatureCollector.shared.currentFeatures)
+            }
         }
     }
 
@@ -478,36 +537,78 @@ struct HomeView: View {
         score += caffeineScore
         print("🎯 [FlowReadiness] Caffeine: \(Int(caffeineLevel))mg -> \(String(format: "%.1f", caffeineScore)) points")
 
-        // 4. Time of Day (0-10 points) - 10% weight
+        // 4. Time of Day with Chronotype (0-10 points) - 10% weight
         let calendar = Calendar.current
         let currentHour = calendar.component(.hour, from: Date())
-        let timeScore: Double
-        if currentHour >= 9 && currentHour <= 11 {
-            // Morning peak
-            timeScore = 10.0
-        } else if currentHour >= 14 && currentHour <= 16 {
-            // Afternoon peak
-            timeScore = 10.0
-        } else if currentHour >= 12 && currentHour <= 13 {
-            // Post-lunch dip
-            timeScore = 5.0
-        } else if currentHour >= 7 && currentHour < 9 {
-            // Early morning warmup
-            timeScore = 7.0
-        } else if currentHour >= 17 && currentHour <= 19 {
-            // Evening wind-down
-            timeScore = 6.0
-        } else if currentHour >= 20 || currentHour <= 6 {
-            // Late night/early morning
-            timeScore = 3.0
+        var timeScore: Double = 7.0 // Default
+
+        // Use chronotype if available for personalized scoring
+        if let chronotypeResult = ChronotypeInferenceEngine.shared.storedResult {
+            let chronotype = chronotypeResult.chronotype
+            let multiplier = ChronotypeInferenceEngine.shared.getCircadianMultiplier(
+                chronotype: chronotype,
+                hour: currentHour
+            )
+
+            // Base score of 7, adjusted by circadian multiplier (0.75-1.1)
+            timeScore = 7.0 * multiplier
+
+            // Bonus if in peak window
+            if ChronotypeInferenceEngine.shared.isOptimalTime(chronotype: chronotype) {
+                timeScore = 10.0
+            }
+
+            print("🎯 [FlowReadiness] Time: \(currentHour):00 (Chronotype: \(chronotype.shortName), multiplier: \(String(format: "%.2f", multiplier))) -> \(String(format: "%.1f", timeScore)) points")
         } else {
-            timeScore = 7.0
+            // Fallback to generic time-of-day scoring
+            if currentHour >= 9 && currentHour <= 11 {
+                timeScore = 10.0
+            } else if currentHour >= 14 && currentHour <= 16 {
+                timeScore = 10.0
+            } else if currentHour >= 12 && currentHour <= 13 {
+                timeScore = 5.0
+            } else if currentHour >= 7 && currentHour < 9 {
+                timeScore = 7.0
+            } else if currentHour >= 17 && currentHour <= 19 {
+                timeScore = 6.0
+            } else if currentHour >= 20 || currentHour <= 6 {
+                timeScore = 3.0
+            }
+            print("🎯 [FlowReadiness] Time: \(currentHour):00 (No chronotype) -> \(String(format: "%.1f", timeScore)) points")
         }
         score += timeScore
-        print("🎯 [FlowReadiness] Time: \(currentHour):00 -> \(String(format: "%.1f", timeScore)) points")
 
         flowReadiness = Int(min(100, max(0, score)))
         print("🎯 [FlowReadiness] TOTAL: \(flowReadiness)/100")
+    }
+
+    // MARK: - Plant Health Sync
+
+    private func syncPlantHealthTracking() {
+        // Sync plant health tracking with actual plants in gardens
+        for garden in gardenViewModel.gardens {
+            let plants = gardenViewModel.plants(for: garden.id)
+            for plant in plants {
+                plantHealthManager.trackPlant(id: plant.id)
+            }
+        }
+    }
+
+    // MARK: - Behavioral Flow Assessment
+
+    private func updateBehavioralAssessment() {
+        // Collect behavioral features from session history
+        BehavioralFeatureCollector.shared.analyzePreSession(
+            sessions: GardenDataManager.shared.loadSessions()
+        )
+
+        // Generate assessment
+        let features = BehavioralFeatureCollector.shared.currentFeatures
+        behavioralAssessment = BehavioralFlowDetector.shared.assessReadiness(features: features)
+
+        if let assessment = behavioralAssessment {
+            print("📊 [BehavioralFlow] Score: \(Int(assessment.flowProbability)), Level: \(assessment.level.rawValue)")
+        }
     }
 
     // MARK: - Flow Readiness Display Properties
@@ -560,6 +661,164 @@ struct HomeView: View {
         }
     }
 
+}
+
+// MARK: - Optimal Focus Time Card
+
+struct OptimalFocusTimeCard: View {
+    let chronotypeResult: ChronotypeInferenceResult
+
+    private var isInOptimalWindow: Bool {
+        ChronotypeInferenceEngine.shared.isOptimalTime(chronotype: chronotypeResult.chronotype)
+    }
+
+    private var focusRecommendation: String {
+        if isInOptimalWindow {
+            return "Now is your optimal focus time!"
+        }
+
+        if let nextWindow = ChronotypeInferenceEngine.shared.getNextOptimalWindow(
+            chronotype: chronotypeResult.chronotype
+        ) {
+            let calendar = Calendar.current
+            let now = Date()
+            let hoursUntil = calendar.dateComponents([.hour, .minute], from: now, to: nextWindow)
+
+            if let hours = hoursUntil.hour, let minutes = hoursUntil.minute {
+                if hours > 0 {
+                    return "Optimal window in \(hours)h \(minutes)m"
+                } else if minutes > 0 {
+                    return "Optimal window in \(minutes)m"
+                }
+            }
+        }
+
+        return "Check back for your next optimal window"
+    }
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            // Chronotype icon
+            Text(chronotypeResult.chronotype.icon)
+                .font(.system(size: 32))
+
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack(spacing: Spacing.sm) {
+                    Text("Optimal Focus Time")
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+
+                    if isInOptimalWindow {
+                        Text("NOW")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(
+                                Capsule()
+                                    .fill(OnLifeColors.sage)
+                            )
+                    }
+                }
+
+                Text(focusRecommendation)
+                    .font(OnLifeFont.body())
+                    .fontWeight(.medium)
+                    .foregroundColor(isInOptimalWindow ? OnLifeColors.sage : OnLifeColors.textPrimary)
+            }
+
+            Spacer()
+
+            // Arrow or checkmark
+            Image(systemName: isInOptimalWindow ? "checkmark.circle.fill" : "clock")
+                .font(.system(size: 20))
+                .foregroundColor(isInOptimalWindow ? OnLifeColors.sage : OnLifeColors.textTertiary)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .fill(isInOptimalWindow ? OnLifeColors.sage.opacity(0.1) : OnLifeColors.cardBackground)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
+                .stroke(isInOptimalWindow ? OnLifeColors.sage.opacity(0.3) : Color.clear, lineWidth: 1)
+        )
+    }
+}
+
+// MARK: - Behavioral Insight Row
+
+struct BehavioralInsightRow: View {
+    let assessment: BehavioralFlowDetector.ReadinessAssessment
+    let features: BehavioralFeatures
+
+    var body: some View {
+        HStack(spacing: Spacing.md) {
+            // Behavioral score indicator
+            ZStack {
+                Circle()
+                    .fill(assessment.level.color.opacity(0.2))
+                    .frame(width: 40, height: 40)
+
+                Text(assessment.level.emoji)
+                    .font(.system(size: 20))
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: Spacing.sm) {
+                    Text("Behavioral Flow")
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+
+                    Text("\(Int(assessment.flowProbability))")
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundColor(assessment.level.color)
+                }
+
+                // Show key positive factor
+                if features.consecutiveDays >= 3 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "flame.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(OnLifeColors.amber)
+                        Text("\(features.consecutiveDays) day streak")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textTertiary)
+                    }
+                } else if features.completionRateLast7Days >= 0.7 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 10))
+                            .foregroundColor(OnLifeColors.sage)
+                        Text("\(Int(features.completionRateLast7Days * 100))% completion rate")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textTertiary)
+                    }
+                } else if features.sameTimeOfDayAsUsual {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.badge.checkmark")
+                            .font(.system(size: 10))
+                            .foregroundColor(OnLifeColors.sage)
+                        Text("Consistent timing")
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textTertiary)
+                    }
+                }
+            }
+
+            Spacer()
+
+            // Level indicator
+            Text(assessment.level.rawValue)
+                .font(OnLifeFont.caption())
+                .foregroundColor(assessment.level.color)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.cardBackground)
+        )
+    }
 }
 
 // MARK: - Insight Card View
