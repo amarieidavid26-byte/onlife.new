@@ -2,36 +2,19 @@ import SwiftUI
 
 struct FocusTimerScreen: View {
     @ObservedObject var viewModel: FocusSessionViewModel
-    @State private var plantScale: CGFloat = 1.0
 
     var body: some View {
         VStack(spacing: Spacing.xxxl) {
             Spacer()
 
-            // Plant growth indicator with animations
-            ZStack {
-                // Glow effect
-                Circle()
-                    .fill(OnLifeColors.sage.opacity(glowOpacity))
-                    .frame(width: 120, height: 120)
-                    .blur(radius: 20)
-
-                Text(plantEmoji)
-                    .font(.system(size: 80))
-                    .scaleEffect(plantScale)
-                    .animation(.spring(response: 0.6, dampingFraction: 0.7), value: viewModel.plantGrowthStage)
-                    .onChange(of: viewModel.plantGrowthStage) { oldValue, newValue in
-                        // Pulse animation on growth
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
-                            plantScale = 1.15
-                        }
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.6).delay(0.2)) {
-                            plantScale = 1.0
-                        }
-                        HapticManager.shared.impact(style: .medium)
-                    }
-            }
-            .transition(.scale)
+            // Animated plant with organic growth effects
+            AnimatedPlantView(
+                growthStage: viewModel.plantGrowthStage,
+                plantSpecies: viewModel.selectedPlantSpecies,
+                isWilting: viewModel.plantHealth < 70,
+                isPaused: viewModel.isPaused
+            )
+            .frame(height: 200)
 
             // Timer
             ZStack {
@@ -91,19 +74,5 @@ struct FocusTimerScreen: View {
 
             Spacer()
         }
-    }
-
-    var plantEmoji: String {
-        let stage = viewModel.plantGrowthStage
-        if stage < 3 { return "🌱" }
-        else if stage < 7 { return "🪴" }
-        else { return viewModel.selectedPlantSpecies.icon }
-    }
-
-    var glowOpacity: Double {
-        // Glow intensity increases with growth stage
-        let maxStage = 10.0
-        let stage = Double(viewModel.plantGrowthStage)
-        return min(stage / maxStage * 0.5, 0.5)
     }
 }

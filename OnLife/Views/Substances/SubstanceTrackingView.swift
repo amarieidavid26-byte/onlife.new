@@ -466,6 +466,7 @@ struct QuickLogButton: View {
 
 struct TodayLogSection: View {
     let logs: [SubstanceLog]
+    @ObservedObject private var tracker = SubstanceTracker.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -474,9 +475,17 @@ struct TodayLogSection: View {
                     .foregroundColor(OnLifeColors.sage)
                     .font(.system(size: 18))
 
-                Text("Today's Log")
+                Text("Today's Timeline")
                     .font(OnLifeFont.heading3())
                     .foregroundColor(OnLifeColors.textPrimary)
+
+                Spacer()
+
+                if !logs.isEmpty {
+                    Text("Tap for details")
+                        .font(OnLifeFont.caption())
+                        .foregroundColor(OnLifeColors.textTertiary)
+                }
             }
 
             if logs.isEmpty {
@@ -492,52 +501,64 @@ struct TodayLogSection: View {
             } else {
                 VStack(spacing: Spacing.sm) {
                     ForEach(logs) { log in
-                        LogEntryRow(log: log)
+                        SubstanceTimelineView(
+                            substance: log,
+                            currentLevel: getCurrentLevel(for: log)
+                        )
                     }
+                }
+
+                // Next dose recommendation (show if caffeine is declining)
+                if let recommendation = getNextDoseRecommendation() {
+                    NextDoseRecommendation(
+                        substanceType: recommendation.type,
+                        recommendedTime: recommendation.time,
+                        reason: recommendation.reason
+                    )
+                    .padding(.top, Spacing.xs)
                 }
             }
         }
     }
-}
 
-struct LogEntryRow: View {
-    let log: SubstanceLog
+    private func getCurrentLevel(for log: SubstanceLog) -> Double {
+        // Calculate current active amount for this specific log
+        return log.activeAmount(at: Date())
+    }
 
-    var body: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: log.substanceType.iconName)
-                .font(.system(size: 22))
-                .foregroundColor(OnLifeColors.sage)
-                .frame(width: 36)
+    private func getNextDoseRecommendation() -> (type: SubstanceType, time: Date, reason: String)? {
+        let caffeine = tracker.activeLevels[.caffeine] ?? 0
+        let lTheanine = tracker.activeLevels[.lTheanine] ?? 0
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(log.substanceType.rawValue)
-                    .font(OnLifeFont.body())
-                    .fontWeight(.medium)
-                    .foregroundColor(OnLifeColors.textPrimary)
-
-                Text(log.timestamp, style: .time)
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.textTertiary)
-            }
-
-            Spacer()
-
-            VStack(alignment: .trailing, spacing: 2) {
-                Text("\(Int(log.amount))")
-                    .font(OnLifeFont.heading3())
-                    .foregroundColor(OnLifeColors.textPrimary)
-
-                Text(log.unit.rawValue)
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.textTertiary)
-            }
+        // If caffeine is between 25-50mg, suggest re-dose timing
+        if caffeine > 25 && caffeine < 50 {
+            // Estimate when level will drop to ~25mg for optimal re-dose
+            return (
+                type: .caffeine,
+                time: Date().addingTimeInterval(30 * 60), // 30 min from now
+                reason: "Level dropping - good time for a boost"
+            )
         }
-        .padding(Spacing.md)
-        .background(
-            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                .fill(OnLifeColors.cardBackground)
-        )
+
+        // If no caffeine but L-theanine is active, suggest caffeine for synergy
+        if caffeine < 10 && lTheanine > 50 {
+            return (
+                type: .caffeine,
+                time: Date(),
+                reason: "Add caffeine for synergy effect"
+            )
+        }
+
+        // If caffeine is high but no L-theanine, suggest it
+        if caffeine > 50 && lTheanine < 20 {
+            return (
+                type: .lTheanine,
+                time: Date(),
+                reason: "Add L-theanine to smooth out jitters"
+            )
+        }
+
+        return nil
     }
 }
 
