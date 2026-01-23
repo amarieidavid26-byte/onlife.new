@@ -80,7 +80,38 @@ struct OnLifeApp: App {
                 }
             }
             .onOpenURL { url in
-                GIDSignIn.sharedInstance.handle(url)
+                print("📱 [OnLifeApp] ===== onOpenURL RECEIVED =====")
+                print("📱 [OnLifeApp] Full URL: \(url.absoluteString)")
+                print("📱 [OnLifeApp] Scheme: \(url.scheme ?? "nil")")
+                print("📱 [OnLifeApp] Host: \(url.host ?? "nil")")
+                print("📱 [OnLifeApp] Path: \(url.path)")
+                print("📱 [OnLifeApp] Query: \(url.query ?? "nil")")
+
+                // Handle Google Sign-In callback
+                if GIDSignIn.sharedInstance.handle(url) {
+                    print("📱 [OnLifeApp] URL handled by Google Sign-In")
+                    return
+                }
+
+                // Handle WHOOP OAuth callback
+                if WHOOPAuthService.canHandle(url: url) {
+                    print("📱 [OnLifeApp] URL recognized as WHOOP callback, routing to WHOOPAuthService...")
+                    Task {
+                        do {
+                            try await WHOOPAuthService.shared.handleCallback(url: url)
+                            print("📱 [OnLifeApp] WHOOP callback handled successfully ✓")
+                        } catch {
+                            print("📱 [OnLifeApp] ❌ WHOOP OAuth callback error: \(error)")
+                            print("📱 [OnLifeApp] Error type: \(type(of: error))")
+                            if let whoopError = error as? WHOOPAuthError {
+                                print("📱 [OnLifeApp] WHOOPAuthError description: \(whoopError.localizedDescription)")
+                            }
+                        }
+                    }
+                    return
+                }
+
+                print("📱 [OnLifeApp] ⚠️ URL not handled by any handler: \(url)")
             }
         }
     }

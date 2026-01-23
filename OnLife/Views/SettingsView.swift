@@ -103,6 +103,36 @@ struct SettingsView: View {
                             .animation(OnLifeAnimation.elegant.delay(0.12), value: contentAppeared)
                         }
 
+                        // INTEGRATIONS Section
+                        SettingsSection(title: "INTEGRATIONS") {
+                            NavigationLink {
+                                WHOOPSettingsView()
+                            } label: {
+                                SettingsRowContent(
+                                    icon: "heart.circle.fill",
+                                    iconColor: OnLifeColors.sage,
+                                    title: "WHOOP",
+                                    trailing: {
+                                        HStack(spacing: Spacing.sm) {
+                                            if WHOOPAuthService.shared.isAuthenticated {
+                                                Text("Connected")
+                                                    .font(OnLifeFont.caption())
+                                                    .foregroundColor(OnLifeColors.sage)
+                                            }
+
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(OnLifeColors.textTertiary)
+                                        }
+                                    }
+                                )
+                            }
+                            .buttonStyle(SettingsRowButtonStyle())
+                        }
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.13), value: contentAppeared)
+
                         // ACCOUNT Section
                         SettingsSection(title: "ACCOUNT") {
                             VStack(spacing: 0) {
@@ -127,7 +157,7 @@ struct SettingsView: View {
                         }
                         .opacity(contentAppeared ? 1 : 0)
                         .offset(y: contentAppeared ? 0 : 20)
-                        .animation(OnLifeAnimation.elegant.delay(0.15), value: contentAppeared)
+                        .animation(OnLifeAnimation.elegant.delay(0.17), value: contentAppeared)
 
                         // DEVELOPER Section
                         SettingsSection(title: "DEVELOPER") {
@@ -179,7 +209,7 @@ struct SettingsView: View {
                         }
                         .opacity(contentAppeared ? 1 : 0)
                         .offset(y: contentAppeared ? 0 : 20)
-                        .animation(OnLifeAnimation.elegant.delay(0.2), value: contentAppeared)
+                        .animation(OnLifeAnimation.elegant.delay(0.22), value: contentAppeared)
 
                         // DANGER ZONE Section
                         SettingsSection(title: "DANGER ZONE", titleColor: OnLifeColors.terracotta) {
@@ -224,7 +254,7 @@ struct SettingsView: View {
                         }
                         .opacity(contentAppeared ? 1 : 0)
                         .offset(y: contentAppeared ? 0 : 20)
-                        .animation(OnLifeAnimation.elegant.delay(0.25), value: contentAppeared)
+                        .animation(OnLifeAnimation.elegant.delay(0.27), value: contentAppeared)
 
                         // Footer
                         VStack(spacing: Spacing.sm) {
@@ -242,7 +272,7 @@ struct SettingsView: View {
                         }
                         .padding(.vertical, Spacing.xxl)
                         .opacity(contentAppeared ? 1 : 0)
-                        .animation(OnLifeAnimation.elegant.delay(0.3), value: contentAppeared)
+                        .animation(OnLifeAnimation.elegant.delay(0.32), value: contentAppeared)
                     }
                     .padding(.horizontal, Spacing.lg)
                     .padding(.bottom, Spacing.xxl)

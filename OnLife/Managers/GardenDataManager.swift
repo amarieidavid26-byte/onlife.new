@@ -110,14 +110,11 @@ class GardenDataManager {
 
     func loadSessions() -> [FocusSession] {
         guard let data = UserDefaults.standard.data(forKey: sessionsKey) else {
-            print("⏱️ No sessions found in storage")
             return []
         }
 
         do {
-            let sessions = try JSONDecoder().decode([FocusSession].self, from: data)
-            print("⏱️ Loaded \(sessions.count) sessions from storage")
-            return sessions
+            return try JSONDecoder().decode([FocusSession].self, from: data)
         } catch {
             print("❌ Failed to decode sessions: \(error)")
             return []

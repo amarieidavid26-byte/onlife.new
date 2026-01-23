@@ -6,6 +6,13 @@ Config.xcconfig
 # Firebase
 GoogleService-Info.plist
 
+# WHOOP Secrets - NEVER commit these
+**/WHOOPAuthService.swift.secret
+*.secret
+
+# Note: WHOOPAuthService.swift contains client secret - be careful with commits
+# Use WHOOPAuthService.swift.template for sharing code without secrets
+
 # Xcode user-specific files
 *.xcuserstate
 xcuserdata/

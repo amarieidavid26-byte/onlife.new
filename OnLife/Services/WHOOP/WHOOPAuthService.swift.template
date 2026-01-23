@@ -1,0 +1,461 @@
+//
+//  WHOOPAuthService.swift
+//  OnLife
+//
+//  WHOOP OAuth 2.0 authentication service using ASWebAuthenticationSession
+//
+//  SETUP INSTRUCTIONS:
+//  1. Copy this file to WHOOPAuthService.swift
+//  2. Replace "REPLACE_WITH_YOUR_CLIENT_SECRET" with your actual WHOOP client secret
+//  3. Never commit the actual secret to source control
+//
+
+import Foundation
+import AuthenticationServices
+import Combine
+
+/// Manages WHOOP OAuth 2.0 authentication flow
+///
+/// OAuth Flow:
+/// 1. User taps "Connect WHOOP"
+/// 2. App opens ASWebAuthenticationSession with WHOOP authorization URL
+/// 3. User logs in on WHOOP's website
+/// 4. WHOOP redirects to onlife://auth/callback?code=XXX&state=XXX
+/// 5. App intercepts callback and extracts authorization code
+/// 6. App POSTs code to token endpoint with credentials
+/// 7. WHOOP returns access_token + refresh_token
+/// 8. App stores tokens securely in Keychain
+/// 9. App uses access_token for API calls
+/// 10. When token expires, app uses refresh_token to get new tokens
+@MainActor
+final class WHOOPAuthService: NSObject, ObservableObject {
+
+    // MARK: - Singleton
+
+    static let shared = WHOOPAuthService()
+
+    // MARK: - Published Properties
+
+    /// Current authentication state
+    @Published private(set) var authState: WHOOPAuthState = .disconnected
+
+    /// Whether user is currently authenticated with WHOOP
+    @Published private(set) var isAuthenticated: Bool = false
+
+    // MARK: - OAuth Configuration
+
+    private enum Config {
+        static let clientId = "2b0edc70-a586-4edf-b9f7-c8eb601fcd19"
+        static let redirectUri = "onlife://auth/callback"
+        static let authorizationUrl = "https://api.prod.whoop.com/oauth/oauth2/auth"
+        static let tokenUrl = "https://api.prod.whoop.com/oauth/oauth2/token"
+        static let scopes = "read:recovery read:cycles read:sleep read:workout read:body_measurement"
+
+        // SECURITY NOTE: Client secret should be moved to backend proxy in production
+        // For development, store in secure location (not in source control)
+        // ⚠️ REPLACE THIS WITH YOUR ACTUAL CLIENT SECRET
+        static let clientSecret = "REPLACE_WITH_YOUR_CLIENT_SECRET"
+
+        // State parameter must be exactly 8 characters per WHOOP spec
+        static let stateLength = 8
+    }
+
+    // MARK: - Private Properties
+
+    private let tokenManager = WHOOPTokenManager.shared
+    private var currentState: String?
+    private var authSession: ASWebAuthenticationSession?
+    private var authContinuation: CheckedContinuation<Void, Error>?
+
+    // MARK: - Initialization
+
+    private override init() {
+        super.init()
+        // Check if user was previously authenticated
+        updateAuthenticationStatus()
+    }
+
+    // MARK: - Public Methods
+
+    /// Starts the OAuth authentication flow
+    /// Opens WHOOP login page in a secure browser session
+    /// - Throws: WHOOPAuthError on failure
+    func startAuthentication() async throws {
+        guard authState != .authenticating else { return }
+
+        authState = .authenticating
+
+        do {
+            // Generate cryptographically random state parameter
+            currentState = generateSecureState()
+
+            // Construct authorization URL
+            guard let authURL = buildAuthorizationURL() else {
+                throw WHOOPAuthError.urlConstructionFailed
+            }
+
+            // Start ASWebAuthenticationSession
+            try await performWebAuthentication(url: authURL)
+
+            updateAuthenticationStatus()
+        } catch {
+            authState = .error(error.localizedDescription)
+            throw error
+        }
+    }
+
+    /// Handles the OAuth callback URL from WHOOP
+    /// Called when app receives the redirect URL
+    /// - Parameter url: The callback URL with authorization code
+    /// - Returns: true if URL was handled successfully
+    @discardableResult
+    func handleCallback(url: URL) async throws -> Bool {
+        // Check URL format - handle both formats:
+        // onlife://auth/callback (host = "auth", path = "/callback")
+        // onlife:///auth/callback (host = nil, path = "/auth/callback")
+        let isValidScheme = url.scheme == "onlife"
+        let isAuthCallback = (url.host == "auth" && url.path == "/callback") ||
+                            (url.host == nil && url.path == "/auth/callback") ||
+                            url.path.contains("/callback")
+
+        guard isValidScheme && isAuthCallback else {
+            return false
+        }
+
+        // Parse URL components
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              let queryItems = components.queryItems else {
+            throw WHOOPAuthError.invalidResponse
+        }
+
+        // Check for error response
+        if let error = queryItems.first(where: { $0.name == "error" })?.value {
+            let errorDescription = queryItems.first(where: { $0.name == "error_description" })?.value ?? "Unknown"
+            if error == "access_denied" {
+                throw WHOOPAuthError.authorizationDenied
+            }
+            throw WHOOPAuthError.serverError(statusCode: 0, message: "\(error): \(errorDescription)")
+        }
+
+        // Extract authorization code
+        guard let code = queryItems.first(where: { $0.name == "code" })?.value else {
+            throw WHOOPAuthError.missingAuthorizationCode
+        }
+
+        // Validate state parameter
+        guard let returnedState = queryItems.first(where: { $0.name == "state" })?.value,
+              returnedState == currentState else {
+            throw WHOOPAuthError.invalidState
+        }
+
+        // Exchange code for tokens
+        try await exchangeCodeForTokens(code: code)
+
+        return true
+    }
+
+    /// Exchanges authorization code for access and refresh tokens
+    /// - Parameter code: The authorization code from callback
+    private func exchangeCodeForTokens(code: String) async throws {
+        let tokenResponse = try await performTokenRequest(
+            grantType: "authorization_code",
+            code: code
+        )
+
+        try tokenManager.saveTokens(from: tokenResponse)
+        authState = .connected
+        isAuthenticated = true
+        currentState = nil
+    }
+
+    /// Refreshes the access token using the refresh token
+    /// Called automatically when access token is expired
+    func refreshAccessToken() async throws {
+        guard let refreshToken = tokenManager.getRefreshToken() else {
+            throw WHOOPAuthError.notAuthenticated
+        }
+
+        authState = .refreshing
+
+        do {
+            let tokenResponse = try await performTokenRequest(
+                grantType: "refresh_token",
+                refreshToken: refreshToken
+            )
+
+            try tokenManager.saveTokens(from: tokenResponse)
+            authState = .connected
+        } catch {
+            // Refresh failed - user needs to re-authenticate
+            authState = .error("Session expired")
+            isAuthenticated = false
+            throw WHOOPAuthError.refreshFailed
+        }
+    }
+
+    /// Gets a valid access token, refreshing if necessary
+    /// - Returns: Valid access token
+    /// - Throws: WHOOPAuthError if not authenticated or refresh fails
+    func getValidAccessToken() async throws -> String {
+        guard let accessToken = tokenManager.getAccessToken() else {
+            throw WHOOPAuthError.notAuthenticated
+        }
+
+        // Check if expired with 5-minute buffer
+        if tokenManager.isTokenExpired(buffer: 300) {
+            try await refreshAccessToken()
+            guard let newToken = tokenManager.getAccessToken() else {
+                throw WHOOPAuthError.refreshFailed
+            }
+            return newToken
+        }
+
+        return accessToken
+    }
+
+    /// Logs out and clears all stored tokens
+    func logout() {
+        do {
+            try tokenManager.clearTokens()
+        } catch {
+            // Log error but continue logout
+            print("Warning: Failed to clear tokens from Keychain")
+        }
+
+        currentState = nil
+        authSession = nil
+        authState = .disconnected
+        isAuthenticated = false
+    }
+
+    /// Convenience property for current access token (may be expired)
+    var accessToken: String? {
+        return tokenManager.getAccessToken()
+    }
+
+    // MARK: - Private Methods
+
+    /// Updates authentication status based on stored tokens
+    private func updateAuthenticationStatus() {
+        if tokenManager.hasStoredTokens {
+            isAuthenticated = true
+            authState = tokenManager.isTokenExpired() ? .error("Token expired") : .connected
+        } else {
+            isAuthenticated = false
+            authState = .disconnected
+        }
+    }
+
+    /// Generates a cryptographically secure random state parameter
+    /// WHOOP requires exactly 8 characters
+    private func generateSecureState() -> String {
+        let characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+        var randomBytes = [UInt8](repeating: 0, count: Config.stateLength)
+        _ = SecRandomCopyBytes(kSecRandomDefault, Config.stateLength, &randomBytes)
+
+        return String(randomBytes.map { byte in
+            characters[characters.index(characters.startIndex, offsetBy: Int(byte) % characters.count)]
+        })
+    }
+
+    /// Builds the WHOOP authorization URL with required parameters
+    private func buildAuthorizationURL() -> URL? {
+        var components = URLComponents(string: Config.authorizationUrl)
+
+        components?.queryItems = [
+            URLQueryItem(name: "client_id", value: Config.clientId),
+            URLQueryItem(name: "redirect_uri", value: Config.redirectUri),
+            URLQueryItem(name: "response_type", value: "code"),
+            URLQueryItem(name: "scope", value: Config.scopes),
+            URLQueryItem(name: "state", value: currentState)
+        ]
+
+        return components?.url
+    }
+
+    /// Performs the OAuth web authentication session
+    private func performWebAuthentication(url: URL) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.authContinuation = continuation
+
+            let session = ASWebAuthenticationSession(
+                url: url,
+                callbackURLScheme: "onlife"
+            ) { [weak self] callbackURL, error in
+                guard let self = self else { return }
+
+                Task { @MainActor in
+                    if let error = error {
+                        if (error as NSError).code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
+                            self.authContinuation?.resume(throwing: WHOOPAuthError.userCancelled)
+                        } else {
+                            self.authContinuation?.resume(throwing: WHOOPAuthError.networkError(error))
+                        }
+                        self.authContinuation = nil
+                        return
+                    }
+
+                    guard let callbackURL = callbackURL else {
+                        self.authContinuation?.resume(throwing: WHOOPAuthError.invalidResponse)
+                        self.authContinuation = nil
+                        return
+                    }
+
+                    do {
+                        try await self.handleCallback(url: callbackURL)
+                        self.authContinuation?.resume()
+                    } catch {
+                        self.authContinuation?.resume(throwing: error)
+                    }
+                    self.authContinuation = nil
+                }
+            }
+
+            session.presentationContextProvider = self
+            session.prefersEphemeralWebBrowserSession = false
+
+            self.authSession = session
+
+            if !session.start() {
+                continuation.resume(throwing: WHOOPAuthError.urlConstructionFailed)
+                self.authContinuation = nil
+            }
+        }
+    }
+
+    /// Performs token exchange or refresh request
+    private func performTokenRequest(
+        grantType: String,
+        code: String? = nil,
+        refreshToken: String? = nil
+    ) async throws -> WHOOPTokenResponse {
+        guard let url = URL(string: Config.tokenUrl) else {
+            throw WHOOPAuthError.urlConstructionFailed
+        }
+
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+
+        // Build request body
+        var bodyComponents = URLComponents()
+        bodyComponents.queryItems = [
+            URLQueryItem(name: "grant_type", value: grantType),
+            URLQueryItem(name: "client_id", value: Config.clientId),
+            URLQueryItem(name: "client_secret", value: Config.clientSecret),
+            URLQueryItem(name: "redirect_uri", value: Config.redirectUri)
+        ]
+
+        if let code = code {
+            bodyComponents.queryItems?.append(URLQueryItem(name: "code", value: code))
+        }
+
+        if let refreshToken = refreshToken {
+            bodyComponents.queryItems?.append(URLQueryItem(name: "refresh_token", value: refreshToken))
+        }
+
+        request.httpBody = bodyComponents.query?.data(using: .utf8)
+
+        // Perform request
+        let (data, response) = try await URLSession.shared.data(for: request)
+
+        guard let httpResponse = response as? HTTPURLResponse else {
+            throw WHOOPAuthError.invalidResponse
+        }
+
+        // Handle response status
+        switch httpResponse.statusCode {
+        case 200:
+            do {
+                return try JSONDecoder().decode(WHOOPTokenResponse.self, from: data)
+            } catch {
+                throw WHOOPAuthError.invalidResponse
+            }
+
+        case 400:
+            // Bad request - likely invalid code or refresh token
+            if let errorResponse = try? JSONDecoder().decode(WHOOPOAuthErrorResponse.self, from: data) {
+                if errorResponse.error == "invalid_grant" {
+                    throw grantType == "refresh_token"
+                        ? WHOOPAuthError.refreshFailed
+                        : WHOOPAuthError.invalidAuthorizationCode
+                }
+                throw WHOOPAuthError.serverError(statusCode: 400, message: errorResponse.errorDescription)
+            }
+            throw WHOOPAuthError.invalidAuthorizationCode
+
+        case 401:
+            throw WHOOPAuthError.notAuthenticated
+
+        case 429:
+            let retryAfter = httpResponse.value(forHTTPHeaderField: "Retry-After")
+                .flatMap { Int($0) }
+            throw WHOOPAuthError.rateLimited(retryAfter: retryAfter)
+
+        default:
+            let message = String(data: data, encoding: .utf8)
+            throw WHOOPAuthError.serverError(statusCode: httpResponse.statusCode, message: message)
+        }
+    }
+}
+
+// MARK: - ASWebAuthenticationPresentationContextProviding
+
+extension WHOOPAuthService: ASWebAuthenticationPresentationContextProviding {
+
+    /// Provides the window for presenting the authentication session
+    /// Note: This method is called on the main thread by ASWebAuthenticationSession
+    nonisolated func presentationAnchor(for session: ASWebAuthenticationSession) -> ASPresentationAnchor {
+        print("🔐 [WHOOP] presentationAnchor called, isMainThread: \(Thread.isMainThread)")
+
+        // ASWebAuthenticationSession always calls this on the main thread
+        // Use MainActor.assumeIsolated to safely access main-actor-isolated properties
+        return MainActor.assumeIsolated {
+            print("🔐 [WHOOP] Getting window on main actor")
+
+            // Try to get existing window from connected scenes
+            if let scene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let window = scene.windows.first {
+                print("🔐 [WHOOP] Got existing window: \(window)")
+                return window
+            }
+
+            // Fallback: create window from first available scene
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                let window = UIWindow(windowScene: windowScene)
+                print("🔐 [WHOOP] Created window from scene: \(window)")
+                return window
+            }
+
+            // Last resort: create window from any available scene
+            print("🔐 [WHOOP] Using fallback window creation")
+            if let windowScene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first {
+                return UIWindow(windowScene: windowScene)
+            }
+
+            // Absolute last resort - should never reach here in practice
+            fatalError("No window scene available for WHOOP authentication")
+        }
+    }
+}
+
+// MARK: - URL Handling Extension
+
+extension WHOOPAuthService {
+    /// Check if a URL can be handled by this service
+    /// Handles both URL formats:
+    /// - onlife://auth/callback (host = "auth", path = "/callback")
+    /// - onlife:///auth/callback (host = nil, path = "/auth/callback")
+    static func canHandle(url: URL) -> Bool {
+        guard url.scheme == "onlife" else { return false }
+
+        // Handle both formats
+        let isAuthCallback = (url.host == "auth") ||
+                            url.path.hasPrefix("/auth") ||
+                            url.path.contains("callback")
+
+        return isAuthCallback
+    }
+}

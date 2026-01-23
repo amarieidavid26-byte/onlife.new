@@ -6,6 +6,10 @@
 	<string>OnLife reads your sleep data to calculate optimal focus times and your heart rate to detect flow states during sessions.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>OnLife saves your focus sessions as mindful sessions in HealthKit.</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>OnLife uses Bluetooth to receive real-time heart rate data from your WHOOP for flow state detection.</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>OnLife connects to your WHOOP to measure HRV during focus sessions.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -16,7 +20,16 @@
 				<string>com.googleusercontent.apps.630350256939-8h34sgv8dh34pbc95jkmvbi8di0ov0ro</string>
 			</array>
 		</dict>
-		<dict/>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>onlife</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>com.onlife.OnLife</string>
+		</dict>
 	</array>
 </dict>
 </plist>

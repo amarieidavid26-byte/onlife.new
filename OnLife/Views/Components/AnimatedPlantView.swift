@@ -203,7 +203,7 @@ struct GrowthParticleEmitter: View {
             let delay = Double(i) * 0.03
 
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                var particle = GrowthParticle(
+                let particle = GrowthParticle(
                     x: 0,
                     y: 0,
                     targetX: CGFloat.random(in: -80...80),

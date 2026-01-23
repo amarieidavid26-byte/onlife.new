@@ -50,6 +50,11 @@ class FocusSessionViewModel: ObservableObject {
     @Published var currentHRV: Double = 0
     @Published var isWatchConnected: Bool = false
 
+    // MARK: - WHOOP Biometrics (Higher Quality)
+
+    @Published var isWHOOPConnected: Bool = false
+    @Published var whoopFlowIndicator: WHOOPDataProvider.FlowIndicator = .unknown
+
     // MARK: - Fatigue & Warnings (NEW)
 
     @Published var fatigueWarning: String? = nil
@@ -78,6 +83,7 @@ class FocusSessionViewModel: ObservableObject {
     private let sleepCalculator = SleepQualityIndexCalculator.shared
     private let pharmacoEngine = CorrectedPharmacokineticsEngine.shared
     private let behavioralCollector = BehavioralFeatureCollector.shared
+    private let whoopProvider = WHOOPDataProvider.shared
 
     // MARK: - Flow Score History (for averaging)
 
@@ -92,6 +98,7 @@ class FocusSessionViewModel: ObservableObject {
     init() {
         setupWatchDataSubscription()
         setupConnectionStatusSubscription()
+        setupWHOOPSubscription()
     }
 
     // MARK: - Watch Data Subscription
@@ -126,6 +133,47 @@ class FocusSessionViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 self?.isWatchConnected = status.isUsable
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - WHOOP Data Subscription
+
+    private func setupWHOOPSubscription() {
+        // Subscribe to WHOOP heart rate (higher quality than Watch when available)
+        whoopProvider.$currentHeartRate
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] hr in
+                guard let self = self else { return }
+                // Use WHOOP HR when connected, otherwise fall back to Watch
+                if self.whoopProvider.isBLEActive && hr > 0 {
+                    self.currentHeartRate = Double(hr)
+                }
+            }
+            .store(in: &cancellables)
+
+        // Subscribe to WHOOP RMSSD (research-grade HRV)
+        whoopProvider.$currentRMSSD
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] rmssd in
+                guard let self = self else { return }
+                if let rmssd = rmssd, self.whoopProvider.isBLEActive {
+                    self.currentHRV = rmssd
+                }
+            }
+            .store(in: &cancellables)
+
+        // Subscribe to WHOOP flow indicator
+        whoopProvider.$flowIndicator
+            .receive(on: DispatchQueue.main)
+            .assign(to: &$whoopFlowIndicator)
+
+        // Track WHOOP connection status
+        whoopProvider.$isSessionActive
+            .combineLatest(whoopProvider.$isBaselineReady)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] (isActive, hasBaseline) in
+                self?.isWHOOPConnected = self?.whoopProvider.isBLEActive ?? false
             }
             .store(in: &cancellables)
     }
@@ -247,6 +295,14 @@ class FocusSessionViewModel: ObservableObject {
 
         // Clear previous history for fresh behavioral tracking
         watchBridge.clearHistory()
+
+        // Start WHOOP BLE session (if connected)
+        whoopProvider.startSession()
+
+        // Fetch WHOOP baseline (async)
+        Task {
+            await whoopProvider.updateBaseline()
+        }
 
         // Start timers
         startTimer()
@@ -458,6 +514,12 @@ class FocusSessionViewModel: ObservableObject {
         // Stop Watch session
         watchBridge.stopWatchSession()
 
+        // Stop WHOOP session and capture biometrics
+        let whoopBiometrics = whoopProvider.endSession()
+        if let biometrics = whoopBiometrics {
+            print("📊 [Session] WHOOP biometrics: \(biometrics.summary)")
+        }
+
         // Stop screen activity tracking
         removeScreenActivityTracking()
 
@@ -626,6 +688,7 @@ class FocusSessionViewModel: ObservableObject {
         flowScoreHistory = []
         pauseCount = 0
         totalPauseTime = 0
+        whoopFlowIndicator = .unknown
 
         // Reset all behavioral tracking (screen, app switches)
         behavioralCollector.resetAllTracking()
