@@ -9,15 +9,14 @@ struct ProtocolLibraryView: View {
 
     @StateObject private var protocolService = ProtocolService.shared
     @State private var searchText = ""
-    @State private var selectedFilter: ProtocolFilter = .recommended
+    @State private var selectedTab: LibraryTab = .forYou
     @State private var showingCreateProtocol = false
     @State private var selectedProtocol: FlowProtocol?
 
-    enum ProtocolFilter: String, CaseIterable {
-        case recommended = "For You"
+    enum LibraryTab: String, CaseIterable {
+        case forYou = "For You"
         case trending = "Trending"
         case newest = "New"
-        case verified = "Verified"
         case saved = "Saved"
     }
 
@@ -30,18 +29,16 @@ struct ProtocolLibraryView: View {
                 // Search bar
                 searchBar
 
-                // Filter pills
-                filterPills
+                // Tab pills
+                tabPills
 
-                // Content based on filter
+                // Content based on tab
                 contentSection
             }
             .padding(.horizontal, Spacing.lg)
             .padding(.bottom, Spacing.xxl)
         }
         .background(OnLifeColors.deepForest.ignoresSafeArea())
-        .navigationTitle("Protocol Library")
-        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingCreateProtocol = true }) {
@@ -56,9 +53,6 @@ struct ProtocolLibraryView: View {
                 forkingFrom: nil,
                 userProfile: userProfile,
                 onSave: { newProtocol in
-                    Task {
-                        try? await protocolService.createProtocol(newProtocol)
-                    }
                     showingCreateProtocol = false
                 },
                 onCancel: { showingCreateProtocol = false }
@@ -70,7 +64,6 @@ struct ProtocolLibraryView: View {
                 currentUserProfile: userProfile,
                 onTryProtocol: {
                     selectedProtocol = nil
-                    // Navigate to session start with protocol
                 },
                 onFork: {
                     selectedProtocol = nil
@@ -99,13 +92,13 @@ struct ProtocolLibraryView: View {
                     .foregroundColor(OnLifeColors.textPrimary)
 
                 PhilosophyButton {
-                    onPhilosophyTap(PhilosophyMomentsLibrary.substanceOptimization)
+                    onPhilosophyTap(PhilosophyMomentsLibrary.socialLearning)
                 }
 
                 Spacer()
             }
 
-            Text("Find substance and timing strategies that work for people like you")
+            Text("Substance and timing strategies from the community")
                 .font(OnLifeFont.body())
                 .foregroundColor(OnLifeColors.textSecondary)
         }
@@ -139,233 +132,88 @@ struct ProtocolLibraryView: View {
         )
     }
 
-    // MARK: - Filter Pills
+    // MARK: - Tab Pills
 
-    private var filterPills: some View {
+    private var tabPills: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: Spacing.sm) {
-                ForEach(ProtocolFilter.allCases, id: \.self) { filter in
-                    filterPill(filter)
+                ForEach(LibraryTab.allCases, id: \.self) { tab in
+                    tabPill(tab)
                 }
             }
         }
     }
 
-    private func filterPill(_ filter: ProtocolFilter) -> some View {
-        let isSelected = selectedFilter == filter
-
-        return Button(action: {
+    private func tabPill(_ tab: LibraryTab) -> some View {
+        Button(action: {
             withAnimation(.spring(duration: 0.2)) {
-                selectedFilter = filter
+                selectedTab = tab
             }
             HapticManager.shared.impact(style: .light)
-            Task {
-                await loadProtocols()
-            }
         }) {
-            Text(filter.rawValue)
+            Text(tab.rawValue)
                 .font(OnLifeFont.label())
-                .foregroundColor(isSelected ? OnLifeColors.textPrimary : OnLifeColors.textSecondary)
+                .foregroundColor(selectedTab == tab ? OnLifeColors.textPrimary : OnLifeColors.textTertiary)
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
                 .background(
                     Capsule()
-                        .fill(isSelected ? OnLifeColors.socialTeal : OnLifeColors.cardBackground)
+                        .fill(selectedTab == tab ? OnLifeColors.socialTeal : OnLifeColors.cardBackground)
                 )
         }
     }
 
     // MARK: - Content Section
 
-    @ViewBuilder
     private var contentSection: some View {
-        if protocolService.isLoading {
-            loadingView
-        } else if filteredProtocols.isEmpty {
-            emptyStateView
-        } else {
-            switch selectedFilter {
-            case .recommended:
-                recommendedSection
-            default:
-                protocolsList
-            }
-        }
-    }
-
-    // MARK: - Recommended Section
-
-    private var recommendedSection: some View {
         VStack(spacing: Spacing.lg) {
-            // Perfect matches for chronotype
-            if let profile = userProfile {
-                chronotypeMatchSection(profile)
-            }
+            let protocols = filteredProtocols
 
-            // Popular in your experience level
-            popularSection
-
-            // Recently added
-            recentSection
-        }
-    }
-
-    private func chronotypeMatchSection(_ profile: UserProfile) -> some View {
-        let matchingProtocols = protocolService.protocols.filter {
-            $0.targetChronotype == profile.chronotype || $0.targetChronotype == nil
-        }.prefix(5)
-
-        guard !matchingProtocols.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack {
-                    Image(systemName: profile.chronotype.icon)
-                        .foregroundColor(chronotypeColor(profile.chronotype))
-
-                    Text("Perfect for \(profile.chronotype.rawValue)s")
-                        .font(OnLifeFont.heading3())
-                        .foregroundColor(OnLifeColors.textPrimary)
-
-                    Spacer()
-
-                    Button(action: {}) {
-                        Text("See all")
-                            .font(OnLifeFont.label())
-                            .foregroundColor(OnLifeColors.socialTeal)
-                    }
-                }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: Spacing.md) {
-                        ForEach(Array(matchingProtocols)) { proto in
-                            ProtocolCardCompact(flowProtocol: proto) {
+            if protocolService.isLoading {
+                loadingView
+            } else if protocols.isEmpty {
+                emptyStateView
+            } else {
+                LazyVStack(spacing: Spacing.md) {
+                    ForEach(protocols) { proto in
+                        ProtocolCard(
+                            flowProtocol: proto,
+                            onTap: {
                                 selectedProtocol = proto
-                            }
-                            .frame(width: 280)
-                        }
+                            },
+                            onFork: nil,
+                            onPhilosophyTap: nil
+                        )
                     }
                 }
             }
-        )
-    }
-
-    private func chronotypeColor(_ chronotype: Chronotype) -> Color {
-        switch chronotype {
-        case .earlyBird: return OnLifeColors.amber
-        case .nightOwl: return Color(hex: "7B68EE")
-        case .flexible: return OnLifeColors.sage
         }
     }
-
-    private var popularSection: some View {
-        let popularProtocols = protocolService.protocols
-            .sorted { ($0.trialCount) > ($1.trialCount) }
-            .prefix(3)
-
-        guard !popularProtocols.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .foregroundColor(OnLifeColors.socialTeal)
-
-                    Text("Most Tried")
-                        .font(OnLifeFont.heading3())
-                        .foregroundColor(OnLifeColors.textPrimary)
-
-                    Spacer()
-                }
-
-                ForEach(Array(popularProtocols)) { proto in
-                    ProtocolCard(
-                        flowProtocol: proto,
-                        onTap: { selectedProtocol = proto },
-                        onFork: nil,
-                        onPhilosophyTap: nil
-                    )
-                }
-            }
-        )
-    }
-
-    private var recentSection: some View {
-        let recentProtocols = protocolService.protocols
-            .sorted { $0.createdAt > $1.createdAt }
-            .prefix(3)
-
-        guard !recentProtocols.isEmpty else { return AnyView(EmptyView()) }
-
-        return AnyView(
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                HStack {
-                    Image(systemName: "sparkle")
-                        .foregroundColor(OnLifeColors.amber)
-
-                    Text("Recently Added")
-                        .font(OnLifeFont.heading3())
-                        .foregroundColor(OnLifeColors.textPrimary)
-
-                    Spacer()
-                }
-
-                ForEach(Array(recentProtocols)) { proto in
-                    ProtocolCardCompact(flowProtocol: proto) {
-                        selectedProtocol = proto
-                    }
-                }
-            }
-        )
-    }
-
-    // MARK: - Protocols List
-
-    private var protocolsList: some View {
-        LazyVStack(spacing: Spacing.md) {
-            ForEach(filteredProtocols) { proto in
-                ProtocolCard(
-                    flowProtocol: proto,
-                    onTap: { selectedProtocol = proto },
-                    onFork: {
-                        // Handle fork
-                    },
-                    onPhilosophyTap: nil
-                )
-            }
-        }
-    }
-
-    // MARK: - Filtered Protocols
 
     private var filteredProtocols: [FlowProtocol] {
-        var result = protocolService.protocols
-
-        // Apply search filter
-        if !searchText.isEmpty {
-            result = result.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText) ||
-                $0.creatorName.localizedCaseInsensitiveContains(searchText) ||
-                $0.substances.contains { $0.substance.localizedCaseInsensitiveContains(searchText) }
-            }
-        }
-
-        // Apply category filter
-        switch selectedFilter {
-        case .recommended:
-            // Already handled in recommendedSection
-            break
+        let baseProtocols: [FlowProtocol]
+        switch selectedTab {
+        case .forYou:
+            baseProtocols = protocolService.recommendedProtocols.isEmpty
+                ? protocolService.publicProtocols
+                : protocolService.recommendedProtocols
         case .trending:
-            result = result.sorted { $0.forkCount + $0.saveCount > $1.forkCount + $1.saveCount }
+            baseProtocols = protocolService.publicProtocols.sorted { $0.tryCount > $1.tryCount }
         case .newest:
-            result = result.sorted { $0.createdAt > $1.createdAt }
-        case .verified:
-            result = result.filter { $0.isVerified }
+            baseProtocols = protocolService.publicProtocols.sorted { $0.createdAt > $1.createdAt }
         case .saved:
-            result = result.filter { protocolService.savedProtocolIds.contains($0.id) }
+            baseProtocols = protocolService.savedProtocols
         }
 
-        return result
+        if searchText.isEmpty {
+            return baseProtocols
+        }
+
+        return baseProtocols.filter { proto in
+            proto.title.localizedCaseInsensitiveContains(searchText) ||
+            proto.description.localizedCaseInsensitiveContains(searchText) ||
+            proto.creatorUsername.localizedCaseInsensitiveContains(searchText)
+        }
     }
 
     // MARK: - Loading View
@@ -392,39 +240,32 @@ struct ProtocolLibraryView: View {
                 .foregroundColor(OnLifeColors.textMuted)
 
             VStack(spacing: Spacing.sm) {
-                Text(emptyStateTitle)
+                Text(selectedTab == .saved ? "No saved protocols" : "No protocols found")
                     .font(OnLifeFont.heading3())
                     .foregroundColor(OnLifeColors.textPrimary)
 
-                Text(emptyStateSubtitle)
+                Text(selectedTab == .saved
+                    ? "Save protocols to quickly access them later"
+                    : "Try adjusting your search or check back later")
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textSecondary)
                     .multilineTextAlignment(.center)
             }
 
-            if selectedFilter == .saved {
-                Button(action: { selectedFilter = .recommended }) {
-                    Text("Browse Protocols")
-                        .font(OnLifeFont.button())
-                        .foregroundColor(OnLifeColors.textPrimary)
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, Spacing.md)
-                        .background(
-                            Capsule()
-                                .fill(OnLifeColors.socialTeal)
-                        )
-                }
-            } else {
+            if selectedTab != .saved {
                 Button(action: { showingCreateProtocol = true }) {
-                    Text("Create First Protocol")
-                        .font(OnLifeFont.button())
-                        .foregroundColor(OnLifeColors.textPrimary)
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, Spacing.md)
-                        .background(
-                            Capsule()
-                                .fill(OnLifeColors.socialTeal)
-                        )
+                    HStack(spacing: Spacing.sm) {
+                        Image(systemName: "plus")
+                        Text("Create Protocol")
+                    }
+                    .font(OnLifeFont.button())
+                    .foregroundColor(OnLifeColors.textPrimary)
+                    .padding(.horizontal, Spacing.xl)
+                    .padding(.vertical, Spacing.md)
+                    .background(
+                        Capsule()
+                            .fill(OnLifeColors.socialTeal)
+                    )
                 }
             }
         }
@@ -432,63 +273,14 @@ struct ProtocolLibraryView: View {
         .padding(Spacing.xxl)
     }
 
-    private var emptyStateTitle: String {
-        if !searchText.isEmpty {
-            return "No results found"
-        }
-        switch selectedFilter {
-        case .saved: return "No saved protocols"
-        case .verified: return "No verified protocols yet"
-        default: return "No protocols found"
-        }
-    }
-
-    private var emptyStateSubtitle: String {
-        if !searchText.isEmpty {
-            return "Try a different search term"
-        }
-        switch selectedFilter {
-        case .saved: return "Save protocols you want to try later"
-        case .verified: return "Verified protocols will appear here"
-        default: return "Be the first to create one!"
-        }
-    }
-
     // MARK: - Load Protocols
 
     private func loadProtocols() async {
-        do {
-            switch selectedFilter {
-            case .recommended, .trending, .newest:
-                try await protocolService.fetchPublicProtocols()
-            case .verified:
-                try await protocolService.fetchPublicProtocols()
-            case .saved:
-                try await protocolService.fetchSavedProtocols()
-            }
-        } catch {
-            // Handle error
-        }
-    }
-}
+        await protocolService.loadPublicProtocols()
 
-// MARK: - Protocol Library Entry Point
-
-struct ProtocolLibraryEntryView: View {
-    let userProfile: UserProfile?
-    let onPhilosophyTap: (PhilosophyMoment) -> Void
-
-    @State private var selectedProtocol: FlowProtocol?
-
-    var body: some View {
-        NavigationView {
-            ProtocolLibraryView(
-                userProfile: userProfile,
-                onProtocolSelect: { proto in
-                    selectedProtocol = proto
-                },
-                onPhilosophyTap: onPhilosophyTap
-            )
+        if userProfile != nil {
+            await protocolService.loadRecommendedProtocols()
+            await protocolService.loadSavedProtocols()
         }
     }
 }
@@ -497,19 +289,22 @@ struct ProtocolLibraryEntryView: View {
 
 #if DEBUG
 struct ProtocolLibraryView_Previews: PreviewProvider {
+    static let userProfile = UserProfile(
+        id: "me",
+        username: "flowmaster",
+        displayName: "You",
+        chronotype: .moderateMorning,
+        gardenAgeDays: 90,
+        thirtyDayTrajectory: 23,
+        consistencyPercentile: 75,
+        totalPlantsGrown: 28,
+        speciesUnlocked: 8
+    )
+
     static var previews: some View {
-        NavigationView {
+        NavigationStack {
             ProtocolLibraryView(
-                userProfile: UserProfile(
-                    id: "test",
-                    username: "testuser",
-                    chronotype: .earlyBird,
-                    thirtyDayTrajectory: 20,
-                    consistencyPercentile: 75,
-                    totalPlantsGrown: 30,
-                    speciesUnlocked: 8,
-                    gardenAgeDays: 60
-                ),
+                userProfile: userProfile,
                 onProtocolSelect: { _ in },
                 onPhilosophyTap: { _ in }
             )

@@ -16,15 +16,25 @@ struct ProtocolCard: View {
                 // Header
                 headerRow
 
+                // Description (if short)
+                if !flowProtocol.description.isEmpty && flowProtocol.description.count < 100 {
+                    Text(flowProtocol.description)
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+                        .lineLimit(2)
+                }
+
                 // Substances
-                substancesRow
+                if !flowProtocol.substances.isEmpty {
+                    substancesRow
+                }
 
                 // Timing info
                 timingRow
 
                 // Results (if available)
-                if let avgScore = flowProtocol.averageFlowScore {
-                    resultsRow(avgScore: avgScore)
+                if flowProtocol.tryCount > 0 {
+                    resultsRow
                 }
 
                 // Footer with stats
@@ -37,10 +47,15 @@ struct ProtocolCard: View {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
-                    .stroke(borderColor, lineWidth: flowProtocol.isVerified ? 2 : 0)
+                    .stroke(borderColor, lineWidth: isVerified ? 2 : 0)
             )
         }
         .buttonStyle(PressableCardStyle())
+    }
+
+    // Computed property for verified status (based on ratings)
+    private var isVerified: Bool {
+        flowProtocol.ratingsCount >= 10 && flowProtocol.averageRating >= 4.0
     }
 
     // MARK: - Header Row
@@ -49,7 +64,7 @@ struct ProtocolCard: View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
                 // Protocol name
-                Text(flowProtocol.name)
+                Text(flowProtocol.title)
                     .font(OnLifeFont.heading3())
                     .foregroundColor(OnLifeColors.textPrimary)
                     .lineLimit(2)
@@ -59,7 +74,7 @@ struct ProtocolCard: View {
                     Text("by")
                         .foregroundColor(OnLifeColors.textTertiary)
 
-                    Text(flowProtocol.creatorName)
+                    Text(flowProtocol.creatorUsername)
                         .foregroundColor(OnLifeColors.socialTeal)
                 }
                 .font(OnLifeFont.caption())
@@ -69,7 +84,7 @@ struct ProtocolCard: View {
 
             // Badges
             VStack(alignment: .trailing, spacing: Spacing.xs) {
-                if flowProtocol.isVerified {
+                if isVerified {
                     verifiedBadge
                 }
 
@@ -99,10 +114,10 @@ struct ProtocolCard: View {
 
     private func chronotypeBadge(_ chronotype: Chronotype) -> some View {
         HStack(spacing: 2) {
-            Image(systemName: chronotype.icon)
+            Image(systemName: chronotype.sfSymbol)
                 .font(.system(size: 10))
 
-            Text(chronotype.rawValue)
+            Text(chronotype.shortName)
                 .font(OnLifeFont.labelSmall())
         }
         .foregroundColor(chronotypeColor(chronotype))
@@ -116,14 +131,14 @@ struct ProtocolCard: View {
 
     private func chronotypeColor(_ chronotype: Chronotype) -> Color {
         switch chronotype {
-        case .earlyBird: return OnLifeColors.amber
-        case .nightOwl: return Color(hex: "7B68EE")
-        case .flexible: return OnLifeColors.sage
+        case .extremeMorning, .moderateMorning: return OnLifeColors.amber
+        case .moderateEvening, .extremeEvening: return Color(hex: "7B68EE")
+        case .intermediate: return OnLifeColors.sage
         }
     }
 
     private var borderColor: Color {
-        flowProtocol.isVerified ? OnLifeColors.socialTeal.opacity(0.5) : Color.clear
+        isVerified ? OnLifeColors.socialTeal.opacity(0.5) : Color.clear
     }
 
     // MARK: - Substances Row
@@ -146,19 +161,17 @@ struct ProtocolCard: View {
 
     private func substancePill(_ substance: SubstanceEntry) -> some View {
         HStack(spacing: Spacing.xs) {
-            Image(systemName: substanceIcon(substance.substance))
+            Image(systemName: substanceIcon(substance.substanceName))
                 .font(.system(size: 12))
 
-            Text(substance.substance)
+            Text(substance.substanceName)
                 .font(OnLifeFont.bodySmall())
 
-            if let dosage = substance.dosage {
-                Text("•")
-                    .foregroundColor(OnLifeColors.textMuted)
-                Text(dosage)
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.textTertiary)
-            }
+            Text("•")
+                .foregroundColor(OnLifeColors.textMuted)
+            Text(substance.formattedDose)
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textTertiary)
         }
         .foregroundColor(OnLifeColors.textSecondary)
         .padding(.horizontal, Spacing.sm)
@@ -188,28 +201,41 @@ struct ProtocolCard: View {
 
     private var timingRow: some View {
         HStack(spacing: Spacing.lg) {
-            // Optimal time
-            if let optimalTime = flowProtocol.optimalTimeOfDay {
-                HStack(spacing: Spacing.xs) {
-                    Image(systemName: "clock")
-                        .font(.system(size: 12))
-                        .foregroundColor(OnLifeColors.textTertiary)
-
-                    Text(optimalTime)
-                        .font(OnLifeFont.bodySmall())
-                        .foregroundColor(OnLifeColors.textSecondary)
-                }
-            }
-
             // Duration
             HStack(spacing: Spacing.xs) {
                 Image(systemName: "timer")
                     .font(.system(size: 12))
                     .foregroundColor(OnLifeColors.textTertiary)
 
-                Text("\(flowProtocol.recommendedDurationMinutes)m session")
+                Text(flowProtocol.formattedDuration)
                     .font(OnLifeFont.bodySmall())
                     .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            // Blocks
+            if flowProtocol.blocksPerSession > 1 {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "square.stack")
+                        .font(.system(size: 12))
+                        .foregroundColor(OnLifeColors.textTertiary)
+
+                    Text("\(flowProtocol.blocksPerSession) blocks")
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+                }
+            }
+
+            // Activities
+            if !flowProtocol.bestForActivities.isEmpty {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: flowProtocol.bestForActivities.first?.icon ?? "sparkles")
+                        .font(.system(size: 12))
+                        .foregroundColor(OnLifeColors.textTertiary)
+
+                    Text(flowProtocol.bestForActivities.first?.displayName ?? "")
+                        .font(OnLifeFont.bodySmall())
+                        .foregroundColor(OnLifeColors.textSecondary)
+                }
             }
 
             Spacer()
@@ -218,24 +244,39 @@ struct ProtocolCard: View {
 
     // MARK: - Results Row
 
-    private func resultsRow(avgScore: Double) -> some View {
+    private var resultsRow: some View {
         HStack(spacing: Spacing.md) {
-            // Average flow score
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 14))
-                    .foregroundColor(OnLifeColors.socialTeal)
+            // Average improvement
+            if flowProtocol.averageFlowImprovement > 0 {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 14))
+                        .foregroundColor(OnLifeColors.socialTeal)
 
-                Text("\(Int(avgScore * 100))% avg flow")
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textPrimary)
+                    Text("+\(Int(flowProtocol.averageFlowImprovement))% flow")
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+            }
+
+            // Rating
+            if flowProtocol.ratingsCount > 0 {
+                HStack(spacing: 2) {
+                    Image(systemName: "star.fill")
+                        .font(.system(size: 12))
+                        .foregroundColor(OnLifeColors.amber)
+
+                    Text(String(format: "%.1f", flowProtocol.averageRating))
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
             }
 
             // Trial count
             Text("•")
                 .foregroundColor(OnLifeColors.textMuted)
 
-            Text("\(flowProtocol.trialCount) trials")
+            Text("\(flowProtocol.tryCount) trials")
                 .font(OnLifeFont.caption())
                 .foregroundColor(OnLifeColors.textTertiary)
 
@@ -258,16 +299,6 @@ struct ProtocolCard: View {
                     .font(.system(size: 12))
 
                 Text("\(flowProtocol.forkCount) forks")
-                    .font(OnLifeFont.caption())
-            }
-            .foregroundColor(OnLifeColors.textTertiary)
-
-            // Save count
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: "bookmark")
-                    .font(.system(size: 12))
-
-                Text("\(flowProtocol.saveCount)")
                     .font(OnLifeFont.caption())
             }
             .foregroundColor(OnLifeColors.textTertiary)
@@ -319,25 +350,25 @@ struct ProtocolCardCompact: View {
 
                 // Info
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(flowProtocol.name)
+                    Text(flowProtocol.title)
                         .font(OnLifeFont.body())
                         .foregroundColor(OnLifeColors.textPrimary)
                         .lineLimit(1)
 
                     HStack(spacing: Spacing.sm) {
-                        Text("by \(flowProtocol.creatorName)")
+                        Text("by \(flowProtocol.creatorUsername)")
                             .font(OnLifeFont.caption())
                             .foregroundColor(OnLifeColors.textTertiary)
 
-                        if let avgScore = flowProtocol.averageFlowScore {
+                        if flowProtocol.averageFlowImprovement > 0 {
                             Text("•")
                                 .foregroundColor(OnLifeColors.textMuted)
 
                             HStack(spacing: 2) {
-                                Image(systemName: "sparkles")
+                                Image(systemName: "chart.line.uptrend.xyaxis")
                                     .font(.system(size: 10))
 
-                                Text("\(Int(avgScore * 100))%")
+                                Text("+\(Int(flowProtocol.averageFlowImprovement))%")
                                     .font(OnLifeFont.caption())
                             }
                             .foregroundColor(OnLifeColors.socialTeal)
@@ -372,39 +403,29 @@ struct ProtocolSubstancesList: View {
             ForEach(substances) { substance in
                 HStack(spacing: Spacing.md) {
                     // Icon
-                    Image(systemName: substanceIcon(substance.substance))
+                    Image(systemName: substanceIcon(substance.substanceName))
                         .font(.system(size: 16))
                         .foregroundColor(OnLifeColors.socialTeal)
                         .frame(width: 24)
 
                     // Name and dosage
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(substance.substance)
+                        Text(substance.substanceName)
                             .font(OnLifeFont.body())
                             .foregroundColor(OnLifeColors.textPrimary)
 
-                        if let dosage = substance.dosage {
-                            Text(dosage)
-                                .font(OnLifeFont.caption())
-                                .foregroundColor(OnLifeColors.textTertiary)
-                        }
+                        Text(substance.formattedDose)
+                            .font(OnLifeFont.caption())
+                            .foregroundColor(OnLifeColors.textTertiary)
                     }
 
                     Spacer()
 
                     // Timing
                     if showTiming {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text(timingLabel(substance.timing))
-                                .font(OnLifeFont.label())
-                                .foregroundColor(OnLifeColors.textSecondary)
-
-                            if let minutes = substance.minutesBefore {
-                                Text("\(minutes)m before")
-                                    .font(OnLifeFont.caption())
-                                    .foregroundColor(OnLifeColors.textTertiary)
-                            }
-                        }
+                        Text(substance.timingDescription)
+                            .font(OnLifeFont.label())
+                            .foregroundColor(OnLifeColors.textSecondary)
                     }
                 }
                 .padding(Spacing.sm)
@@ -430,16 +451,6 @@ struct ProtocolSubstancesList: View {
             return "pills.fill"
         }
     }
-
-    private func timingLabel(_ timing: SubstanceTiming) -> String {
-        switch timing {
-        case .prework: return "Pre-work"
-        case .duringWork: return "During"
-        case .postWork: return "After"
-        case .wakeUp: return "Wake-up"
-        case .beforeBed: return "Before bed"
-        }
-    }
 }
 
 // MARK: - Preview
@@ -448,36 +459,31 @@ struct ProtocolSubstancesList: View {
 struct ProtocolCard_Previews: PreviewProvider {
     static let sampleProtocol = FlowProtocol(
         id: "1",
-        name: "Morning Clarity Stack",
         creatorId: "user1",
-        creatorName: "Sarah Chen",
+        creatorUsername: "sarah_chen",
+        title: "Morning Clarity Stack",
         description: "Optimized caffeine + L-theanine stack for morning deep work sessions. The 2:1 theanine to caffeine ratio smooths out the energy curve.",
         substances: [
             SubstanceEntry(
-                substance: "Caffeine",
-                dosage: "100mg",
-                timing: .prework,
-                minutesBefore: 30
+                substanceName: "Caffeine",
+                doseMg: 100,
+                timingMinutes: -30
             ),
             SubstanceEntry(
-                substance: "L-Theanine",
-                dosage: "200mg",
-                timing: .prework,
-                minutesBefore: 30
+                substanceName: "L-Theanine",
+                doseMg: 200,
+                timingMinutes: -30
             )
         ],
-        activities: [.coding, .writing],
-        targetChronotype: .earlyBird,
-        optimalTimeOfDay: "6-10 AM",
-        recommendedDurationMinutes: 90,
-        averageFlowScore: 0.78,
-        trialCount: 156,
+        sessionDurationMinutes: 90,
+        blocksPerSession: 2,
+        targetChronotype: .moderateMorning,
+        bestForActivities: [.coding, .writing],
         forkCount: 23,
-        saveCount: 89,
-        isVerified: true,
-        isPublic: true,
-        createdAt: Date(),
-        updatedAt: Date()
+        tryCount: 156,
+        averageFlowImprovement: 18,
+        averageRating: 4.5,
+        ratingsCount: 42
     )
 
     static var previews: some View {

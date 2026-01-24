@@ -1,6 +1,40 @@
 import Foundation
 import FirebaseFirestore
 
+// MARK: - Substance Timing
+
+enum SubstanceTiming: String, CaseIterable, Codable {
+    case prework = "Pre-work"
+    case atStart = "At start"
+    case midSession = "Mid-session"
+    case postSession = "Post-session"
+
+    var minuteOffset: Int {
+        switch self {
+        case .prework: return -30
+        case .atStart: return 0
+        case .midSession: return 45
+        case .postSession: return 90
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .prework: return "clock.badge.checkmark"
+        case .atStart: return "play.circle"
+        case .midSession: return "timer"
+        case .postSession: return "checkmark.circle"
+        }
+    }
+
+    static func from(minutes: Int) -> SubstanceTiming {
+        if minutes < -15 { return .prework }
+        if minutes < 15 { return .atStart }
+        if minutes < 60 { return .midSession }
+        return .postSession
+    }
+}
+
 // MARK: - Substance Entry
 
 struct SubstanceEntry: Codable, Identifiable, Hashable {

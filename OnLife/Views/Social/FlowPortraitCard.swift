@@ -91,12 +91,16 @@ struct FlowPortraitCard: View {
 
     private var chronotypeColor: Color {
         switch profile.chronotype {
-        case .earlyBird:
+        case .extremeMorning:
             return OnLifeColors.amber
-        case .nightOwl:
-            return Color(hex: "7B68EE") // Soft purple
-        case .flexible:
+        case .moderateMorning:
+            return OnLifeColors.sunlight
+        case .intermediate:
             return OnLifeColors.sage
+        case .moderateEvening:
+            return Color(hex: "9B8FCE")
+        case .extremeEvening:
+            return Color(hex: "7B68EE") // Soft purple
         }
     }
 
@@ -391,7 +395,7 @@ struct FlowPortraitCard_Previews: PreviewProvider {
                     id: "preview",
                     username: "sarahflows",
                     displayName: "Sarah Chen",
-                    chronotype: .nightOwl,
+                    chronotype: .moderateEvening,
                     peakFlowWindows: [TimeWindow(startHour: 22, endHour: 2)],
                     masteryDurationDays: 120,
                     gardenAgeDays: 120,
@@ -408,12 +412,12 @@ struct FlowPortraitCard_Previews: PreviewProvider {
                     id: "preview",
                     username: "test",
                     displayName: "Test",
-                    chronotype: .earlyBird,
+                    chronotype: .moderateMorning,
+                    gardenAgeDays: 45,
                     thirtyDayTrajectory: -5,
                     consistencyPercentile: 60,
                     totalPlantsGrown: 10,
-                    speciesUnlocked: 3,
-                    gardenAgeDays: 45
+                    speciesUnlocked: 3
                 )
             )
             .padding()

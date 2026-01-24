@@ -22,11 +22,12 @@ struct UserSearchResultCard: View {
             // User info
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: Spacing.xs) {
-                    Text(profile.displayName ?? profile.username)
+                    Text(profile.displayName)
                         .font(OnLifeFont.body())
                         .foregroundColor(OnLifeColors.textPrimary)
 
-                    if profile.isVerified {
+                    // Verified badge for high consistency users
+                    if profile.consistencyPercentile >= 90 {
                         Image(systemName: "checkmark.seal.fill")
                             .font(.system(size: 12))
                             .foregroundColor(OnLifeColors.socialTeal)
@@ -39,7 +40,7 @@ struct UserSearchResultCard: View {
 
                 // Mini stats
                 HStack(spacing: Spacing.sm) {
-                    miniStat(icon: profile.chronotype.icon, value: profile.chronotype.rawValue)
+                    miniStat(icon: profile.chronotype.sfSymbol, value: profile.chronotype.shortName)
 
                     if profile.thirtyDayTrajectory != 0 {
                         miniStat(
@@ -64,7 +65,7 @@ struct UserSearchResultCard: View {
             onViewProfile()
         }
         .confirmationDialog(
-            "Connect with \(profile.displayName ?? profile.username)",
+            "Connect with \(profile.displayName)",
             isPresented: $showingConnectionOptions,
             titleVisibility: .visible
         ) {
@@ -168,7 +169,7 @@ struct UserSearchResultCard: View {
         case .observer: return OnLifeColors.textTertiary
         case .friend: return OnLifeColors.socialTeal
         case .flowPartner: return OnLifeColors.amber
-        case .mentor: return Color(hex: "7B68EE")
+        case .mentor, .mentee: return Color(hex: "7B68EE")
         }
     }
 }
@@ -206,7 +207,7 @@ struct UserAvatarView: View {
     }
 
     private var initials: String {
-        let name = profile.displayName ?? profile.username
+        let name = profile.displayName
         let parts = name.split(separator: " ")
         if parts.count >= 2 {
             return String(parts[0].prefix(1) + parts[1].prefix(1)).uppercased()
@@ -242,7 +243,7 @@ struct UserSearchResultCompact: View {
                 UserAvatarView(profile: profile, size: 36)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(profile.displayName ?? profile.username)
+                    Text(profile.displayName)
                         .font(OnLifeFont.bodySmall())
                         .foregroundColor(OnLifeColors.textPrimary)
 
@@ -270,12 +271,12 @@ struct UserSearchResultCard_Previews: PreviewProvider {
         id: "user1",
         username: "sarahflows",
         displayName: "Sarah Chen",
-        chronotype: .earlyBird,
+        chronotype: .moderateMorning,
+        gardenAgeDays: 90,
         thirtyDayTrajectory: 23,
         consistencyPercentile: 85,
         totalPlantsGrown: 45,
-        speciesUnlocked: 12,
-        gardenAgeDays: 90
+        speciesUnlocked: 12
     )
 
     static var previews: some View {
@@ -294,8 +295,8 @@ struct UserSearchResultCard_Previews: PreviewProvider {
                 profile: sampleProfile,
                 existingConnection: Connection(
                     id: "conn1",
-                    userId: "me",
-                    connectedUserId: "user1",
+                    user1Id: "me",
+                    user2Id: "user1",
                     level: .friend,
                     createdAt: Date()
                 ),

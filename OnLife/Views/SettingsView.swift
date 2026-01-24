@@ -2,12 +2,20 @@ import SwiftUI
 
 struct SettingsView: View {
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+    @AppStorage("hasCompletedAuthentication") private var hasCompletedAuthentication = true
     @StateObject private var profileManager = MetabolismProfileManager.shared
     @StateObject private var watchConnectivity = WatchConnectivityManager.shared
+    @StateObject private var profileViewModel = SettingsProfileViewModel()
+    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var biometricSourceManager = BiometricSourceManager.shared
     @State private var showClearDataConfirmation = false
+    @State private var showingThemePicker = false
     @State private var showResetProfileConfirmation = false
     @State private var showResetOnboardingConfirmation = false
     @State private var showingProfileEdit = false
+    @State private var showingUpgradeAccount = false
+    @State private var showingSignOutConfirmation = false
+    @State private var showingDeleteAccountConfirmation = false
     @State private var contentAppeared = false
 
     var body: some View {
@@ -53,13 +61,16 @@ struct SettingsView: View {
 
                                 SettingsDivider()
 
-                                SettingsRow(
-                                    icon: "paintpalette.fill",
-                                    iconColor: OnLifeColors.sage,
+                                SettingsRowButton(
+                                    icon: themeManager.currentThemeType.icon,
+                                    iconColor: themeManager.currentTheme.accent,
                                     title: "Theme",
-                                    value: "Earth tones",
-                                    showChevron: false
-                                )
+                                    value: themeManager.currentThemeType.rawValue,
+                                    showChevron: true
+                                ) {
+                                    Haptics.light()
+                                    showingThemePicker = true
+                                }
 
                                 SettingsDivider()
 
@@ -103,6 +114,39 @@ struct SettingsView: View {
                             .animation(OnLifeAnimation.elegant.delay(0.12), value: contentAppeared)
                         }
 
+                        // DATA SOURCES Section
+                        SettingsSection(title: "DATA SOURCES") {
+                            NavigationLink {
+                                BiometricSourcesView()
+                            } label: {
+                                SettingsRowContent(
+                                    icon: biometricSourceManager.activeSource.icon,
+                                    iconColor: OnLifeColors.sage,
+                                    title: "Biometric Sources",
+                                    trailing: {
+                                        HStack(spacing: Spacing.sm) {
+                                            Text(biometricSourceManager.activeSource.displayName)
+                                                .font(OnLifeFont.caption())
+                                                .foregroundColor(OnLifeColors.textSecondary)
+
+                                            // Accuracy indicator
+                                            Text(biometricSourceManager.activeSource.accuracy.replacingOccurrences(of: " accuracy", with: ""))
+                                                .font(OnLifeFont.caption())
+                                                .foregroundColor(OnLifeColors.healthy)
+
+                                            Image(systemName: "chevron.right")
+                                                .font(.system(size: 12, weight: .semibold))
+                                                .foregroundColor(OnLifeColors.textTertiary)
+                                        }
+                                    }
+                                )
+                            }
+                            .buttonStyle(SettingsRowButtonStyle())
+                        }
+                        .opacity(contentAppeared ? 1 : 0)
+                        .offset(y: contentAppeared ? 0 : 20)
+                        .animation(OnLifeAnimation.elegant.delay(0.13), value: contentAppeared)
+
                         // INTEGRATIONS Section
                         SettingsSection(title: "INTEGRATIONS") {
                             NavigationLink {
@@ -131,28 +175,84 @@ struct SettingsView: View {
                         }
                         .opacity(contentAppeared ? 1 : 0)
                         .offset(y: contentAppeared ? 0 : 20)
-                        .animation(OnLifeAnimation.elegant.delay(0.13), value: contentAppeared)
+                        .animation(OnLifeAnimation.elegant.delay(0.15), value: contentAppeared)
 
                         // ACCOUNT Section
                         SettingsSection(title: "ACCOUNT") {
                             VStack(spacing: 0) {
-                                SettingsRow(
-                                    icon: "person.fill",
-                                    iconColor: OnLifeColors.sage,
-                                    title: "Profile",
-                                    value: "Coming soon",
-                                    showChevron: false
-                                )
+                                // Account status row
+                                HStack(spacing: Spacing.md) {
+                                    // Account icon
+                                    ZStack {
+                                        Circle()
+                                            .fill(profileViewModel.accountType.color.opacity(0.2))
+                                            .frame(width: 40, height: 40)
+
+                                        Image(systemName: profileViewModel.accountType.icon)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(profileViewModel.accountType.color)
+                                    }
+
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text(profileViewModel.displayName)
+                                            .font(OnLifeFont.body())
+                                            .foregroundColor(OnLifeColors.textPrimary)
+
+                                        if profileViewModel.isAnonymous {
+                                            Text("Guest account")
+                                                .font(OnLifeFont.caption())
+                                                .foregroundColor(OnLifeColors.textTertiary)
+                                        } else {
+                                            Text(profileViewModel.email)
+                                                .font(OnLifeFont.caption())
+                                                .foregroundColor(OnLifeColors.textSecondary)
+                                        }
+                                    }
+
+                                    Spacer()
+
+                                    // Account type badge
+                                    Text(profileViewModel.accountType.rawValue)
+                                        .font(OnLifeFont.caption())
+                                        .foregroundColor(OnLifeColors.textTertiary)
+                                        .padding(.horizontal, Spacing.sm)
+                                        .padding(.vertical, 4)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: CornerRadius.small, style: .continuous)
+                                                .fill(OnLifeColors.surface)
+                                        )
+                                }
+                                .padding(.horizontal, Spacing.lg)
+                                .padding(.vertical, Spacing.md)
 
                                 SettingsDivider()
 
-                                SettingsRow(
-                                    icon: "cloud.fill",
-                                    iconColor: OnLifeColors.sage,
-                                    title: "Sync",
-                                    value: "Local only",
+                                // Upgrade button for anonymous users
+                                if profileViewModel.isAnonymous {
+                                    SettingsRowButton(
+                                        icon: "arrow.up.circle.fill",
+                                        iconColor: OnLifeColors.sage,
+                                        title: "Upgrade Account",
+                                        titleColor: OnLifeColors.sage,
+                                        showChevron: true
+                                    ) {
+                                        Haptics.light()
+                                        showingUpgradeAccount = true
+                                    }
+
+                                    SettingsDivider()
+                                }
+
+                                // Sign out button
+                                SettingsRowButton(
+                                    icon: "rectangle.portrait.and.arrow.right",
+                                    iconColor: OnLifeColors.textSecondary,
+                                    title: "Sign Out",
                                     showChevron: false
-                                )
+                                ) {
+                                    Haptics.warning()
+                                    showingSignOutConfirmation = true
+                                }
                             }
                         }
                         .opacity(contentAppeared ? 1 : 0)
@@ -317,6 +417,38 @@ struct SettingsView: View {
             NavigationView {
                 MetabolismProfileEditView()
             }
+        }
+        .sheet(isPresented: $showingUpgradeAccount) {
+            UpgradeAccountView()
+        }
+        .sheet(isPresented: $showingThemePicker) {
+            ThemePickerView()
+        }
+        // Sign Out Confirmation
+        .alert("Sign Out", isPresented: $showingSignOutConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Sign Out", role: .destructive) {
+                profileViewModel.signOut()
+            }
+        } message: {
+            if profileViewModel.isAnonymous {
+                Text("Warning: As a guest, signing out will permanently lose your data. Consider upgrading your account first.")
+            } else {
+                Text("You can sign back in anytime to access your data.")
+            }
+        }
+        // Delete Account Confirmation
+        .alert("Delete Account", isPresented: $showingDeleteAccountConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete Account", role: .destructive) {
+                Task {
+                    await profileViewModel.deleteAccount()
+                    hasCompletedOnboarding = false
+                    hasCompletedAuthentication = false
+                }
+            }
+        } message: {
+            Text("This will permanently delete your account and all associated data. This action cannot be undone.")
         }
     }
 }

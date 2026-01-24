@@ -154,6 +154,8 @@ private struct PlantThumbnail: View {
         case .bamboo: return "🎋"
         case .lavender: return "💜"
         case .bonsai: return "🪴"
+        case .cherry: return "🌸"
+        case .tulip: return "🌷"
         }
     }
 

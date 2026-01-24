@@ -42,7 +42,7 @@ struct ComparisonView: View {
                     ComparisonModeToggle(
                         mode: $comparisonMode,
                         onPhilosophyTap: {
-                            onPhilosophyTap(PhilosophyMomentsLibrary.healthyComparison)
+                            onPhilosophyTap(PhilosophyMomentsLibrary.howYouCompareMatters)
                         }
                     )
                     .opacity(contentOpacity)
@@ -133,7 +133,7 @@ struct ComparisonView: View {
                 yourTrajectory: yourProfile.thirtyDayTrajectory,
                 theirTrajectory: theirProfile.thirtyDayTrajectory,
                 yourName: "You",
-                theirName: theirProfile.displayName ?? theirProfile.username,
+                theirName: theirProfile.displayName,
                 animated: true
             )
 
@@ -154,7 +154,7 @@ struct ComparisonView: View {
                 yourTrajectory: yourProfile.thirtyDayTrajectory,
                 theirTrajectory: theirProfile.thirtyDayTrajectory,
                 yourName: "You",
-                theirName: theirProfile.displayName ?? theirProfile.username,
+                theirName: theirProfile.displayName,
                 animated: true
             )
 
@@ -164,7 +164,7 @@ struct ComparisonView: View {
                     yourData: yourHistoricalData,
                     theirData: theirHistoricalData,
                     yourName: "You",
-                    theirName: theirProfile.displayName ?? theirProfile.username
+                    theirName: theirProfile.displayName
                 )
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -206,9 +206,9 @@ struct ComparisonView: View {
 
             // Chronotype strategy
             strategyRow(
-                icon: theirProfile.chronotype.icon,
-                title: theirProfile.chronotype.rawValue,
-                subtitle: "Prefers \(theirProfile.chronotype == .earlyBird ? "morning" : theirProfile.chronotype == .nightOwl ? "evening" : "flexible") sessions"
+                icon: theirProfile.chronotype.sfSymbol,
+                title: theirProfile.chronotype.shortName,
+                subtitle: "Prefers \(theirProfile.chronotype.socialDisplayName) sessions"
             )
 
             // Session duration (mock data - would come from their protocols)
@@ -294,7 +294,7 @@ struct ComparisonView: View {
 
                 // Their peak
                 peakWindowPill(
-                    label: theirProfile.displayName ?? "Them",
+                    label: theirProfile.displayName,
                     chronotype: theirProfile.chronotype,
                     windows: theirProfile.peakFlowWindows,
                     color: OnLifeColors.amber
@@ -432,7 +432,7 @@ struct ComparisonView: View {
             insights: generateInsights(),
             onActionTap: { destination in
                 switch destination {
-                case .protocol(let id):
+                case .flowProtocol(let id):
                     onProtocolTap(id)
                 case .philosophyMoment(let moment):
                     onPhilosophyTap(moment)
@@ -441,7 +441,7 @@ struct ComparisonView: View {
                 }
             },
             onPhilosophyTap: {
-                onPhilosophyTap(PhilosophyMomentsLibrary.healthyComparison)
+                onPhilosophyTap(PhilosophyMomentsLibrary.howYouCompareMatters)
             }
         )
     }
@@ -545,7 +545,7 @@ struct QuickCompareButton: View {
 
                 // Name and trajectory
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(profile.displayName ?? profile.username)
+                    Text(profile.displayName)
                         .font(OnLifeFont.body())
                         .foregroundColor(OnLifeColors.textPrimary)
 
@@ -579,7 +579,7 @@ struct ComparisonView_Previews: PreviewProvider {
         id: "you",
         username: "flowmaster",
         displayName: "You",
-        chronotype: .earlyBird,
+        chronotype: .moderateMorning,
         peakFlowWindows: [TimeWindow(startHour: 6, endHour: 10)],
         masteryDurationDays: 60,
         gardenAgeDays: 60,
@@ -593,7 +593,7 @@ struct ComparisonView_Previews: PreviewProvider {
         id: "them",
         username: "sarahflows",
         displayName: "Sarah Chen",
-        chronotype: .earlyBird,
+        chronotype: .moderateMorning,
         peakFlowWindows: [TimeWindow(startHour: 7, endHour: 11)],
         masteryDurationDays: 180,
         gardenAgeDays: 180,

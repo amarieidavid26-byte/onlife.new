@@ -8,13 +8,14 @@ struct CreateProtocolView: View {
     let onSave: (FlowProtocol) -> Void
     let onCancel: () -> Void
 
-    @State private var name: String = ""
+    @State private var title: String = ""
     @State private var description: String = ""
     @State private var substances: [SubstanceEntry] = []
     @State private var selectedActivities: Set<ProtocolActivityType> = []
     @State private var targetChronotype: Chronotype?
-    @State private var optimalTimeOfDay: String = ""
-    @State private var recommendedDuration: Int = 90
+    @State private var sessionDuration: Int = 60
+    @State private var breakDuration: Int = 10
+    @State private var blocksPerSession: Int = 1
     @State private var isPublic: Bool = true
 
     @State private var showingAddSubstance = false
@@ -24,7 +25,7 @@ struct CreateProtocolView: View {
     @FocusState private var focusedField: Field?
 
     enum Field {
-        case name, description, timeOfDay
+        case title, description
     }
 
     init(forkingFrom: FlowProtocol? = nil, userProfile: UserProfile?, onSave: @escaping (FlowProtocol) -> Void, onCancel: @escaping () -> Void) {
@@ -35,13 +36,14 @@ struct CreateProtocolView: View {
 
         // Initialize with forked values if applicable
         if let fork = forkingFrom {
-            _name = State(initialValue: "\(fork.name) (My Version)")
-            _description = State(initialValue: fork.description ?? "")
+            _title = State(initialValue: "\(fork.title) (My Version)")
+            _description = State(initialValue: fork.description)
             _substances = State(initialValue: fork.substances)
-            _selectedActivities = State(initialValue: Set(fork.activities))
+            _selectedActivities = State(initialValue: Set(fork.bestForActivities))
             _targetChronotype = State(initialValue: fork.targetChronotype)
-            _optimalTimeOfDay = State(initialValue: fork.optimalTimeOfDay ?? "")
-            _recommendedDuration = State(initialValue: fork.recommendedDurationMinutes)
+            _sessionDuration = State(initialValue: fork.sessionDurationMinutes)
+            _breakDuration = State(initialValue: fork.breakDurationMinutes ?? 10)
+            _blocksPerSession = State(initialValue: fork.blocksPerSession)
         }
     }
 
@@ -123,7 +125,7 @@ struct CreateProtocolView: View {
     // MARK: - Validation
 
     private var canSave: Bool {
-        !name.trimmingCharacters(in: .whitespaces).isEmpty &&
+        !title.trimmingCharacters(in: .whitespaces).isEmpty &&
         !substances.isEmpty
     }
 
@@ -140,11 +142,11 @@ struct CreateProtocolView: View {
                     .font(OnLifeFont.caption())
                     .foregroundColor(OnLifeColors.textTertiary)
 
-                Text(fork.name)
+                Text(fork.title)
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textPrimary)
 
-                Text("by \(fork.creatorName)")
+                Text("by \(fork.creatorUsername)")
                     .font(OnLifeFont.caption())
                     .foregroundColor(OnLifeColors.socialTeal)
             }
@@ -166,13 +168,13 @@ struct CreateProtocolView: View {
                 .font(OnLifeFont.heading3())
                 .foregroundColor(OnLifeColors.textPrimary)
 
-            // Name field
+            // Title field
             VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Protocol Name")
+                Text("Protocol Title")
                     .font(OnLifeFont.label())
                     .foregroundColor(OnLifeColors.textTertiary)
 
-                TextField("e.g., Morning Clarity Stack", text: $name)
+                TextField("e.g., Morning Clarity Stack", text: $title)
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textPrimary)
                     .padding(Spacing.md)
@@ -180,7 +182,7 @@ struct CreateProtocolView: View {
                         RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
                             .fill(OnLifeColors.cardBackgroundElevated)
                     )
-                    .focused($focusedField, equals: .name)
+                    .focused($focusedField, equals: .title)
             }
 
             // Description field
@@ -274,33 +276,26 @@ struct CreateProtocolView: View {
     private func substanceRow(_ substance: SubstanceEntry, index: Int) -> some View {
         HStack(spacing: Spacing.md) {
             // Icon
-            Image(systemName: substanceIcon(substance.substance))
+            Image(systemName: substanceIcon(substance.substanceName))
                 .font(.system(size: 16))
                 .foregroundColor(OnLifeColors.socialTeal)
                 .frame(width: 24)
 
             // Info
             VStack(alignment: .leading, spacing: 2) {
-                Text(substance.substance)
+                Text(substance.substanceName)
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textPrimary)
 
                 HStack(spacing: Spacing.sm) {
-                    if let dosage = substance.dosage {
-                        Text(dosage)
-                            .foregroundColor(OnLifeColors.textTertiary)
-                    }
+                    Text(substance.formattedDose)
+                        .foregroundColor(OnLifeColors.textTertiary)
 
                     Text("•")
                         .foregroundColor(OnLifeColors.textMuted)
 
-                    Text(timingLabel(substance.timing))
+                    Text(substance.timingDescription)
                         .foregroundColor(OnLifeColors.textTertiary)
-
-                    if let minutes = substance.minutesBefore {
-                        Text("(\(minutes)m before)")
-                            .foregroundColor(OnLifeColors.textMuted)
-                    }
                 }
                 .font(OnLifeFont.caption())
             }
@@ -320,7 +315,7 @@ struct CreateProtocolView: View {
             // Delete button
             Button(action: {
                 withAnimation {
-                    substances.remove(at: index)
+                    _ = substances.remove(at: index)
                 }
             }) {
                 Image(systemName: "trash")
@@ -350,15 +345,6 @@ struct CreateProtocolView: View {
         }
     }
 
-    private func timingLabel(_ timing: SubstanceTiming) -> String {
-        switch timing {
-        case .prework: return "Pre-work"
-        case .duringWork: return "During"
-        case .postWork: return "After"
-        case .wakeUp: return "Wake-up"
-        case .beforeBed: return "Before bed"
-        }
-    }
 
     // MARK: - Activities Section
 
@@ -423,7 +409,7 @@ struct CreateProtocolView: View {
 
     private var timingSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Timing")
+            Text("Timing & Duration")
                 .font(OnLifeFont.heading3())
                 .foregroundColor(OnLifeColors.textPrimary)
 
@@ -433,50 +419,79 @@ struct CreateProtocolView: View {
                     .font(OnLifeFont.label())
                     .foregroundColor(OnLifeColors.textTertiary)
 
-                HStack(spacing: Spacing.sm) {
-                    chronotypeButton(nil, label: "Any")
-                    ForEach([Chronotype.earlyBird, .nightOwl, .flexible], id: \.self) { chrono in
-                        chronotypeButton(chrono, label: chrono.rawValue)
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.sm) {
+                        chronotypeButton(nil, label: "Any")
+                        ForEach(Chronotype.allCases, id: \.self) { chrono in
+                            chronotypeButton(chrono, label: chrono.shortName)
+                        }
                     }
                 }
             }
 
-            // Optimal time of day
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Text("Optimal Time Window")
-                    .font(OnLifeFont.label())
-                    .foregroundColor(OnLifeColors.textTertiary)
-
-                TextField("e.g., 6-10 AM", text: $optimalTimeOfDay)
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textPrimary)
-                    .padding(Spacing.md)
-                    .background(
-                        RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                            .fill(OnLifeColors.cardBackgroundElevated)
-                    )
-                    .focused($focusedField, equals: .timeOfDay)
-            }
-
-            // Recommended duration
+            // Session duration
             VStack(alignment: .leading, spacing: Spacing.xs) {
                 HStack {
-                    Text("Recommended Session Duration")
+                    Text("Session Duration")
                         .font(OnLifeFont.label())
                         .foregroundColor(OnLifeColors.textTertiary)
 
                     Spacer()
 
-                    Text("\(recommendedDuration) minutes")
+                    Text("\(sessionDuration) minutes")
                         .font(OnLifeFont.body())
                         .foregroundColor(OnLifeColors.textPrimary)
                 }
 
                 Slider(value: Binding(
-                    get: { Double(recommendedDuration) },
-                    set: { recommendedDuration = Int($0) }
+                    get: { Double(sessionDuration) },
+                    set: { sessionDuration = Int($0) }
                 ), in: 15...180, step: 15)
                 .tint(OnLifeColors.socialTeal)
+            }
+
+            // Blocks per session
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                HStack {
+                    Text("Blocks per Session")
+                        .font(OnLifeFont.label())
+                        .foregroundColor(OnLifeColors.textTertiary)
+
+                    Spacer()
+
+                    Text("\(blocksPerSession)")
+                        .font(OnLifeFont.body())
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+
+                Slider(value: Binding(
+                    get: { Double(blocksPerSession) },
+                    set: { blocksPerSession = Int($0) }
+                ), in: 1...6, step: 1)
+                .tint(OnLifeColors.socialTeal)
+            }
+
+            // Break duration (if multiple blocks)
+            if blocksPerSession > 1 {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    HStack {
+                        Text("Break Duration")
+                            .font(OnLifeFont.label())
+                            .foregroundColor(OnLifeColors.textTertiary)
+
+                        Spacer()
+
+                        Text("\(breakDuration) minutes")
+                            .font(OnLifeFont.body())
+                            .foregroundColor(OnLifeColors.textPrimary)
+                    }
+
+                    Slider(value: Binding(
+                        get: { Double(breakDuration) },
+                        set: { breakDuration = Int($0) }
+                    ), in: 5...30, step: 5)
+                    .tint(OnLifeColors.socialTeal)
+                }
             }
         }
         .padding(Spacing.lg)
@@ -497,7 +512,7 @@ struct CreateProtocolView: View {
         }) {
             HStack(spacing: Spacing.xs) {
                 if let chrono = chrono {
-                    Image(systemName: chrono.icon)
+                    Image(systemName: chrono.sfSymbol)
                         .font(.system(size: 12))
                 }
 
@@ -518,9 +533,11 @@ struct CreateProtocolView: View {
     private func chronotypeColor(_ chrono: Chronotype?) -> Color {
         guard let chrono = chrono else { return OnLifeColors.socialTeal }
         switch chrono {
-        case .earlyBird: return OnLifeColors.amber
-        case .nightOwl: return Color(hex: "7B68EE")
-        case .flexible: return OnLifeColors.sage
+        case .extremeMorning: return OnLifeColors.amber
+        case .moderateMorning: return OnLifeColors.sunlight
+        case .intermediate: return OnLifeColors.sage
+        case .moderateEvening: return Color(hex: "9B8FCE")
+        case .extremeEvening: return Color(hex: "7B68EE")
         }
     }
 
@@ -562,17 +579,22 @@ struct CreateProtocolView: View {
 
         let newProtocol = FlowProtocol(
             id: UUID().uuidString,
-            name: name.trimmingCharacters(in: .whitespaces),
             creatorId: userProfile?.id ?? "",
-            creatorName: userProfile?.displayName ?? userProfile?.username ?? "Anonymous",
-            description: description.isEmpty ? nil : description,
+            creatorUsername: userProfile?.username ?? "Anonymous",
+            title: title.trimmingCharacters(in: .whitespaces),
+            description: description.isEmpty ? "No description" : description,
             substances: substances,
-            activities: Array(selectedActivities),
+            sessionDurationMinutes: sessionDuration,
+            breakDurationMinutes: blocksPerSession > 1 ? breakDuration : nil,
+            blocksPerSession: blocksPerSession,
             targetChronotype: targetChronotype,
-            optimalTimeOfDay: optimalTimeOfDay.isEmpty ? nil : optimalTimeOfDay,
-            recommendedDurationMinutes: recommendedDuration,
+            bestForActivities: Array(selectedActivities),
             forkedFromId: forkingFrom?.id,
-            forkedFromName: forkingFrom?.name,
+            forkCount: 0,
+            tryCount: 0,
+            averageFlowImprovement: 0,
+            averageRating: 0,
+            ratingsCount: 0,
             isPublic: isPublic,
             createdAt: Date(),
             updatedAt: Date()
@@ -590,9 +612,9 @@ struct AddSubstanceSheet: View {
     let onCancel: () -> Void
 
     @State private var substanceName: String = ""
-    @State private var dosage: String = ""
+    @State private var dosageMg: Int = 100
     @State private var timing: SubstanceTiming = .prework
-    @State private var minutesBefore: Int = 30
+    @State private var timingMinutes: Int = -30
 
     @State private var showingSuggestions = false
 
@@ -607,10 +629,10 @@ struct AddSubstanceSheet: View {
         self.onCancel = onCancel
 
         if let existing = existingSubstance {
-            _substanceName = State(initialValue: existing.substance)
-            _dosage = State(initialValue: existing.dosage ?? "")
-            _timing = State(initialValue: existing.timing)
-            _minutesBefore = State(initialValue: existing.minutesBefore ?? 30)
+            _substanceName = State(initialValue: existing.substanceName)
+            _dosageMg = State(initialValue: existing.doseMg)
+            _timingMinutes = State(initialValue: existing.timingMinutes)
+            _timing = State(initialValue: SubstanceTiming.from(minutes: existing.timingMinutes))
         }
     }
 
@@ -658,18 +680,23 @@ struct AddSubstanceSheet: View {
 
                     // Dosage
                     VStack(alignment: .leading, spacing: Spacing.xs) {
-                        Text("Dosage")
-                            .font(OnLifeFont.label())
-                            .foregroundColor(OnLifeColors.textTertiary)
+                        HStack {
+                            Text("Dosage")
+                                .font(OnLifeFont.label())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
-                        TextField("e.g., 100mg", text: $dosage)
-                            .font(OnLifeFont.body())
-                            .foregroundColor(OnLifeColors.textPrimary)
-                            .padding(Spacing.md)
-                            .background(
-                                RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                                    .fill(OnLifeColors.cardBackgroundElevated)
-                            )
+                            Spacer()
+
+                            Text("\(dosageMg)mg")
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
+                        }
+
+                        Slider(value: Binding(
+                            get: { Double(dosageMg) },
+                            set: { dosageMg = Int($0) }
+                        ), in: 10...1000, step: 10)
+                        .tint(OnLifeColors.socialTeal)
                     }
 
                     // Timing
@@ -680,33 +707,34 @@ struct AddSubstanceSheet: View {
 
                         Picker("Timing", selection: $timing) {
                             ForEach(SubstanceTiming.allCases, id: \.self) { t in
-                                Text(timingLabel(t)).tag(t)
+                                Text(t.rawValue).tag(t)
                             }
                         }
                         .pickerStyle(.segmented)
+                        .onChange(of: timing) { _, newTiming in
+                            timingMinutes = newTiming.minuteOffset
+                        }
                     }
 
-                    // Minutes before (if applicable)
-                    if timing == .prework {
-                        VStack(alignment: .leading, spacing: Spacing.xs) {
-                            HStack {
-                                Text("Minutes Before Session")
-                                    .font(OnLifeFont.label())
-                                    .foregroundColor(OnLifeColors.textTertiary)
+                    // Fine-tune timing
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        HStack {
+                            Text("Timing Offset")
+                                .font(OnLifeFont.label())
+                                .foregroundColor(OnLifeColors.textTertiary)
 
-                                Spacer()
+                            Spacer()
 
-                                Text("\(minutesBefore) min")
-                                    .font(OnLifeFont.body())
-                                    .foregroundColor(OnLifeColors.textPrimary)
-                            }
-
-                            Slider(value: Binding(
-                                get: { Double(minutesBefore) },
-                                set: { minutesBefore = Int($0) }
-                            ), in: 5...120, step: 5)
-                            .tint(OnLifeColors.socialTeal)
+                            Text(timingMinutes < 0 ? "\(abs(timingMinutes)) min before" : timingMinutes == 0 ? "At start" : "\(timingMinutes) min after")
+                                .font(OnLifeFont.body())
+                                .foregroundColor(OnLifeColors.textPrimary)
                         }
+
+                        Slider(value: Binding(
+                            get: { Double(timingMinutes) },
+                            set: { timingMinutes = Int($0) }
+                        ), in: -60...120, step: 5)
+                        .tint(OnLifeColors.socialTeal)
                     }
 
                     Spacer()
@@ -727,10 +755,9 @@ struct AddSubstanceSheet: View {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
                         let entry = SubstanceEntry(
-                            substance: substanceName,
-                            dosage: dosage.isEmpty ? nil : dosage,
-                            timing: timing,
-                            minutesBefore: timing == .prework ? minutesBefore : nil
+                            substanceName: substanceName,
+                            doseMg: dosageMg,
+                            timingMinutes: timingMinutes
                         )
                         onSave(entry)
                     }
@@ -741,16 +768,6 @@ struct AddSubstanceSheet: View {
             }
         }
         .presentationDetents([.medium])
-    }
-
-    private func timingLabel(_ timing: SubstanceTiming) -> String {
-        switch timing {
-        case .prework: return "Before"
-        case .duringWork: return "During"
-        case .postWork: return "After"
-        case .wakeUp: return "Wake"
-        case .beforeBed: return "Bed"
-        }
     }
 }
 

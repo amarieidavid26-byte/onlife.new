@@ -23,6 +23,11 @@ struct HomeView: View {
     @State private var currentInsight: String? = nil
     @State private var flowReadiness: Int = 0
     @State private var behavioralAssessment: BehavioralFlowDetector.ReadinessAssessment?
+    @State private var showingSettings = false
+
+    // Biometric source upgrade banner
+    @State private var pendingSourceChange: BiometricSourceChange?
+    @State private var showSourceBanner = false
 
     var body: some View {
         NavigationView {
@@ -98,16 +103,16 @@ struct HomeView: View {
                                 )
                                 .padding(.horizontal, -Spacing.lg) // Allow full bleed for carousel
 
-                                // Plants Section
+                                // MARK: - Premium 3D Garden Experience
                                 if let selectedGarden = gardenViewModel.selectedGarden {
                                     let plants = gardenViewModel.plants(for: selectedGarden.id)
                                     if !plants.isEmpty {
-                                        PlantsGridView(
-                                            plants: plants,
-                                            gardenName: selectedGarden.name,
-                                            selectedPlant: $selectedPlant
-                                        )
-                                        .padding(.top, Spacing.sm)
+                                        // Immersive 3D Garden View
+                                        GardenExperienceView(gardenViewModel: gardenViewModel)
+                                            .frame(height: UIScreen.main.bounds.height * 0.55)
+                                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                                            .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+                                            .padding(.top, Spacing.sm)
                                     } else {
                                         EmptyGardenPlantsView(
                                             gardenName: selectedGarden.name,
@@ -175,6 +180,11 @@ struct HomeView: View {
                 }
             )
         }
+        .sheet(isPresented: $showingSettings) {
+            NavigationView {
+                SettingsView()
+            }
+        }
         .overlay {
             // Streak saved alert (freeze used)
             if streakManager.showStreakSavedAlert {
@@ -190,6 +200,28 @@ struct HomeView: View {
                 StreakMilestoneAlert(milestone: milestone) {
                     streakManager.recentMilestone = nil
                 }
+            }
+        }
+        .overlay(alignment: .top) {
+            // Biometric source upgrade banner
+            if showSourceBanner, let change = pendingSourceChange {
+                BiometricSourceBanner(
+                    change: change,
+                    onSwitch: {
+                        BiometricSourceManager.shared.setPreferredSource(change.to)
+                        withAnimation(OnLifeAnimation.elegant) {
+                            showSourceBanner = false
+                        }
+                        pendingSourceChange = nil
+                    },
+                    onDismiss: {
+                        withAnimation(OnLifeAnimation.elegant) {
+                            showSourceBanner = false
+                        }
+                        pendingSourceChange = nil
+                    }
+                )
+                .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .alert("Delete Garden", isPresented: $showDeleteAlert, presenting: gardenToDelete) { garden in
@@ -249,6 +281,15 @@ struct HomeView: View {
                 gardenViewModel.selectGarden(id: gardenId)
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: .BiometricSourceUpgradeAvailable)) { notification in
+            if let change = notification.object as? BiometricSourceChange {
+                print("💓 [HomeView] Better biometric source available: \(change.from.displayName) → \(change.to.displayName)")
+                pendingSourceChange = change
+                withAnimation(OnLifeAnimation.celebration) {
+                    showSourceBanner = true
+                }
+            }
+        }
     }
 
     // MARK: - Header View
@@ -269,19 +310,37 @@ struct HomeView: View {
 
             Spacer()
 
-            // Create Garden Button
-            Button(action: {
-                showCreateGarden = true
-                Haptics.light()
-            }) {
-                ZStack {
-                    Circle()
-                        .fill(OnLifeColors.sage.opacity(0.2))
-                        .frame(width: 44, height: 44)
+            HStack(spacing: Spacing.sm) {
+                // Create Garden Button
+                Button(action: {
+                    showCreateGarden = true
+                    Haptics.light()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(OnLifeColors.sage.opacity(0.2))
+                            .frame(width: 44, height: 44)
 
-                    Image(systemName: "plus")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(OnLifeColors.sage)
+                        Image(systemName: "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(OnLifeColors.sage)
+                    }
+                }
+
+                // Settings Button
+                Button(action: {
+                    showingSettings = true
+                    Haptics.light()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(OnLifeColors.textTertiary.opacity(0.2))
+                            .frame(width: 44, height: 44)
+
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(OnLifeColors.textSecondary)
+                    }
                 }
             }
             .opacity(headerAppeared ? 1 : 0)

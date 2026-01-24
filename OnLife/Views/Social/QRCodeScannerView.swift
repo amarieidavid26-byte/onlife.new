@@ -97,19 +97,6 @@ struct QRCodeScannerView: View {
                 // Corner accents
                 scannerCorners(size: scannerSize)
 
-                // Instructions
-                VStack {
-                    Spacer()
-                        .frame(height: (geometry.size.height - scannerSize) / 2 + scannerSize + 40)
-
-                    Text("Align QR code within the frame")
-                        .font(OnLifeFont.body())
-                        .foregroundColor(.white)
-
-                    Text("Scanning automatically")
-                        .font(OnLifeFont.caption())
-                        .foregroundColor(.white.opacity(0.7))
-                }
             }
             .compositingGroup()
         }
@@ -186,7 +173,34 @@ struct QRCodeScannerView: View {
     // MARK: - Bottom Controls
 
     private var bottomControls: some View {
-        VStack(spacing: Spacing.lg) {
+        VStack(spacing: Spacing.md) {
+            // Main instruction
+            Text("Align QR code within the frame")
+                .font(OnLifeFont.body())
+                .foregroundColor(.white)
+
+            // Status indicator
+            if isScanning {
+                HStack(spacing: Spacing.sm) {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: OnLifeColors.socialTeal))
+                        .scaleEffect(0.8)
+
+                    Text("Scanning...")
+                        .font(OnLifeFont.caption())
+                        .foregroundColor(.white.opacity(0.7))
+                }
+            } else if scannedCode != nil {
+                HStack(spacing: Spacing.sm) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(OnLifeColors.healthy)
+
+                    Text("Code found!")
+                        .font(OnLifeFont.caption())
+                        .foregroundColor(OnLifeColors.healthy)
+                }
+            }
+
             // Manual entry option
             Button(action: {
                 // Could show manual entry sheet
@@ -198,29 +212,11 @@ struct QRCodeScannerView: View {
                     Text("Enter code manually")
                         .font(OnLifeFont.bodySmall())
                 }
-                .foregroundColor(.white.opacity(0.8))
+                .foregroundColor(.white.opacity(0.6))
             }
-
-            // Status indicator
-            HStack(spacing: Spacing.sm) {
-                if isScanning {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: OnLifeColors.socialTeal))
-                        .scaleEffect(0.8)
-
-                    Text("Scanning...")
-                        .font(OnLifeFont.caption())
-                        .foregroundColor(.white.opacity(0.7))
-                } else if scannedCode != nil {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(OnLifeColors.healthy)
-
-                    Text("Code found!")
-                        .font(OnLifeFont.caption())
-                        .foregroundColor(OnLifeColors.healthy)
-                }
-            }
+            .padding(.top, Spacing.sm)
         }
+        .padding(.horizontal, Spacing.lg)
         .padding(.bottom, Spacing.xxl)
     }
 

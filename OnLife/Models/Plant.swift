@@ -76,6 +76,38 @@ struct Plant: Codable, Identifiable {
         return growthStage >= 10
     }
 
+    // MARK: - 3D Garden View Properties
+
+    /// Growth progress from 0.0 (seed) to 1.0 (fully grown)
+    var growthProgress: Double {
+        return Double(growthStage) / 10.0
+    }
+
+    /// Health level from 0.0 (dead) to 1.0 (thriving)
+    var healthLevel: Double {
+        return health / 100.0
+    }
+
+    /// Date the plant was created/planted
+    var plantedDate: Date? {
+        return createdAt
+    }
+
+    /// Total focus time in minutes
+    var focusMinutes: Int {
+        return Int(totalFocusTime / 60)
+    }
+
+    /// Plant type for 3D rendering (alias for species)
+    var type: PlantSpecies {
+        return species
+    }
+
+    /// Optional custom name for the plant
+    var name: String? {
+        return nil  // Could be extended to allow custom naming
+    }
+
     // MARK: - Decay System
 
     mutating func updateDecay() {

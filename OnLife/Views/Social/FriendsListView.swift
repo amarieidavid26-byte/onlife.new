@@ -39,8 +39,6 @@ struct FriendsListView: View {
             .padding(Spacing.lg)
         }
         .background(OnLifeColors.deepForest.ignoresSafeArea())
-        .navigationTitle("Connections")
-        .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button(action: { showingAddFriend = true }) {
@@ -89,8 +87,8 @@ struct FriendsListView: View {
             }
         }
         .task {
-            await socialService.fetchConnections(for: currentUserId)
-            await socialService.fetchConnectionRequests(for: currentUserId)
+            await socialService.loadConnections()
+            await socialService.loadPendingRequests()
         }
     }
 
@@ -132,19 +130,19 @@ struct FriendsListView: View {
                 slotIndicator(
                     level: .flowPartner,
                     used: connectionCount(for: .flowPartner),
-                    limit: ConnectionLevel.flowPartner.limit ?? 5
+                    limit: ConnectionLevel.flowPartner.maxAllowed ?? 5
                 )
 
                 slotIndicator(
                     level: .mentor,
                     used: connectionCount(for: .mentor),
-                    limit: ConnectionLevel.mentor.limit ?? 2
+                    limit: ConnectionLevel.mentor.maxAllowed ?? 2
                 )
 
                 slotIndicator(
                     level: .friend,
                     used: connectionCount(for: .friend),
-                    limit: ConnectionLevel.friend.limit ?? 150
+                    limit: ConnectionLevel.friend.maxAllowed ?? 150
                 )
             }
 
@@ -318,10 +316,11 @@ struct FriendsListView: View {
             ForEach(filteredConnections) { connection in
                 FriendRow(
                     connection: connection,
+                    currentUserId: currentUserId,
                     onTap: {
                         // Fetch profile and show detail
                         Task {
-                            if let profile = await socialService.fetchProfile(userId: connection.connectedUserId) {
+                            if let profile = await socialService.fetchProfile(userId: connection.otherUserId(currentUserId: currentUserId)) {
                                 selectedProfile = profile
                             }
                         }
@@ -334,7 +333,7 @@ struct FriendsListView: View {
                     },
                     onRemove: {
                         Task {
-                            try? await socialService.removeConnection(connection.id)
+                            try? await socialService.removeConnection(with: connection.otherUserId(currentUserId: currentUserId))
                         }
                     }
                 )
@@ -386,13 +385,13 @@ struct FriendsListView: View {
         case .observer: return OnLifeColors.textTertiary
         case .friend: return OnLifeColors.socialTeal
         case .flowPartner: return OnLifeColors.amber
-        case .mentor: return Color(hex: "7B68EE")
+        case .mentor, .mentee: return Color(hex: "7B68EE")
         }
     }
 
     private func handleLevelChange(connection: Connection, newLevel: ConnectionLevel) {
         // Check if we're at the limit for the new level
-        if let limit = newLevel.limit {
+        if let limit = newLevel.maxAllowed {
             let currentCount = connectionCount(for: newLevel)
             if currentCount >= limit {
                 limitAlertLevel = newLevel
@@ -402,7 +401,7 @@ struct FriendsListView: View {
         }
 
         Task {
-            try? await socialService.updateConnectionLevel(connection.id, newLevel: newLevel)
+            try? await socialService.upgradeConnection(with: connection.otherUserId(currentUserId: currentUserId), to: newLevel)
         }
     }
 
@@ -424,6 +423,7 @@ struct FriendsListView: View {
 
 struct FriendRow: View {
     let connection: Connection
+    let currentUserId: String
     let onTap: () -> Void
     let onCompare: () -> Void
     let onChangeLevel: (ConnectionLevel) -> Void
@@ -447,7 +447,7 @@ struct FriendRow: View {
                 // Info
                 VStack(alignment: .leading, spacing: 2) {
                     if let profile = profile {
-                        Text(profile.displayName ?? profile.username)
+                        Text(profile.displayName)
                             .font(OnLifeFont.body())
                             .foregroundColor(OnLifeColors.textPrimary)
 
@@ -497,7 +497,7 @@ struct FriendRow: View {
         }
         .buttonStyle(.plain)
         .task {
-            profile = await SocialService.shared.fetchProfile(userId: connection.connectedUserId)
+            profile = await SocialService.shared.fetchProfile(userId: connection.otherUserId(currentUserId: currentUserId))
         }
         .confirmationDialog("Connection Options", isPresented: $showingOptions) {
             Button("Compare Progress") {
@@ -543,7 +543,7 @@ struct FriendRow: View {
         case .observer: return OnLifeColors.textTertiary
         case .friend: return OnLifeColors.socialTeal
         case .flowPartner: return OnLifeColors.amber
-        case .mentor: return Color(hex: "7B68EE")
+        case .mentor, .mentee: return Color(hex: "7B68EE")
         }
     }
 }

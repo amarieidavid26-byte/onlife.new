@@ -47,7 +47,7 @@ class SocialService: ObservableObject {
     }
 
     private func setupAuthListener() {
-        Auth.auth().addStateDidChangeListener { [weak self] _, user in
+        _ = Auth.auth().addStateDidChangeListener { [weak self] _, user in
             Task { @MainActor in
                 if user != nil {
                     await self?.loadCurrentUserProfile()
@@ -76,20 +76,27 @@ class SocialService: ObservableObject {
 
     /// Fetch or create profile for current user
     func loadCurrentUserProfile() async {
+        print("👤 [SocialService] loadCurrentUserProfile() called")
+
         guard let userId = Auth.auth().currentUser?.uid else {
+            print("👤 [SocialService] ERROR: Not authenticated")
             error = "Not authenticated"
             return
         }
 
+        print("👤 [SocialService] Loading profile for user: \(userId)")
         isLoading = true
         defer { isLoading = false }
 
         do {
             let doc = try await profilesCollection.document(userId).getDocument()
+            print("👤 [SocialService] Document exists: \(doc.exists)")
 
             if let profile = UserProfile(document: doc) {
+                print("👤 [SocialService] Profile loaded: \(profile.username)")
                 self.currentUserProfile = profile
             } else {
+                print("👤 [SocialService] No profile found, creating default...")
                 // Create new profile
                 let email = Auth.auth().currentUser?.email
                 let newProfile = createDefaultProfile(userId: userId, email: email)
@@ -102,13 +109,17 @@ class SocialService: ObservableObject {
             await loadPendingRequests()
 
         } catch {
+            print("👤 [SocialService] ERROR: \(error.localizedDescription)")
             self.error = "Failed to load profile: \(error.localizedDescription)"
         }
     }
 
     /// Save profile to Firestore
     func saveProfile(_ profile: UserProfile) async throws {
+        print("👤 [SocialService] saveProfile called for user: \(profile.id)")
+        print("👤 [SocialService] Username: \(profile.username), DisplayName: \(profile.displayName)")
         try await profilesCollection.document(profile.id).setData(profile.toFirestoreData())
+        print("👤 [SocialService] Profile saved to Firestore successfully")
     }
 
     /// Update current user's profile with specific fields
@@ -153,6 +164,23 @@ class SocialService: ObservableObject {
         }
 
         try await updateCurrentProfile(["username": sanitized])
+    }
+
+    /// Check if a username is available
+    func isUsernameAvailable(_ username: String) async -> Bool {
+        let sanitized = username.lowercased().trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard sanitized.count >= 3 else { return false }
+
+        do {
+            let existing = try await profilesCollection
+                .whereField("username", isEqualTo: sanitized)
+                .getDocuments()
+
+            return existing.documents.isEmpty
+        } catch {
+            return false
+        }
     }
 
     /// Fetch another user's profile
@@ -592,7 +620,7 @@ class SocialService: ObservableObject {
             displayName: "New User",
             bio: "",
             profileImageURL: nil,
-            chronotype: .flexible,
+            chronotype: .intermediate,
             peakFlowWindows: [],
             masteryDurationDays: 0,
             gardenAgeDays: 0,

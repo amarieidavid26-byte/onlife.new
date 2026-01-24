@@ -26,7 +26,7 @@ struct ComparisonData: Identifiable {
     let yourPercentileForExperience: Int
 
     // Insights
-    var insights: [ComparisonInsight]
+    var insights: [ServiceInsight]
 
     // MARK: - Computed Properties
 
@@ -64,9 +64,9 @@ struct ComparisonData: Identifiable {
     }
 }
 
-// MARK: - Comparison Insight
+// MARK: - Service Insight (internal to ComparisonService)
 
-struct ComparisonInsight: Identifiable {
+struct ServiceInsight: Identifiable {
     let id = UUID()
     let icon: String
     let title: String
@@ -280,15 +280,15 @@ class ComparisonService: ObservableObject {
         theirProfile: UserProfile,
         myStats: UserStats,
         theirStats: UserStats
-    ) -> [ComparisonInsight] {
+    ) -> [ServiceInsight] {
 
-        var insights: [ComparisonInsight] = []
+        var insights: [ServiceInsight] = []
 
         // Trajectory insight
         let trajectoryDiff = myProfile.thirtyDayTrajectory - theirProfile.thirtyDayTrajectory
 
         if trajectoryDiff > 5 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "chart.line.uptrend.xyaxis",
                 title: "Learning faster",
                 description: "Your improvement rate is \(Int(trajectoryDiff))% higher right now!",
@@ -297,7 +297,7 @@ class ComparisonService: ObservableObject {
                 action: nil
             ))
         } else if trajectoryDiff < -5 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "lightbulb",
                 title: "They're improving faster",
                 description: "Their trajectory is \(Int(abs(trajectoryDiff)))% higher—check their protocol",
@@ -311,7 +311,7 @@ class ComparisonService: ObservableObject {
         let experienceDiff = (theirProfile.masteryDurationDays - myProfile.masteryDurationDays) / 30
 
         if experienceDiff > 2 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "calendar",
                 title: "Experience difference",
                 description: "They've been training \(experienceDiff) months longer",
@@ -320,7 +320,7 @@ class ComparisonService: ObservableObject {
                 action: nil
             ))
         } else if experienceDiff < -2 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "calendar",
                 title: "You have more experience",
                 description: "You've been training \(abs(experienceDiff)) months longer",
@@ -334,7 +334,7 @@ class ComparisonService: ObservableObject {
         let consistencyDiff = theirStats.sessionsPerWeek - myStats.sessionsPerWeek
 
         if consistencyDiff > 1 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "repeat",
                 title: "Higher consistency",
                 description: "Their \(String(format: "%.1f", theirStats.sessionsPerWeek)) sessions/week might explain better results",
@@ -343,7 +343,7 @@ class ComparisonService: ObservableObject {
                 action: "Schedule Sessions"
             ))
         } else if consistencyDiff < -1 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "checkmark.circle",
                 title: "More consistent",
                 description: "Your \(String(format: "%.1f", myStats.sessionsPerWeek)) sessions/week shows great dedication",
@@ -357,7 +357,7 @@ class ComparisonService: ObservableObject {
         let flowDiff = theirStats.avgFlowScore - myStats.avgFlowScore
 
         if flowDiff > 10 {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "waveform.path",
                 title: "Deeper flow states",
                 description: "Their average quality is \(flowDiff)% higher",
@@ -369,8 +369,8 @@ class ComparisonService: ObservableObject {
 
         // Chronotype insight (if similar)
         if myProfile.chronotype == theirProfile.chronotype {
-            insights.append(ComparisonInsight(
-                icon: myProfile.chronotype.icon,
+            insights.append(ServiceInsight(
+                icon: myProfile.chronotype.sfSymbol,
                 title: "Same chronotype",
                 description: "You're both \(myProfile.chronotype.rawValue)s—their strategies may work well for you",
                 type: .context,
@@ -381,7 +381,7 @@ class ComparisonService: ObservableObject {
 
         // Current protocol insight
         if let protocolId = theirProfile.currentProtocolId, !protocolId.isEmpty {
-            insights.append(ComparisonInsight(
+            insights.append(ServiceInsight(
                 icon: "doc.text",
                 title: "Active protocol",
                 description: "They're currently using a shared protocol",

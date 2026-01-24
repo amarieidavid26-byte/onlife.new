@@ -10,9 +10,14 @@ enum PlantSpecies: String, Codable, CaseIterable {
     case bamboo = "bamboo"
     case lavender = "lavender"
     case bonsai = "bonsai"
+    case cherry = "cherry"
+    case tulip = "tulip"
 
     var displayName: String {
-        rawValue.capitalized
+        switch self {
+        case .cherry: return "Cherry Blossom"
+        default: return rawValue.capitalized
+        }
     }
 
     var icon: String {
@@ -25,8 +30,13 @@ enum PlantSpecies: String, Codable, CaseIterable {
         case .bamboo: return "🎋"
         case .lavender: return "💜"
         case .bonsai: return "🪴"
+        case .cherry: return "🌸"
+        case .tulip: return "🌷"
         }
     }
+
+    /// Alias for icon (used by 3D garden view)
+    var emoji: String { icon }
 
     var description: String {
         switch self {
@@ -38,6 +48,8 @@ enum PlantSpecies: String, Codable, CaseIterable {
         case .bamboo: return "Fast-growing and flexible"
         case .lavender: return "Soothing and aromatic, perfect for focus"
         case .bonsai: return "Mindful and meditative, rewards patience"
+        case .cherry: return "Graceful and serene, symbolizes renewal"
+        case .tulip: return "Elegant and colorful, represents perfect focus"
         }
     }
 }

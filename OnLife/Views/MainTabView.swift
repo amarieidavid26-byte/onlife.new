@@ -35,19 +35,19 @@ struct MainTabView: View {
             }
             .tag(2)
 
-            // History tab
-            SessionHistoryView()
+            // Social tab
+            SocialTabView()
                 .tabItem {
-                    Image(systemName: selectedTab == 3 ? "clock.fill" : "clock")
-                    Text("History")
+                    Image(systemName: selectedTab == 3 ? "person.2.fill" : "person.2")
+                    Text("Social")
                 }
                 .tag(3)
 
-            // Settings tab
-            SettingsView()
+            // History tab
+            SessionHistoryView()
                 .tabItem {
-                    Image(systemName: selectedTab == 4 ? "gearshape.fill" : "gearshape")
-                    Text("Settings")
+                    Image(systemName: selectedTab == 4 ? "clock.fill" : "clock")
+                    Text("History")
                 }
                 .tag(4)
         }

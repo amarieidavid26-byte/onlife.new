@@ -1,34 +1,6 @@
 import SwiftUI
 
-// MARK: - Comparison Mode
-
-enum ComparisonMode: String, CaseIterable {
-    case inspiration = "Inspiration"
-    case competition = "Competition"
-
-    var icon: String {
-        switch self {
-        case .inspiration: return "lightbulb.fill"
-        case .competition: return "flag.fill"
-        }
-    }
-
-    var description: String {
-        switch self {
-        case .inspiration:
-            return "Learn from their strategies"
-        case .competition:
-            return "Track your relative progress"
-        }
-    }
-
-    var color: Color {
-        switch self {
-        case .inspiration: return OnLifeColors.amber
-        case .competition: return OnLifeColors.socialTeal
-        }
-    }
-}
+// ComparisonMode is defined in Models/Social/UserProfile.swift
 
 // MARK: - Comparison Mode Toggle
 
@@ -85,7 +57,7 @@ struct ComparisonModeToggle: View {
                 Image(systemName: modeOption.icon)
                     .font(.system(size: 14))
 
-                Text(modeOption.rawValue)
+                Text(modeOption.displayName)
                     .font(OnLifeFont.button())
             }
             .foregroundColor(mode == modeOption ? OnLifeColors.textPrimary : OnLifeColors.textTertiary)
@@ -179,7 +151,7 @@ struct ComparisonModeIndicator: View {
             Image(systemName: mode.icon)
                 .font(.system(size: 10))
 
-            Text(mode.rawValue)
+            Text(mode.displayName)
                 .font(OnLifeFont.labelSmall())
         }
         .foregroundColor(mode.color)

@@ -17,11 +17,11 @@ import Combine
 
 // MARK: - BLE Heart Rate Constants (Bluetooth SIG GATT Spec)
 
-enum HeartRateBLE {
-    // Computed properties avoid MainActor isolation inference
-    static var serviceUUID: CBUUID { CBUUID(string: "180D") }
-    static var measurementCharacteristicUUID: CBUUID { CBUUID(string: "2A37") }
-    static var bodySensorLocationUUID: CBUUID { CBUUID(string: "2A38") }
+enum HeartRateBLE: Sendable {
+    // Nonisolated static properties for use in CBPeripheralDelegate methods
+    nonisolated(unsafe) static let serviceUUID = CBUUID(string: "180D")
+    nonisolated(unsafe) static let measurementCharacteristicUUID = CBUUID(string: "2A37")
+    nonisolated(unsafe) static let bodySensorLocationUUID = CBUUID(string: "2A38")
 
     // Flags byte bit masks (primitives are fine as let)
     static let hrFormatMask: UInt8 = 0x01       // Bit 0: 0=UINT8, 1=UINT16

@@ -138,9 +138,7 @@ struct TrajectoryComparisonBar: View {
     // MARK: - Comparison Insight
 
     private var comparisonInsight: some View {
-        let diff = theirTrajectory - yourTrajectory
-
-        return HStack(spacing: Spacing.sm) {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: insightIcon)
                 .font(.system(size: 14))
                 .foregroundColor(insightColor)

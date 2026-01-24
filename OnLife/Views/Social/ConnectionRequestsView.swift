@@ -34,7 +34,7 @@ struct ConnectionRequestsView: View {
         .navigationTitle("Connection Requests")
         .navigationBarTitleDisplayMode(.large)
         .task {
-            await socialService.fetchConnectionRequests(for: currentUserId)
+            await socialService.loadPendingRequests()
         }
         .confirmationDialog(
             "Decline Request",
@@ -44,7 +44,7 @@ struct ConnectionRequestsView: View {
             Button("Decline", role: .destructive) {
                 if let request = selectedRequest {
                     Task {
-                        try? await socialService.declineConnectionRequest(request.id)
+                        try? await socialService.respondToRequest(request.id, accept: false)
                     }
                 }
             }
@@ -90,9 +90,9 @@ struct ConnectionRequestsView: View {
             ForEach(incomingRequests) { request in
                 IncomingRequestCard(
                     request: request,
-                    onAccept: { level in
+                    onAccept: { _ in
                         Task {
-                            try? await socialService.acceptConnectionRequest(request.id, level: level)
+                            try? await socialService.respondToRequest(request.id, accept: true)
                         }
                     },
                     onDecline: {
@@ -126,7 +126,7 @@ struct ConnectionRequestsView: View {
                     request: request,
                     onCancel: {
                         Task {
-                            try? await socialService.cancelConnectionRequest(request.id)
+                            try? await socialService.cancelRequest(request.id)
                         }
                     }
                 )
@@ -176,7 +176,7 @@ struct IncomingRequestCard: View {
                     UserAvatarView(profile: profile, size: 50)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(profile.displayName ?? profile.username)
+                        Text(profile.displayName)
                             .font(OnLifeFont.body())
                             .foregroundColor(OnLifeColors.textPrimary)
 
@@ -323,7 +323,7 @@ struct IncomingRequestCard: View {
         case .observer: return OnLifeColors.textTertiary
         case .friend: return OnLifeColors.socialTeal
         case .flowPartner: return OnLifeColors.amber
-        case .mentor: return Color(hex: "7B68EE")
+        case .mentor, .mentee: return Color(hex: "7B68EE")
         }
     }
 
@@ -348,7 +348,7 @@ struct OutgoingRequestCard: View {
                 UserAvatarView(profile: profile, size: 44)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(profile.displayName ?? profile.username)
+                    Text(profile.displayName)
                         .font(OnLifeFont.body())
                         .foregroundColor(OnLifeColors.textPrimary)
 
@@ -513,7 +513,7 @@ struct ConnectionLevelPicker: View {
                 Spacer()
 
                 // Limit indicator
-                if level.limit != nil {
+                if level.maxAllowed != nil {
                     Text("Limited")
                         .font(OnLifeFont.labelSmall())
                         .foregroundColor(OnLifeColors.warning)
@@ -540,7 +540,7 @@ struct ConnectionLevelPicker: View {
         case .observer: return OnLifeColors.textTertiary
         case .friend: return OnLifeColors.socialTeal
         case .flowPartner: return OnLifeColors.amber
-        case .mentor: return Color(hex: "7B68EE")
+        case .mentor, .mentee: return Color(hex: "7B68EE")
         }
     }
 
@@ -550,6 +550,7 @@ struct ConnectionLevelPicker: View {
         case .friend: return "See detailed stats and compare. Limit: 150"
         case .flowPartner: return "Deep sharing, co-working, mentorship. Limit: 5"
         case .mentor: return "Guide and be guided. Limit: 2"
+        case .mentee: return "Be guided by a mentor. Limit: 10"
         }
     }
 }

@@ -284,7 +284,7 @@ struct AddFriendView: View {
                 ForEach(searchResults) { profile in
                     UserSearchResultCard(
                         profile: profile,
-                        existingConnection: socialService.connections.first { $0.connectedUserId == profile.id },
+                        existingConnection: socialService.connections.first { $0.user1Id == profile.id || $0.user2Id == profile.id },
                         pendingRequest: socialService.pendingRequests.first {
                             $0.toUserId == profile.id || $0.fromUserId == profile.id
                         },
@@ -428,16 +428,10 @@ struct AddFriendView: View {
         isSearching = true
 
         Task {
-            do {
-                let results = try await socialService.searchUsers(query: query)
-                await MainActor.run {
-                    searchResults = results.filter { $0.id != currentUserId }
-                    isSearching = false
-                }
-            } catch {
-                await MainActor.run {
-                    isSearching = false
-                }
+            let results = await socialService.searchProfiles(query: query)
+            await MainActor.run {
+                searchResults = results.filter { $0.id != currentUserId }
+                isSearching = false
             }
         }
     }
@@ -446,8 +440,7 @@ struct AddFriendView: View {
         Task {
             do {
                 try await socialService.sendConnectionRequest(
-                    from: currentUserId,
-                    to: profile.id,
+                    toUserId: profile.id,
                     level: level
                 )
                 HapticManager.shared.notificationOccurred(.success)

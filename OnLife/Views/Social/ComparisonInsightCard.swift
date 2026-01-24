@@ -42,7 +42,7 @@ struct ComparisonInsight: Identifiable {
     }
 
     enum InsightActionDestination {
-        case protocol(id: String)
+        case flowProtocol(id: String)
         case profile(userId: String)
         case settings
         case philosophyMoment(PhilosophyMoment)
@@ -211,7 +211,7 @@ struct ComparisonInsightsStack: View {
                         onActionTap: onActionTap,
                         onDismiss: {
                             withAnimation(.easeOut(duration: 0.2)) {
-                                dismissedInsights.insert(insight.id)
+                                _ = dismissedInsights.insert(insight.id)
                             }
                         }
                     )
@@ -288,7 +288,7 @@ struct ComparisonInsightCard_Previews: PreviewProvider {
             body: "Her protocol includes a fixed 90-minute block which matches the brain's natural ultradian rhythm. This could explain her 11% higher deep work scores.",
             action: .init(
                 label: "View her protocol",
-                destination: .protocol(id: "123")
+                destination: .flowProtocol(id: "123")
             )
         ),
         ComparisonInsight(

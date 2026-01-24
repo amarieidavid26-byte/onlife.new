@@ -533,6 +533,11 @@ struct PhilosophyMomentsLibrary {
         learnMoreURL: nil
     )
 
+    // MARK: - Aliases for Convenience
+
+    /// Alias for lessIsMoreRelationships (Dunbar's number concept)
+    static let dunbarNumber = lessIsMoreRelationships
+
     // MARK: - All Moments
 
     static let all: [PhilosophyMoment] = [

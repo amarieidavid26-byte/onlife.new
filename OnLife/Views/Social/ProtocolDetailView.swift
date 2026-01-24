@@ -16,6 +16,11 @@ struct ProtocolDetailView: View {
     @State private var showingForkSheet = false
     @State private var contentOpacity: Double = 0
 
+    // Computed property for verified status
+    private var isVerified: Bool {
+        flowProtocol.ratingsCount >= 10 && flowProtocol.averageRating >= 4.0
+    }
+
     var body: some View {
         NavigationView {
             ScrollView(showsIndicators: false) {
@@ -29,13 +34,15 @@ struct ProtocolDetailView: View {
                     }
 
                     // Substances section
-                    substancesSection
+                    if !flowProtocol.substances.isEmpty {
+                        substancesSection
+                    }
 
                     // "Why This Works" pharmacology section
                     pharmacologySection
 
                     // Results section
-                    if flowProtocol.trialCount > 0 {
+                    if flowProtocol.tryCount > 0 {
                         resultsSection
                     }
 
@@ -78,7 +85,7 @@ struct ProtocolDetailView: View {
                         }
 
                         // Share button
-                        ShareLink(item: "Check out this flow protocol: \(flowProtocol.name)") {
+                        ShareLink(item: "Check out this flow protocol: \(flowProtocol.title)") {
                             Image(systemName: "square.and.arrow.up")
                                 .font(.system(size: 16))
                                 .foregroundColor(OnLifeColors.textSecondary)
@@ -113,7 +120,7 @@ struct ProtocolDetailView: View {
             // Title and badges
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
-                    Text(flowProtocol.name)
+                    Text(flowProtocol.title)
                         .font(OnLifeFont.heading2())
                         .foregroundColor(OnLifeColors.textPrimary)
 
@@ -121,10 +128,10 @@ struct ProtocolDetailView: View {
                         Text("by")
                             .foregroundColor(OnLifeColors.textTertiary)
 
-                        Text(flowProtocol.creatorName)
+                        Text(flowProtocol.creatorUsername)
                             .foregroundColor(OnLifeColors.socialTeal)
 
-                        if flowProtocol.isVerified {
+                        if isVerified {
                             Image(systemName: "checkmark.seal.fill")
                                 .foregroundColor(OnLifeColors.socialTeal)
                         }
@@ -143,18 +150,20 @@ struct ProtocolDetailView: View {
                     .font(OnLifeFont.label())
                     .foregroundColor(OnLifeColors.textTertiary)
 
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "bookmark")
-                        Text("\(flowProtocol.saveCount)")
+                    if flowProtocol.ratingsCount > 0 {
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "star.fill")
+                            Text(String(format: "%.1f", flowProtocol.averageRating))
+                        }
+                        .font(OnLifeFont.label())
+                        .foregroundColor(OnLifeColors.amber)
                     }
-                    .font(OnLifeFont.label())
-                    .foregroundColor(OnLifeColors.textTertiary)
                 }
             }
 
             // Description
-            if let description = flowProtocol.description {
-                Text(description)
+            if !flowProtocol.description.isEmpty {
+                Text(flowProtocol.description)
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textSecondary)
                     .lineSpacing(4)
@@ -163,14 +172,14 @@ struct ProtocolDetailView: View {
             // Tags
             HStack(spacing: Spacing.sm) {
                 if let chronotype = flowProtocol.targetChronotype {
-                    tagPill(chronotype.icon, chronotype.rawValue, chronotypeColor(chronotype))
+                    tagPill(chronotype.sfSymbol, chronotype.shortName, chronotypeColor(chronotype))
                 }
 
-                if let timeOfDay = flowProtocol.optimalTimeOfDay {
-                    tagPill("clock", timeOfDay, OnLifeColors.textTertiary)
-                }
+                tagPill("timer", flowProtocol.formattedDuration, OnLifeColors.textTertiary)
 
-                tagPill("timer", "\(flowProtocol.recommendedDurationMinutes)m", OnLifeColors.textTertiary)
+                if flowProtocol.blocksPerSession > 1 {
+                    tagPill("square.stack", "\(flowProtocol.blocksPerSession) blocks", OnLifeColors.textTertiary)
+                }
             }
         }
         .padding(Spacing.lg)
@@ -199,9 +208,9 @@ struct ProtocolDetailView: View {
 
     private func chronotypeColor(_ chronotype: Chronotype) -> Color {
         switch chronotype {
-        case .earlyBird: return OnLifeColors.amber
-        case .nightOwl: return Color(hex: "7B68EE")
-        case .flexible: return OnLifeColors.sage
+        case .extremeMorning, .moderateMorning: return OnLifeColors.amber
+        case .moderateEvening, .extremeEvening: return Color(hex: "7B68EE")
+        case .intermediate: return OnLifeColors.sage
         }
     }
 
@@ -217,22 +226,18 @@ struct ProtocolDetailView: View {
                 .foregroundColor(isMatch ? OnLifeColors.healthy : OnLifeColors.warning)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(isMatch ? "Great match for your profile!" : "Different chronotype")
+                Text(isMatch ? "Good match for you" : "Different chronotype")
                     .font(OnLifeFont.body())
                     .foregroundColor(OnLifeColors.textPrimary)
 
                 Text(isMatch
-                     ? "This protocol is optimized for \(userProfile.chronotype.rawValue)s like you"
-                     : "You're a \(userProfile.chronotype.rawValue), this is for \(flowProtocol.targetChronotype?.rawValue ?? "all")s. Consider adjusting timing.")
+                    ? "This protocol is optimized for your chronotype"
+                    : "This protocol is designed for \(flowProtocol.targetChronotype?.shortName ?? "different") chronotypes")
                     .font(OnLifeFont.caption())
                     .foregroundColor(OnLifeColors.textTertiary)
             }
 
             Spacer()
-
-            PhilosophyButton {
-                onPhilosophyTap(PhilosophyMomentsLibrary.peakWindows)
-            }
         }
         .padding(Spacing.md)
         .background(
@@ -246,99 +251,34 @@ struct ProtocolDetailView: View {
     private var substancesSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
-                Text("Substances & Timing")
+                Text("Substances")
                     .font(OnLifeFont.heading3())
                     .foregroundColor(OnLifeColors.textPrimary)
 
+                PhilosophyButton {
+                    onPhilosophyTap(PhilosophyMomentsLibrary.socialLearning)
+                }
+
                 Spacer()
 
-                PhilosophyButton {
-                    onPhilosophyTap(PhilosophyMomentsLibrary.substanceOptimization)
+                Button(action: { showingPharmacology.toggle() }) {
+                    Text(showingPharmacology ? "Hide science" : "Show science")
+                        .font(OnLifeFont.label())
+                        .foregroundColor(OnLifeColors.socialTeal)
                 }
             }
 
+            // Substances list
             ProtocolSubstancesList(
                 substances: flowProtocol.substances,
                 showTiming: true
             )
-
-            // Timing visualization
-            substanceTimingVisualization
         }
         .padding(Spacing.lg)
         .background(
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .fill(OnLifeColors.cardBackground)
         )
-    }
-
-    private var substanceTimingVisualization: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Timeline")
-                .font(OnLifeFont.label())
-                .foregroundColor(OnLifeColors.textTertiary)
-
-            // Timeline bar
-            GeometryReader { geometry in
-                ZStack(alignment: .leading) {
-                    // Background track
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(OnLifeColors.cardBackgroundElevated)
-                        .frame(height: 8)
-
-                    // Work session indicator
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(OnLifeColors.socialTeal.opacity(0.3))
-                        .frame(width: geometry.size.width * 0.6, height: 8)
-                        .offset(x: geometry.size.width * 0.3)
-
-                    // Substance markers
-                    ForEach(flowProtocol.substances) { substance in
-                        if let minutes = substance.minutesBefore {
-                            Circle()
-                                .fill(OnLifeColors.amber)
-                                .frame(width: 12, height: 12)
-                                .offset(x: calculateMarkerPosition(minutes: minutes, width: geometry.size.width))
-                        }
-                    }
-
-                    // Session start marker
-                    Rectangle()
-                        .fill(OnLifeColors.socialTeal)
-                        .frame(width: 2, height: 16)
-                        .offset(x: geometry.size.width * 0.3, y: -4)
-                }
-            }
-            .frame(height: 16)
-
-            // Labels
-            HStack {
-                Text("Substances")
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.amber)
-
-                Spacer()
-
-                Text("Session Start")
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.socialTeal)
-
-                Spacer()
-
-                Text("Session End")
-                    .font(OnLifeFont.caption())
-                    .foregroundColor(OnLifeColors.textMuted)
-            }
-        }
-        .padding(.top, Spacing.sm)
-    }
-
-    private func calculateMarkerPosition(minutes: Int, width: CGFloat) -> CGFloat {
-        // Assume 60 minutes is the max pre-work time
-        let maxPrework: CGFloat = 60
-        let sessionStart = width * 0.3
-        let offset = CGFloat(minutes) / maxPrework * sessionStart
-        return sessionStart - offset - 6 // -6 for centering the circle
     }
 
     // MARK: - Pharmacology Section
@@ -346,130 +286,126 @@ struct ProtocolDetailView: View {
     private var pharmacologySection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             HStack {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "brain.head.profile")
-                        .foregroundColor(OnLifeColors.amber)
+                Image(systemName: "brain.head.profile")
+                    .font(.system(size: 16))
+                    .foregroundColor(OnLifeColors.socialTeal)
 
-                    Text("Why This Works")
-                        .font(OnLifeFont.heading3())
-                        .foregroundColor(OnLifeColors.textPrimary)
-                }
+                Text("Why This Works")
+                    .font(OnLifeFont.heading3())
+                    .foregroundColor(OnLifeColors.textPrimary)
 
-                Spacer()
-
-                Button(action: { withAnimation { showingPharmacology.toggle() } }) {
-                    Image(systemName: showingPharmacology ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(OnLifeColors.textTertiary)
+                PhilosophyButton {
+                    onPhilosophyTap(PhilosophyMomentsLibrary.socialLearning)
                 }
             }
 
-            if showingPharmacology {
-                pharmacologyContent
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-            } else {
-                // Preview text
-                Text("Tap to learn the pharmacokinetics behind this protocol...")
-                    .font(OnLifeFont.bodySmall())
-                    .foregroundColor(OnLifeColors.textTertiary)
-                    .italic()
+            // Generate pharmacology explanation based on substances
+            ForEach(flowProtocol.substances) { substance in
+                pharmacologyCard(substance)
+            }
+
+            // Synergy note (if multiple substances)
+            if flowProtocol.substances.count > 1 {
+                synergyNote
             }
         }
         .padding(Spacing.lg)
         .background(
             RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
                 .fill(OnLifeColors.cardBackground)
-                .overlay(
-                    RoundedRectangle(cornerRadius: CornerRadius.card, style: .continuous)
-                        .stroke(OnLifeColors.amber.opacity(0.3), lineWidth: 1)
-                )
         )
     }
 
-    private var pharmacologyContent: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            ForEach(flowProtocol.substances) { substance in
-                pharmacologyItem(for: substance)
+    private func pharmacologyCard(_ substance: SubstanceEntry) -> some View {
+        let info = pharmacologyInfo(for: substance.substanceName)
+
+        return VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack {
+                Image(systemName: info.icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(OnLifeColors.socialTeal)
+
+                Text(substance.substanceName)
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
+
+                Spacer()
+
+                Text(substance.formattedDose)
+                    .font(OnLifeFont.label())
+                    .foregroundColor(OnLifeColors.textTertiary)
             }
 
-            // Synergy explanation
-            if flowProtocol.substances.count > 1 {
-                synergyExplanation
-            }
+            Text(info.mechanism)
+                .font(OnLifeFont.bodySmall())
+                .foregroundColor(OnLifeColors.textSecondary)
 
-            // Learn more link
-            Button(action: {
-                onPhilosophyTap(PhilosophyMomentsLibrary.substanceOptimization)
-            }) {
-                HStack(spacing: Spacing.sm) {
-                    Image(systemName: "lightbulb.fill")
-                        .foregroundColor(OnLifeColors.amber)
-
-                    Text("Learn more about substance optimization")
-                        .font(OnLifeFont.bodySmall())
-                        .foregroundColor(OnLifeColors.textSecondary)
+            if !info.timing.isEmpty {
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 10))
+                    Text(info.timing)
+                        .font(OnLifeFont.caption())
                 }
+                .foregroundColor(OnLifeColors.textTertiary)
             }
-        }
-    }
-
-    private func pharmacologyItem(for substance: SubstanceEntry) -> some View {
-        let explanation = getPharmacologyExplanation(for: substance.substance)
-
-        return VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(spacing: Spacing.sm) {
-                Circle()
-                    .fill(OnLifeColors.socialTeal)
-                    .frame(width: 6, height: 6)
-
-                Text(substance.substance)
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textPrimary)
-            }
-
-            Text(explanation)
-                .font(OnLifeFont.caption())
-                .foregroundColor(OnLifeColors.textSecondary)
-                .padding(.leading, Spacing.md + 6)
-        }
-    }
-
-    private func getPharmacologyExplanation(for substance: String) -> String {
-        let lowercased = substance.lowercased()
-
-        if lowercased.contains("caffeine") {
-            return "Blocks adenosine receptors, increasing alertness. Peak effect at 30-60 minutes, half-life of 5-6 hours. Best taken 30 minutes before focus work."
-        } else if lowercased.contains("theanine") {
-            return "Promotes alpha brain waves associated with calm focus. Smooths caffeine's stimulant curve and reduces jitters. 2:1 ratio with caffeine is commonly used."
-        } else if lowercased.contains("nicotine") {
-            return "Acetylcholine agonist that enhances attention and working memory. Effects peak in 10-15 minutes. Low doses (1-2mg) provide cognitive benefits without addiction risk."
-        } else if lowercased.contains("creatine") {
-            return "Supports ATP regeneration in brain cells. Improves cognitive performance especially under stress or sleep deprivation. Effects are cumulative over weeks."
-        } else {
-            return "Consult research for specific pharmacokinetics of this substance."
-        }
-    }
-
-    private var synergyExplanation: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "arrow.triangle.merge")
-                    .foregroundColor(OnLifeColors.healthy)
-
-                Text("Synergy Effect")
-                    .font(OnLifeFont.body())
-                    .foregroundColor(OnLifeColors.textPrimary)
-            }
-
-            Text("These substances work together. The combination creates effects greater than each individually, while timing them properly ensures peak concentrations align with your focus window.")
-                .font(OnLifeFont.caption())
-                .foregroundColor(OnLifeColors.textSecondary)
-                .padding(.leading, Spacing.md + 6)
         }
         .padding(Spacing.md)
         .background(
             RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                .fill(OnLifeColors.healthy.opacity(0.1))
+                .fill(OnLifeColors.cardBackgroundElevated)
+        )
+    }
+
+    private struct PharmacologyInfo {
+        let icon: String
+        let mechanism: String
+        let timing: String
+    }
+
+    private func pharmacologyInfo(for substance: String) -> PharmacologyInfo {
+        let lowercased = substance.lowercased()
+        if lowercased.contains("caffeine") {
+            return PharmacologyInfo(
+                icon: "cup.and.saucer.fill",
+                mechanism: "Blocks adenosine receptors, increasing alertness and dopamine signaling. Enhances focus and reduces perceived effort.",
+                timing: "Peak effects 30-60 minutes after consumption"
+            )
+        } else if lowercased.contains("theanine") {
+            return PharmacologyInfo(
+                icon: "leaf.fill",
+                mechanism: "Promotes alpha brain waves associated with relaxed focus. Smooths caffeine's effects by reducing jitters and anxiety.",
+                timing: "Best taken with caffeine for synergistic effect"
+            )
+        } else if lowercased.contains("creatine") {
+            return PharmacologyInfo(
+                icon: "bolt.fill",
+                mechanism: "Supports brain ATP production, improving cognitive endurance during demanding tasks.",
+                timing: "Consistent daily use recommended for benefits"
+            )
+        } else {
+            return PharmacologyInfo(
+                icon: "pills.fill",
+                mechanism: "Supports cognitive function through various pathways.",
+                timing: ""
+            )
+        }
+    }
+
+    private var synergyNote: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 14))
+                .foregroundColor(OnLifeColors.amber)
+
+            Text("These substances work synergistically to enhance focus while reducing side effects.")
+                .font(OnLifeFont.caption())
+                .foregroundColor(OnLifeColors.textSecondary)
+        }
+        .padding(Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
+                .fill(OnLifeColors.amber.opacity(0.1))
         )
     }
 
@@ -477,37 +413,39 @@ struct ProtocolDetailView: View {
 
     private var resultsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack {
-                Text("Community Results")
-                    .font(OnLifeFont.heading3())
-                    .foregroundColor(OnLifeColors.textPrimary)
+            Text("Results")
+                .font(OnLifeFont.heading3())
+                .foregroundColor(OnLifeColors.textPrimary)
 
-                Spacer()
-
-                Text("\(flowProtocol.trialCount) trials")
-                    .font(OnLifeFont.label())
-                    .foregroundColor(OnLifeColors.textTertiary)
-            }
-
-            // Results stats
             HStack(spacing: Spacing.lg) {
+                // Flow improvement
+                if flowProtocol.averageFlowImprovement > 0 {
+                    resultStat(
+                        value: "+\(Int(flowProtocol.averageFlowImprovement))%",
+                        label: "Avg Flow Improvement",
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: OnLifeColors.healthy
+                    )
+                }
+
+                // Rating
+                if flowProtocol.ratingsCount > 0 {
+                    resultStat(
+                        value: String(format: "%.1f", flowProtocol.averageRating),
+                        label: "Avg Rating",
+                        icon: "star.fill",
+                        color: OnLifeColors.amber
+                    )
+                }
+
+                // Trials
                 resultStat(
-                    value: "\(Int((flowProtocol.averageFlowScore ?? 0) * 100))%",
-                    label: "Avg Flow Score",
-                    icon: "sparkles",
+                    value: "\(flowProtocol.tryCount)",
+                    label: "Trials",
+                    icon: "person.2",
                     color: OnLifeColors.socialTeal
                 )
-
-                resultStat(
-                    value: "\(Int((flowProtocol.averageRating ?? 0) * 5))/5",
-                    label: "User Rating",
-                    icon: "star.fill",
-                    color: OnLifeColors.amber
-                )
             }
-
-            // Rating distribution visualization (placeholder)
-            ratingDistribution
         }
         .padding(Spacing.lg)
         .background(
@@ -518,57 +456,18 @@ struct ProtocolDetailView: View {
 
     private func resultStat(value: String, label: String, icon: String, color: Color) -> some View {
         VStack(spacing: Spacing.xs) {
-            HStack(spacing: Spacing.xs) {
-                Image(systemName: icon)
-                    .font(.system(size: 16))
-
-                Text(value)
-                    .font(OnLifeFont.heading2())
-            }
-            .foregroundColor(color)
-
-            Text(label)
-                .font(OnLifeFont.caption())
-                .foregroundColor(OnLifeColors.textTertiary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var ratingDistribution: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text("Effectiveness by Experience Level")
-                .font(OnLifeFont.label())
-                .foregroundColor(OnLifeColors.textTertiary)
-
-            HStack(spacing: Spacing.sm) {
-                distributionBar(label: "Beginner", value: 0.72, color: OnLifeColors.healthy)
-                distributionBar(label: "Intermediate", value: 0.81, color: OnLifeColors.socialTeal)
-                distributionBar(label: "Advanced", value: 0.76, color: OnLifeColors.amber)
-            }
-        }
-    }
-
-    private func distributionBar(label: String, value: Double, color: Color) -> some View {
-        VStack(spacing: Spacing.xs) {
-            Text("\(Int(value * 100))%")
-                .font(OnLifeFont.labelSmall())
+            Image(systemName: icon)
+                .font(.system(size: 20))
                 .foregroundColor(color)
 
-            GeometryReader { geometry in
-                VStack {
-                    Spacer()
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(color)
-                        .frame(height: geometry.size.height * value)
-                }
-            }
-            .frame(height: 60)
+            Text(value)
+                .font(OnLifeFont.heading2())
+                .foregroundColor(OnLifeColors.textPrimary)
 
             Text(label)
                 .font(OnLifeFont.caption())
                 .foregroundColor(OnLifeColors.textTertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
+                .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
     }
@@ -579,25 +478,19 @@ struct ProtocolDetailView: View {
         HStack(spacing: Spacing.md) {
             Image(systemName: "arrow.triangle.branch")
                 .font(.system(size: 16))
-                .foregroundColor(OnLifeColors.socialTeal)
+                .foregroundColor(OnLifeColors.textTertiary)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("Forked from")
+                Text("Forked from another protocol")
+                    .font(OnLifeFont.body())
+                    .foregroundColor(OnLifeColors.textPrimary)
+
+                Text("This protocol was adapted from a community protocol")
                     .font(OnLifeFont.caption())
                     .foregroundColor(OnLifeColors.textTertiary)
-
-                if let originalName = flowProtocol.forkedFromName {
-                    Text(originalName)
-                        .font(OnLifeFont.body())
-                        .foregroundColor(OnLifeColors.socialTeal)
-                }
             }
 
             Spacer()
-
-            Image(systemName: "chevron.right")
-                .font(.system(size: 12))
-                .foregroundColor(OnLifeColors.textTertiary)
         }
         .padding(Spacing.md)
         .background(
@@ -610,11 +503,8 @@ struct ProtocolDetailView: View {
 
     private var actionButtons: some View {
         VStack(spacing: Spacing.md) {
-            // Try Protocol (primary)
-            Button(action: {
-                HapticManager.shared.impact(style: .medium)
-                onTryProtocol()
-            }) {
+            // Try Protocol button
+            Button(action: onTryProtocol) {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 14))
@@ -631,11 +521,8 @@ struct ProtocolDetailView: View {
                 )
             }
 
-            // Fork Protocol (secondary)
-            Button(action: {
-                showingForkSheet = true
-                HapticManager.shared.impact(style: .light)
-            }) {
+            // Fork button
+            Button(action: { showingForkSheet = true }) {
                 HStack(spacing: Spacing.sm) {
                     Image(systemName: "arrow.triangle.branch")
                         .font(.system(size: 14))
@@ -648,7 +535,7 @@ struct ProtocolDetailView: View {
                 .padding(.vertical, Spacing.md)
                 .background(
                     RoundedRectangle(cornerRadius: CornerRadius.medium, style: .continuous)
-                        .stroke(OnLifeColors.socialTeal, lineWidth: 2)
+                        .stroke(OnLifeColors.socialTeal, lineWidth: 1)
                 )
             }
         }
@@ -659,42 +546,43 @@ struct ProtocolDetailView: View {
 
 #if DEBUG
 struct ProtocolDetailView_Previews: PreviewProvider {
+    static let sampleProtocol = FlowProtocol(
+        id: "1",
+        creatorId: "user1",
+        creatorUsername: "sarah_chen",
+        title: "Morning Clarity Stack",
+        description: "Optimized caffeine + L-theanine stack for morning deep work sessions. The 2:1 theanine to caffeine ratio smooths out the energy curve while maintaining alertness.",
+        substances: [
+            SubstanceEntry(substanceName: "Caffeine", doseMg: 100, timingMinutes: -30),
+            SubstanceEntry(substanceName: "L-Theanine", doseMg: 200, timingMinutes: -30)
+        ],
+        sessionDurationMinutes: 90,
+        blocksPerSession: 2,
+        targetChronotype: .moderateMorning,
+        bestForActivities: [.coding, .writing],
+        forkCount: 23,
+        tryCount: 156,
+        averageFlowImprovement: 18,
+        averageRating: 4.5,
+        ratingsCount: 42
+    )
+
+    static let userProfile = UserProfile(
+        id: "me",
+        username: "flowmaster",
+        displayName: "You",
+        chronotype: .moderateMorning,
+        gardenAgeDays: 90,
+        thirtyDayTrajectory: 23,
+        consistencyPercentile: 75,
+        totalPlantsGrown: 28,
+        speciesUnlocked: 8
+    )
+
     static var previews: some View {
         ProtocolDetailView(
-            flowProtocol: FlowProtocol(
-                id: "1",
-                name: "Morning Clarity Stack",
-                creatorId: "user1",
-                creatorName: "Sarah Chen",
-                description: "Optimized caffeine + L-theanine stack for morning deep work sessions. The 2:1 theanine to caffeine ratio smooths out the energy curve and eliminates the crash.",
-                substances: [
-                    SubstanceEntry(substance: "Caffeine", dosage: "100mg", timing: .prework, minutesBefore: 30),
-                    SubstanceEntry(substance: "L-Theanine", dosage: "200mg", timing: .prework, minutesBefore: 30)
-                ],
-                activities: [.coding, .writing],
-                targetChronotype: .earlyBird,
-                optimalTimeOfDay: "6-10 AM",
-                recommendedDurationMinutes: 90,
-                averageFlowScore: 0.78,
-                averageRating: 0.85,
-                trialCount: 156,
-                forkCount: 23,
-                saveCount: 89,
-                isVerified: true,
-                isPublic: true,
-                createdAt: Date(),
-                updatedAt: Date()
-            ),
-            currentUserProfile: UserProfile(
-                id: "me",
-                username: "testuser",
-                chronotype: .earlyBird,
-                thirtyDayTrajectory: 15,
-                consistencyPercentile: 70,
-                totalPlantsGrown: 20,
-                speciesUnlocked: 5,
-                gardenAgeDays: 45
-            ),
+            flowProtocol: sampleProtocol,
+            currentUserProfile: userProfile,
             onTryProtocol: {},
             onFork: {},
             onSave: {},

@@ -276,28 +276,28 @@ struct ProfileView: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: Spacing.md) {
-                StatCard(
+                ProfileStatCard(
                     icon: "leaf.fill",
                     value: "\(profile.totalPlantsGrown)",
                     label: "Plants Grown",
                     color: OnLifeColors.healthy
                 )
 
-                StatCard(
+                ProfileStatCard(
                     icon: "sparkles",
                     value: "\(profile.speciesUnlocked)",
                     label: "Species Unlocked",
                     color: OnLifeColors.amber
                 )
 
-                StatCard(
+                ProfileStatCard(
                     icon: "calendar",
                     value: "\(profile.gardenAgeDays)",
                     label: "Garden Age (days)",
                     color: OnLifeColors.sage
                 )
 
-                StatCard(
+                ProfileStatCard(
                     icon: "person.2.fill",
                     value: "\(profile.connectionCounts.total)",
                     label: "Connections",
@@ -330,9 +330,9 @@ struct ProfileView: View {
     }
 }
 
-// MARK: - Stat Card
+// MARK: - Profile Stat Card
 
-private struct StatCard: View {
+private struct ProfileStatCard: View {
     let icon: String
     let value: String
     let label: String
@@ -391,7 +391,7 @@ struct ProfileView_Previews: PreviewProvider {
                     username: "sarahflows",
                     displayName: "Sarah Chen",
                     bio: "Learning to focus in a noisy world",
-                    chronotype: .nightOwl,
+                    chronotype: .moderateEvening,
                     peakFlowWindows: [TimeWindow(startHour: 22, endHour: 2)],
                     masteryDurationDays: 120,
                     gardenAgeDays: 120,

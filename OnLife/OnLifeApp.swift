@@ -13,6 +13,21 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         print("✅ [Firebase] Configured in AppDelegate")
         return true
     }
+
+    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+        print("⚠️ [Memory] Memory warning received - triggering cleanup")
+
+        // Clear 3D garden resources
+        Task { @MainActor in
+            GardenSceneCoordinator.shared.cleanup()
+
+            // Clear asset cache
+            PlantAssetLoader.shared.clearCache()
+
+            // Force garbage collection hint
+            URLCache.shared.removeAllCachedResponses()
+        }
+    }
 }
 
 // MARK: - Main App
@@ -23,8 +38,17 @@ struct OnLifeApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
 
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedAuthentication") private var hasCompletedAuthentication = false
     @StateObject private var decayManager = PlantDecayManager.shared
     @StateObject private var authManager = AuthenticationManager.shared
+    @StateObject private var themeManager = ThemeManager.shared
+    @StateObject private var gardenCoordinator = GardenSceneCoordinator.shared
+
+    // Asset preloading state
+    @State private var isPreloadingAssets = true
+
+    // Theme refresh ID - changing this forces entire view hierarchy to rebuild
+    @State private var themeRefreshID = UUID()
 
     // CRITICAL: Force WatchConnectivityManager initialization at app launch
     // This MUST be a stored property (not computed) to trigger init
@@ -71,13 +95,50 @@ struct OnLifeApp: App {
     var body: some Scene {
         WindowGroup {
             Group {
-                if !hasCompletedOnboarding {
+                // Step 0: Preload 3D assets (only once at app launch)
+                if isPreloadingAssets {
+                    AssetPreloadView {
+                        withAnimation(.easeOut(duration: 0.3)) {
+                            isPreloadingAssets = false
+                        }
+                    }
+                }
+                // Step 1: Authentication (first-time only)
+                else if !hasCompletedAuthentication {
+                    AuthenticationView()
+                        .onChange(of: authManager.isAuthenticated) { _, isAuthenticated in
+                            if isAuthenticated {
+                                hasCompletedAuthentication = true
+                            }
+                        }
+                }
+                // Step 2: Onboarding (after auth)
+                else if !hasCompletedOnboarding {
                     OnboardingContainerView()
-                } else if !authManager.isAuthenticated {
+                }
+                // Step 3: Main app (or re-auth if signed out)
+                else if !authManager.isAuthenticated {
                     SignInView()
-                } else {
+                }
+                // Step 4: Main app
+                else {
                     MainTabView()
                 }
+            }
+            .id(themeRefreshID)  // Changing this rebuilds entire view hierarchy
+            .environmentObject(themeManager)
+            .environment(\.theme, themeManager.currentTheme)
+            .preferredColorScheme(.dark)  // Force dark mode for all themes
+            .onReceive(NotificationCenter.default.publisher(for: .themeDidChange)) { _ in
+                // Force complete view hierarchy rebuild when theme changes
+                themeRefreshID = UUID()
+                print("🎨 [OnLifeApp] Theme changed - refreshing view hierarchy")
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                gardenCoordinator.onEnterBackground()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
+                gardenCoordinator.onEnterForeground()
             }
             .onOpenURL { url in
                 print("📱 [OnLifeApp] ===== onOpenURL RECEIVED =====")

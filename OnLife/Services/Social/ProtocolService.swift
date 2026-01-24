@@ -5,19 +5,17 @@ import Combine
 
 // MARK: - Protocol Filter
 
-struct ProtocolFilter {
+struct ProtocolFilter: Sendable {
     var chronotype: Chronotype?
     var activityType: ProtocolActivityType?
     var minRating: Double?
     var minTryCount: Int?
     var sortBy: ProtocolSortOption = .popularity
 
-    static var `default`: ProtocolFilter {
-        ProtocolFilter()
-    }
+    static let `default` = ProtocolFilter()
 }
 
-enum ProtocolSortOption: String, CaseIterable {
+enum ProtocolSortOption: String, CaseIterable, Sendable {
     case popularity = "Most Tried"
     case rating = "Highest Rated"
     case newest = "Newest"
@@ -224,7 +222,8 @@ class ProtocolService: ObservableObject {
     }
 
     /// Load public protocols with optional filtering
-    func loadPublicProtocols(filter: ProtocolFilter = .default, limit: Int = 50) async {
+    func loadPublicProtocols(filter: ProtocolFilter? = nil, limit: Int = 50) async {
+        let resolvedFilter = filter ?? .default
         isLoading = true
         defer { isLoading = false }
 
@@ -233,20 +232,20 @@ class ProtocolService: ObservableObject {
                 .whereField("isPublic", isEqualTo: true)
 
             // Apply filters
-            if let chronotype = filter.chronotype {
+            if let chronotype = resolvedFilter.chronotype {
                 query = query.whereField("targetChronotype", isEqualTo: chronotype.rawValue)
             }
 
-            if let minRating = filter.minRating {
+            if let minRating = resolvedFilter.minRating {
                 query = query.whereField("averageRating", isGreaterThanOrEqualTo: minRating)
             }
 
-            if let minTryCount = filter.minTryCount {
+            if let minTryCount = resolvedFilter.minTryCount {
                 query = query.whereField("tryCount", isGreaterThanOrEqualTo: minTryCount)
             }
 
             // Apply sorting
-            switch filter.sortBy {
+            switch resolvedFilter.sortBy {
             case .popularity:
                 query = query.order(by: "tryCount", descending: true)
             case .rating:
@@ -262,7 +261,7 @@ class ProtocolService: ObservableObject {
             var protocols = snapshot.documents.compactMap { FlowProtocol(document: $0) }
 
             // Filter by activity type in memory (Firestore doesn't support array-contains with other where clauses well)
-            if let activityType = filter.activityType {
+            if let activityType = resolvedFilter.activityType {
                 protocols = protocols.filter { $0.bestForActivities.contains(activityType) }
             }
 

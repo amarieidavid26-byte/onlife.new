@@ -7,124 +7,135 @@ import UIKit
 
 // MARK: - Color Palette
 
+/// Dynamic color palette that reads from the current theme
+/// All colors update automatically when the theme changes
 struct OnLifeColors {
 
-    // MARK: Primary - Sage/Mint Greens (60% of UI)
-    // These colors promote restoration and reduce cognitive fatigue
+    // MARK: - Theme Access
 
-    /// Light sage green - primary background accent
-    static let sage = Color(hex: "A8B5A0")
+    /// Access to current theme (internal use)
+    private static var theme: AppTheme { ThemeManager.shared.currentTheme }
 
-    /// Soft mint - highlights and subtle backgrounds
-    static let mint = Color(hex: "D4E4D9")
+    // MARK: Primary Colors
 
-    /// Deep forest green - dark mode primary background
-    static let forest = Color(hex: "2D4A3E")
+    /// Primary color (theme-aware)
+    static var sage: Color { theme.success }
 
-    /// Deepest forest - dark mode deepest background
-    static let deepForest = Color(hex: "1A2E1E")
+    /// Soft mint (maps to secondary)
+    static var mint: Color { theme.primaryLight }
 
-    /// Fresh leaf green - positive states and growth
-    static let leaf = Color(hex: "7CB97C")
+    /// Deep forest (maps to backgroundTertiary)
+    static var forest: Color { theme.backgroundTertiary }
 
-    // MARK: Secondary - Earth Accents (30% of UI)
-    // Grounding colors used sparingly for soil and organic elements
+    /// Deepest forest (maps to backgroundPrimary)
+    static var deepForest: Color { theme.backgroundPrimary }
 
-    /// Rich soil brown - only for soil visualization and stems
-    static let soil = Color(hex: "3D3228")
+    /// Fresh leaf green (maps to healthy)
+    static var leaf: Color { theme.healthy }
 
-    /// Warm bark - card backgrounds in dark mode
-    static let bark = Color(hex: "5C4D3C")
+    // MARK: Secondary - Earth Accents
 
-    /// Soft earth - muted secondary elements
-    static let earth = Color(hex: "6B5D4D")
+    /// Rich soil brown (maps to surfaceCard darkened)
+    static var soil: Color { theme.surfaceCard }
 
-    // MARK: Accent - Warm Highlights (10% of UI)
-    // Used for CTAs, achievements, and important actions
+    /// Warm bark (maps to surfaceElevated)
+    static var bark: Color { theme.surfaceElevated }
 
-    /// Golden amber - primary CTA color
-    static let amber = Color(hex: "C9A87C")
+    /// Soft earth (maps to textMuted)
+    static var earth: Color { theme.textMuted }
 
-    /// Warm terracotta - secondary accent, achievements
-    static let terracotta = Color(hex: "C17F59")
+    // MARK: Accent - Warm Highlights
 
-    /// Sunlight gold - celebration highlights
-    static let sunlight = Color(hex: "E8D5A3")
+    /// Golden amber (maps to accent)
+    static var amber: Color { theme.accent }
+
+    /// Warm terracotta (maps to accentSecondary)
+    static var terracotta: Color { theme.accentSecondary }
+
+    /// Sunlight gold (maps to accentGlow)
+    static var sunlight: Color { theme.accentGlow }
 
     // MARK: Semantic - Plant Health States
-    // Visual feedback for plant lifecycle
 
-    /// Thriving plant - brightest green (excellent health)
-    static let thriving = Color(hex: "90D890")
+    /// Thriving plant (theme-aware)
+    static var thriving: Color { theme.thriving }
 
-    /// Healthy plant - vibrant green (0-24h since last session)
-    static let healthy = Color(hex: "7CB97C")
+    /// Healthy plant (theme-aware)
+    static var healthy: Color { theme.healthy }
 
-    /// Stressed plant - yellow-green (needs attention)
-    static let stressed = Color(hex: "C4B176")
+    /// Stressed plant (theme-aware)
+    static var stressed: Color { theme.stressed }
 
-    /// Thirsty plant - yellow-green (24-48h decay)
-    static let thirsty = Color(hex: "C4B176")
+    /// Thirsty plant (alias for stressed)
+    static var thirsty: Color { theme.stressed }
 
-    /// Wilting plant - warm brown (48-72h decay)
-    static let wilting = Color(hex: "B88B6A")
+    /// Wilting plant (theme-aware)
+    static var wilting: Color { theme.wilting }
 
-    /// Dormant plant - muted brown (72-96h decay)
-    static let dormant = Color(hex: "8B7355")
+    /// Dormant plant (theme-aware)
+    static var dormant: Color { theme.dormant }
 
-    /// Dead plant - grey-brown (96h+ decay)
-    static let dead = Color(hex: "6B6158")
+    /// Dead plant (theme-aware)
+    static var dead: Color { theme.dead }
 
-    /// Withered plant - grey-brown (96h+ decay) - alias for dead
-    static let withered = Color(hex: "6B6158")
+    /// Withered plant (alias for dead)
+    static var withered: Color { theme.dead }
 
     // MARK: Surface Colors
-    // Background and container colors
 
-    /// Primary card background - replaces brown cards
-    static let cardBackground = Color(hex: "2A3B2E")
+    /// Primary card background (theme-aware)
+    static var cardBackground: Color { theme.surfaceCard }
 
-    /// Elevated card background - for layered cards
-    static let cardBackgroundElevated = Color(hex: "354539")
+    /// Elevated card background (theme-aware)
+    static var cardBackgroundElevated: Color { theme.surfaceElevated }
 
-    /// Base surface - deepest background layer
-    static let surface = Color(hex: "1E2D22")
+    /// Base surface (theme-aware)
+    static var surface: Color { theme.backgroundSecondary }
 
-    /// Surface elevated - slightly lifted from base
-    static let surfaceElevated = Color(hex: "253329")
+    /// Surface elevated (theme-aware)
+    static var surfaceElevated: Color { theme.backgroundTertiary }
 
-    /// Overlay - for modals and sheets
-    static let overlay = Color(hex: "1A2E1E").opacity(0.95)
+    /// Overlay (theme-aware)
+    static var overlay: Color { theme.backgroundPrimary.opacity(0.95) }
 
     // MARK: Text Colors
 
-    /// Primary text - highest contrast
-    static let textPrimary = Color(hex: "F5F5F0")
+    /// Primary text (theme-aware)
+    static var textPrimary: Color { theme.textPrimary }
 
-    /// Secondary text - medium emphasis
-    static let textSecondary = Color(hex: "B8C4B0")
+    /// Secondary text (theme-aware)
+    static var textSecondary: Color { theme.textSecondary }
 
-    /// Tertiary text - low emphasis, captions
-    static let textTertiary = Color(hex: "7A8A74")
+    /// Tertiary text (theme-aware)
+    static var textTertiary: Color { theme.textTertiary }
 
-    /// Muted text - disabled states
-    static let textMuted = Color(hex: "5A6A54")
+    /// Muted text (theme-aware)
+    static var textMuted: Color { theme.textMuted }
 
     // MARK: Semantic UI Colors
 
-    /// Success state
-    static let success = Color(hex: "7CB97C")
+    /// Success state (theme-aware)
+    static var success: Color { theme.success }
 
-    /// Warning state
-    static let warning = Color(hex: "D4A84B")
+    /// Warning state (theme-aware)
+    static var warning: Color { theme.warning }
 
-    /// Error state
-    static let error = Color(hex: "C75F5F")
+    /// Error state (theme-aware)
+    static var error: Color { theme.error }
 
-    /// Info state
-    static let info = Color(hex: "6BA3C7")
+    /// Info state (theme-aware)
+    static var info: Color { theme.info }
+
+    // MARK: Social Feature Colors
+
+    /// Social teal (theme-aware)
+    static var socialTeal: Color { theme.socialTeal }
+
+    /// Social teal light (theme-aware)
+    static var socialTealLight: Color { theme.socialTealLight }
 
     // MARK: Light Mode Variants (if needed)
+    // Note: These remain static as they're rarely used
 
     struct Light {
         static let surface = Color(hex: "F8FAF5")

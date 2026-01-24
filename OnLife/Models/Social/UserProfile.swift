@@ -1,34 +1,27 @@
 import Foundation
 import FirebaseFirestore
+import SwiftUI
 
-// MARK: - Chronotype
+// MARK: - Chronotype Extension for Social Views
 
-enum Chronotype: String, Codable, CaseIterable {
-    case earlyBird = "Early Bird"
-    case nightOwl = "Night Owl"
-    case flexible = "Flexible"
-
-    var icon: String {
+extension Chronotype {
+    /// SF Symbol icon for use in social views
+    var sfSymbol: String {
         switch self {
-        case .earlyBird: return "sunrise.fill"
-        case .nightOwl: return "moon.stars.fill"
-        case .flexible: return "clock.fill"
+        case .extremeMorning: return "sunrise.fill"
+        case .moderateMorning: return "sun.and.horizon.fill"
+        case .intermediate: return "clock.fill"
+        case .moderateEvening: return "sunset.fill"
+        case .extremeEvening: return "moon.stars.fill"
         }
     }
 
-    var emoji: String {
+    /// Simple display name for social contexts
+    var socialDisplayName: String {
         switch self {
-        case .earlyBird: return "🌅"
-        case .nightOwl: return "🌙"
-        case .flexible: return "⚖️"
-        }
-    }
-
-    var peakDescription: String {
-        switch self {
-        case .earlyBird: return "Morning sessions (6am - 12pm)"
-        case .nightOwl: return "Evening sessions (6pm - 2am)"
-        case .flexible: return "Adaptable to any time"
+        case .extremeMorning, .moderateMorning: return "Early Bird"
+        case .intermediate: return "Flexible"
+        case .moderateEvening, .extremeEvening: return "Night Owl"
         }
     }
 }
@@ -152,7 +145,14 @@ enum ComparisonMode: String, Codable, CaseIterable {
     var icon: String {
         switch self {
         case .inspiration: return "lightbulb.fill"
-        case .competition: return "trophy.fill"
+        case .competition: return "flag.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .inspiration: return OnLifeColors.amber
+        case .competition: return OnLifeColors.socialTeal
         }
     }
 
@@ -268,7 +268,7 @@ struct UserProfile: Codable, Identifiable {
         displayName: String,
         bio: String = "",
         profileImageURL: String? = nil,
-        chronotype: Chronotype = .flexible,
+        chronotype: Chronotype = .intermediate,
         peakFlowWindows: [TimeWindow] = [],
         masteryDurationDays: Int = 0,
         gardenAgeDays: Int = 0,
@@ -329,9 +329,9 @@ extension UserProfile {
 
         // Decode chronotype
         if let chronotypeRaw = data["chronotype"] as? String {
-            self.chronotype = Chronotype(rawValue: chronotypeRaw) ?? .flexible
+            self.chronotype = Chronotype(rawValue: chronotypeRaw) ?? .intermediate
         } else {
-            self.chronotype = .flexible
+            self.chronotype = .intermediate
         }
 
         // Decode peak windows
