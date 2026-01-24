@@ -313,10 +313,12 @@ class GardenScene: ObservableObject {
         // Re-initialize wind for the new plant
         windSystem.reinitialize()
 
-        // Add plant-specific particles (pollen, butterflies, etc.)
+        // Add plant-specific particles (disabled for stability)
         particleManager.addPlantParticles(to: entity, species: plant.species)
 
-        print("🌳 [Garden3D] Added plant: \(plant.species.rawValue) at \(position)")
+        print("🌱 [Garden3D] Added plant: \(plant.species.rawValue) at position \(position)")
+        print("🌱 [Garden3D] Total entities in scene: \(rootAnchor.children.count)")
+        print("🌱 [Garden3D] Plant entities tracked: \(plantEntities.count)")
     }
 
     /// Called when a plant grows - triggers celebration sparkles

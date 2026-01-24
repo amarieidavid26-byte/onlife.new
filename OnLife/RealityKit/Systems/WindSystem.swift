@@ -310,6 +310,19 @@ class WindSystem: ObservableObject {
         logger.info("Wind preset: \(preset.rawValue)")
     }
 
+    // MARK: - Preset Cycling
+
+    /// Cycle to next wind preset (for button tap)
+    func cyclePreset() {
+        switch windPreset {
+        case .calm: windPreset = .breeze
+        case .breeze: windPreset = .windy
+        case .windy: windPreset = .stormy
+        case .stormy: windPreset = .calm
+        }
+        logger.info("Cycled wind to: \(self.windPreset.rawValue)")
+    }
+
     // MARK: - Manual Gust
 
     /// Trigger a gust manually (e.g., when plant is watered)

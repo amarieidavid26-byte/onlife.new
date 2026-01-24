@@ -381,6 +381,21 @@ class DayNightSystem: ObservableObject {
         }
     }
 
+    /// Cycle to next phase (for button tap)
+    func cyclePhase() {
+        followRealTime = false
+        switch currentPhase {
+        case .night: jumpToPhase(.dawn)
+        case .dawn: jumpToPhase(.morning)
+        case .morning: jumpToPhase(.day)
+        case .day: jumpToPhase(.evening)
+        case .evening: jumpToPhase(.dusk)
+        case .dusk: jumpToPhase(.twilight)
+        case .twilight: jumpToPhase(.night)
+        }
+        logger.info("Cycled to phase: \(self.currentPhase.rawValue)")
+    }
+
     /// Start fast time-lapse (for demo)
     func startTimeLapse(speed: Float = 60) {
         followRealTime = false

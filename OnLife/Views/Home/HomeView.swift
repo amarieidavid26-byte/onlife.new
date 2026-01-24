@@ -108,11 +108,14 @@ struct HomeView: View {
                                     let plants = gardenViewModel.plants(for: selectedGarden.id)
                                     if !plants.isEmpty {
                                         // Immersive 3D Garden View
-                                        GardenExperienceView(gardenViewModel: gardenViewModel)
-                                            .frame(height: UIScreen.main.bounds.height * 0.55)
-                                            .clipShape(RoundedRectangle(cornerRadius: 24))
-                                            .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
-                                            .padding(.top, Spacing.sm)
+                                        GeometryReader { geometry in
+                                            GardenExperienceView(gardenViewModel: gardenViewModel)
+                                                .frame(height: geometry.size.height)
+                                                .clipShape(RoundedRectangle(cornerRadius: 24))
+                                                .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+                                        }
+                                        .frame(height: 450) // Fixed height for garden view
+                                        .padding(.top, Spacing.sm)
                                     } else {
                                         EmptyGardenPlantsView(
                                             gardenName: selectedGarden.name,

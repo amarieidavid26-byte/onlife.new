@@ -82,6 +82,7 @@ class PlantEntityFactory {
         // Generate collision shapes for tap detection
         container.generateCollisionShapes(recursive: true)
 
+        print("🌳 [PlantFactory] Created \(plant.species.rawValue) with \(container.children.count) children, stage: \(stage.rawValue)")
         return container
     }
 

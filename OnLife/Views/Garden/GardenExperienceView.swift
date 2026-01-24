@@ -4,10 +4,8 @@ import RealityKit
 /// Premium garden experience - 3D by default, 2D fallback
 struct GardenExperienceView: View {
     @ObservedObject var gardenViewModel: GardenViewModel
-    @StateObject private var coordinator = GardenSceneCoordinator.shared
     @ObservedObject var themeManager = ThemeManager.shared
 
-    @State private var isLoading = true
     @State private var use3D = true
     @State private var showPlantDetail: Plant? = nil
     @State private var selectedPlantID: UUID? = nil
@@ -24,8 +22,8 @@ struct GardenExperienceView: View {
     var body: some View {
         ZStack {
             if use3D && supports3D {
-                // PREMIUM 3D EXPERIENCE
-                Garden3DContainerView(gardenViewModel: gardenViewModel)
+                // PREMIUM 3D EXPERIENCE with real USDZ models
+                IsometricGardenView(gardenViewModel: gardenViewModel)
                     .overlay(alignment: .top) {
                         gardenHeader
                     }
@@ -43,7 +41,7 @@ struct GardenExperienceView: View {
                 .presentationDragIndicator(.visible)
         }
         .onAppear {
-            setupGarden()
+            // Garden setup handled by IsometricGardenView
         }
     }
 
@@ -171,17 +169,6 @@ struct GardenExperienceView: View {
         guard !gardenViewModel.plants.isEmpty else { return 100 }
         let total = gardenViewModel.plants.reduce(0.0) { $0 + $1.healthLevel }
         return (total / Double(gardenViewModel.plants.count)) * 100
-    }
-
-    // MARK: - Setup
-
-    private func setupGarden() {
-        Task {
-            await coordinator.initialize()
-            withAnimation {
-                isLoading = false
-            }
-        }
     }
 }
 
