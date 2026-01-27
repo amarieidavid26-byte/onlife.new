@@ -29,6 +29,10 @@ struct HomeView: View {
     @State private var pendingSourceChange: BiometricSourceChange?
     @State private var showSourceBanner = false
 
+    // Plant placement mode (after session completion)
+    @State private var pendingPlantToPlace: Plant?
+    @State private var isInPlacementMode = false
+
     var body: some View {
         NavigationView {
             mainContent
@@ -152,6 +156,13 @@ struct HomeView: View {
             // Sleep data loaded - recalculate flow readiness
             calculateFlowReadiness()
         }
+        .onReceive(NotificationCenter.default.publisher(for: .plantReadyToPlace)) { notification in
+            if let plant = notification.object as? Plant {
+                print("🌱 [Placement] Received plant to place: \(plant.species.rawValue)")
+                pendingPlantToPlace = plant
+                isInPlacementMode = true
+            }
+        }
         .onChange(of: sessionViewModel.sessionPhase) { oldValue, newValue in
             if newValue == .input {
                 print("🔄 Session completed, refreshing gardens...")
@@ -252,8 +263,22 @@ struct HomeView: View {
                 .padding(.bottom, Spacing.sm)
 
             let plants = gardenViewModel.plants(for: selectedGarden.id)
-            if !plants.isEmpty {
-                GardenDioramaView(gardenViewModel: gardenViewModel)
+            if !plants.isEmpty || isInPlacementMode {
+                GardenDioramaView(
+                    gardenViewModel: gardenViewModel,
+                    isInPlacementMode: $isInPlacementMode,
+                    pendingPlantToPlace: $pendingPlantToPlace,
+                    onPlacementComplete: { plant, position in
+                        // Save the plant with its position
+                        var plantWithPosition = plant
+                        plantWithPosition.gardenPosition = position
+                        if let gardenId = gardenViewModel.selectedGarden?.id {
+                            GardenDataManager.shared.savePlant(plantWithPosition, to: gardenId)
+                            print("✅ [Placement] Plant saved with position: \(position)")
+                            gardenViewModel.refreshGardens()
+                        }
+                    }
+                )
                     .frame(height: 480)
                     .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
             } else {

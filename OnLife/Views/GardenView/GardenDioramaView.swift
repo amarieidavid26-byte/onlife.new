@@ -4,12 +4,24 @@ import SceneKit
 /// Main garden diorama view - Nintendo/Animal Crossing style
 /// Contains the 3D SceneKit view with UI overlays
 /// Long-press and drag to move plants around the island
+/// Supports placement mode for newly earned plants
 struct GardenDioramaView: View {
     @ObservedObject var gardenViewModel: GardenViewModel
     @State private var selectedPlantID: UUID?
 
-    init(gardenViewModel: GardenViewModel) {
+    // Placement mode (for newly earned plants)
+    @Binding var isInPlacementMode: Bool
+    @Binding var pendingPlantToPlace: Plant?
+    var onPlacementComplete: ((Plant, PlantPosition) -> Void)?
+
+    init(gardenViewModel: GardenViewModel,
+         isInPlacementMode: Binding<Bool> = .constant(false),
+         pendingPlantToPlace: Binding<Plant?> = .constant(nil),
+         onPlacementComplete: ((Plant, PlantPosition) -> Void)? = nil) {
         self.gardenViewModel = gardenViewModel
+        self._isInPlacementMode = isInPlacementMode
+        self._pendingPlantToPlace = pendingPlantToPlace
+        self.onPlacementComplete = onPlacementComplete
     }
 
     var body: some View {
@@ -17,21 +29,69 @@ struct GardenDioramaView: View {
 
         ZStack {
             // The 3D Garden Scene - fills entire card
-            // Long-press + drag to move plants
-            SceneKitGardenView(plants: plants)
+            // Long-press + drag to move plants, or place new plants
+            SceneKitGardenView(
+                plants: plants,
+                isInPlacementMode: $isInPlacementMode,
+                pendingPlantToPlace: $pendingPlantToPlace,
+                onPlacementComplete: { plant, position in
+                    isInPlacementMode = false
+                    pendingPlantToPlace = nil
+                    onPlacementComplete?(plant, position)
+                }
+            )
 
-            // Gradient overlay at bottom for readability
-            VStack {
-                Spacer()
-                LinearGradient(
-                    colors: [.clear, .black.opacity(0.4)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(height: 120)
+            // Gradient overlay at bottom for readability (hide during placement)
+            if !isInPlacementMode {
+                VStack {
+                    Spacer()
+                    LinearGradient(
+                        colors: [.clear, .black.opacity(0.4)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: 120)
+                }
             }
 
-            // UI Overlays
+            // Placement mode overlay
+            if isInPlacementMode, let plant = pendingPlantToPlace {
+                VStack {
+                    // Top prompt
+                    VStack(spacing: 8) {
+                        Text("🌱 Long-press to plant your \(plant.species.rawValue.capitalized)!")
+                            .font(.headline)
+                            .foregroundColor(.white)
+
+                        Text("Hold on the grass where you want it")
+                            .font(.caption)
+                            .foregroundColor(.white.opacity(0.8))
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 14)
+                    .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
+                    .padding(.top, 20)
+
+                    Spacer()
+
+                    // Cancel button
+                    Button(action: {
+                        isInPlacementMode = false
+                        pendingPlantToPlace = nil
+                    }) {
+                        Text("Cancel")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 10)
+                            .background(Color.red.opacity(0.8), in: Capsule())
+                    }
+                    .padding(.bottom, 20)
+                }
+            }
+
+            // UI Overlays (hide during placement)
             VStack(spacing: 0) {
                 // Top: Garden name (if multiple gardens)
                 if let garden = gardenViewModel.selectedGarden {

@@ -113,6 +113,7 @@ struct SessionHistoryView: View {
             .toolbarBackground(OnLifeColors.deepForest, for: .navigationBar)
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarColorScheme(.dark, for: .navigationBar)
+            .tint(.white)
         }
         .onAppear {
             viewModel.loadData()

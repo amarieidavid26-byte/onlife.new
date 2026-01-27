@@ -38,6 +38,9 @@ class FocusSessionViewModel: ObservableObject {
     @Published var plantGrowthStage: Int = 0
     @Published var plantHealth: Double = 100.0
 
+    // Plant created after session (for placement)
+    @Published var lastCreatedPlant: Plant?
+
     // MARK: - Flow Detection (NEW)
 
     @Published var currentFlowScore: Double = 0
@@ -533,6 +536,11 @@ class FocusSessionViewModel: ObservableObject {
             AudioManager.shared.play(.bloom, volume: 0.8)
             HapticManager.shared.notification(type: .success)
 
+            // Create plant if not already created (handles manual end at 80%+)
+            if lastCreatedPlant == nil {
+                savePlantToGarden()
+            }
+
             // Process rewards
             processSessionRewards(completed: true)
         } else {
@@ -543,7 +551,78 @@ class FocusSessionViewModel: ObservableObject {
 
             // Partial rewards
             processSessionRewards(completed: false)
+
+            // Save abandoned session to history (so it shows in Session History)
+            saveAbandonedSession()
         }
+    }
+
+    // MARK: - Save Abandoned Session
+
+    private func saveAbandonedSession() {
+        guard let garden = currentGarden else {
+            print("❌ [Abandoned] No garden selected, session not saved")
+            return
+        }
+
+        // Calculate average flow score
+        let avgFlowScore = flowScoreHistory.isEmpty ? 0 :
+            Int(flowScoreHistory.reduce(0, +) / Double(flowScoreHistory.count))
+
+        // Create biometric session data if available
+        var biometrics: BiometricSessionData? = nil
+        if currentHeartRate > 0 || currentHRV > 0 || !flowScoreHistory.isEmpty {
+            biometrics = BiometricSessionData(
+                averageHR: currentHeartRate,
+                peakHR: currentHeartRate,
+                minimumHR: currentHeartRate,
+                averageHRV: currentHRV,
+                peakHRV: currentHRV,
+                averageFlowScore: avgFlowScore,
+                peakFlowScore: Int(flowScoreHistory.max() ?? 0),
+                timeInFlowState: 0
+            )
+        }
+
+        // Save the abandoned session (no plant created)
+        let session = FocusSession(
+            gardenId: garden.id,
+            plantId: nil, // No plant for abandoned sessions
+            taskDescription: taskDescription,
+            seedType: selectedSeedType,
+            plantSpecies: selectedPlantSpecies,
+            environment: selectedEnvironment,
+            startTime: sessionStartTime ?? Date(),
+            endTime: Date(),
+            plannedDuration: plannedDuration,
+            actualDuration: elapsedTime,
+            wasCompleted: false,
+            wasAbandoned: true,
+            pauseCount: pauseCount,
+            totalPauseTime: totalPauseTime,
+            growthStageAchieved: plantGrowthStage,
+            biometrics: biometrics
+        )
+
+        GardenDataManager.shared.saveSession(session)
+
+        // Debug: Print all session metrics being saved
+        print("📊 [Session] ========== SAVING ABANDONED SESSION ==========")
+        print("📊 [Session] Task: \(session.taskDescription)")
+        print("📊 [Session] plannedDuration: \(Int(session.plannedDuration))s (\(Int(session.plannedDuration/60))m)")
+        print("📊 [Session] actualDuration: \(Int(session.actualDuration))s (\(Int(session.actualDuration/60))m)")
+        print("📊 [Session] completionPercent: \(Int((session.actualDuration / max(1, session.plannedDuration)) * 100))%")
+        print("📊 [Session] growthStage: \(session.growthStageAchieved)/10")
+        print("📊 [Session] pauseCount: \(session.pauseCount)")
+        print("📊 [Session] totalPauseTime: \(Int(session.totalPauseTime))s")
+        if let bio = session.biometrics {
+            print("📊 [Session] flowScore: \(bio.averageFlowScore)/100 (peak: \(bio.peakFlowScore))")
+            print("📊 [Session] avgHR: \(Int(bio.averageHR)) bpm")
+            print("📊 [Session] avgHRV: \(Int(bio.averageHRV)) ms")
+        } else {
+            print("📊 [Session] biometrics: nil (no Watch data)")
+        }
+        print("📊 [Session] ================================================")
     }
 
     func completeSession() {
@@ -624,8 +703,12 @@ class FocusSessionViewModel: ObservableObject {
 
         print("🌱 Created plant: \(plant.species.rawValue) (\(plant.seedType.rawValue))")
 
-        GardenDataManager.shared.savePlant(plant, to: garden.id)
-        print("✅ Plant saved to garden: \(garden.name)")
+        // Store for placement mode (position will be set when user places it)
+        self.lastCreatedPlant = plant
+
+        // Note: We don't save to garden yet - that happens after placement
+        // GardenDataManager.shared.savePlant(plant, to: garden.id)
+        print("🌱 Plant created, ready for placement in garden: \(garden.name)")
 
         // Calculate average flow score
         let avgFlowScore = flowScoreHistory.isEmpty ? 50 :
@@ -667,7 +750,24 @@ class FocusSessionViewModel: ObservableObject {
         )
 
         GardenDataManager.shared.saveSession(session)
-        print("⏱️ Session saved: \(session.taskDescription), Flow: \(avgFlowScore)%")
+
+        // Debug: Print all session metrics being saved
+        print("📊 [Session] ========== SAVING COMPLETED SESSION ==========")
+        print("📊 [Session] Task: \(session.taskDescription)")
+        print("📊 [Session] plannedDuration: \(Int(session.plannedDuration))s (\(Int(session.plannedDuration/60))m)")
+        print("📊 [Session] actualDuration: \(Int(session.actualDuration))s (\(Int(session.actualDuration/60))m)")
+        print("📊 [Session] completionPercent: \(Int((session.actualDuration / session.plannedDuration) * 100))%")
+        print("📊 [Session] growthStage: \(session.growthStageAchieved)/10")
+        print("📊 [Session] pauseCount: \(session.pauseCount)")
+        print("📊 [Session] totalPauseTime: \(Int(session.totalPauseTime))s")
+        if let bio = session.biometrics {
+            print("📊 [Session] flowScore: \(bio.averageFlowScore)/100 (peak: \(bio.peakFlowScore))")
+            print("📊 [Session] avgHR: \(Int(bio.averageHR)) bpm")
+            print("📊 [Session] avgHRV: \(Int(bio.averageHRV)) ms")
+        } else {
+            print("📊 [Session] biometrics: nil (no Watch data)")
+        }
+        print("📊 [Session] ================================================")
     }
 
     // MARK: - Reset
@@ -795,5 +895,12 @@ struct SessionRewardResult {
     var hasBonus: Bool {
         return bonusOrbs > 0
     }
+}
+
+// MARK: - Plant Placement Notification
+
+extension Notification.Name {
+    /// Posted when a plant is ready to be placed in the garden after session completion
+    static let plantReadyToPlace = Notification.Name("plantReadyToPlace")
 }
 

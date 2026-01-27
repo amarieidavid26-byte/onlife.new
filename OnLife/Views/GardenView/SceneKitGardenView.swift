@@ -3,8 +3,24 @@ import SceneKit
 
 /// Nintendo-style isometric garden view using SceneKit
 /// Long-press and drag to move plants around the island
+/// Supports placement mode for newly earned plants
 struct SceneKitGardenView: UIViewRepresentable {
     let plants: [Plant]
+
+    // Placement mode for new plants
+    @Binding var isInPlacementMode: Bool
+    @Binding var pendingPlantToPlace: Plant?
+    var onPlacementComplete: ((Plant, PlantPosition) -> Void)?
+
+    init(plants: [Plant],
+         isInPlacementMode: Binding<Bool> = .constant(false),
+         pendingPlantToPlace: Binding<Plant?> = .constant(nil),
+         onPlacementComplete: ((Plant, PlantPosition) -> Void)? = nil) {
+        self.plants = plants
+        self._isInPlacementMode = isInPlacementMode
+        self._pendingPlantToPlace = pendingPlantToPlace
+        self.onPlacementComplete = onPlacementComplete
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator()
@@ -41,6 +57,12 @@ struct SceneKitGardenView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: SCNView, context: Context) {
+        // Sync placement state to coordinator
+        context.coordinator.updatePlacementState(
+            isPlacing: isInPlacementMode,
+            plant: pendingPlantToPlace,
+            onComplete: onPlacementComplete
+        )
 
         // Update plants when data changes
         if let scene = uiView.scene {
@@ -57,6 +79,20 @@ struct SceneKitGardenView: UIViewRepresentable {
         var draggedNode: SCNNode?
         var dragStartPosition: SCNVector3?
         var isDragging: Bool = false
+
+        // Placement mode state (synced from updateUIView)
+        var isInPlacementMode: Bool = false
+        var pendingPlantToPlace: Plant?
+        var onPlacementComplete: ((Plant, PlantPosition) -> Void)?
+
+        func updatePlacementState(isPlacing: Bool, plant: Plant?, onComplete: ((Plant, PlantPosition) -> Void)?) {
+            self.isInPlacementMode = isPlacing
+            self.pendingPlantToPlace = plant
+            self.onPlacementComplete = onComplete
+            if isPlacing {
+                print("🌱 [Coordinator] Placement mode active for: \(plant?.species.rawValue ?? "nil")")
+            }
+        }
 
         // MARK: - UIGestureRecognizerDelegate
 
@@ -88,6 +124,52 @@ struct SceneKitGardenView: UIViewRepresentable {
 
             switch gesture.state {
             case .began:
+                // PLACEMENT MODE: Place a NEW plant at this location
+                if isInPlacementMode, let newPlant = pendingPlantToPlace {
+                    // Hit test to find ground position
+                    let hitResults = scnView.hitTest(location, options: [
+                        .searchMode: NSNumber(value: SCNHitTestSearchMode.closest.rawValue),
+                        .backFaceCulling: NSNumber(value: false)
+                    ])
+
+                    // Find a surface hit (island or ground)
+                    if let hit = hitResults.first(where: { hit in
+                        let name = hit.node.name ?? ""
+                        // Accept island surfaces, not existing plants
+                        return !name.starts(with: "plant_")
+                    }) {
+                        let worldPos = hit.worldCoordinates
+
+                        // Check bounds - keep within reasonable island area
+                        let distance = sqrt(worldPos.x * worldPos.x + worldPos.z * worldPos.z)
+                        guard distance < 5.0 else {
+                            print("🌱 [Placement] Location too far from island center")
+                            return
+                        }
+
+                        // Create position for the new plant
+                        let position = PlantPosition(
+                            x: worldPos.x,
+                            y: worldPos.y + 0.1, // Slight offset above surface
+                            z: worldPos.z
+                        )
+
+                        print("🌱 [Placement] Placing \(newPlant.species.rawValue) at (\(position.x), \(position.y), \(position.z))")
+
+                        // Haptic feedback for successful placement
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
+
+                        // Call completion handler (this saves the plant)
+                        onPlacementComplete?(newPlant, position)
+                        return
+                    } else {
+                        print("🌱 [Placement] No valid surface found at touch location")
+                        return
+                    }
+                }
+
+                // NORMAL MODE: Pick up existing plant for moving
                 // Hit test to find if we tapped a plant
                 let hitResults = scnView.hitTest(location, options: [
                     .searchMode: NSNumber(value: SCNHitTestSearchMode.closest.rawValue)

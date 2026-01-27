@@ -99,7 +99,15 @@ struct SessionCompletedScreen: View {
 
             Spacer()
 
-            PrimaryButton(title: "Back to Garden") {
+            PrimaryButton(title: "🌱 Plant in Garden") {
+                // Post notification to trigger placement mode
+                if let plant = viewModel.lastCreatedPlant {
+                    NotificationCenter.default.post(
+                        name: .plantReadyToPlace,
+                        object: plant
+                    )
+                    print("🌱 [Placement] Posted notification for plant: \(plant.species.rawValue)")
+                }
                 viewModel.resetSession()
             }
             .padding(.horizontal, Spacing.xl)
