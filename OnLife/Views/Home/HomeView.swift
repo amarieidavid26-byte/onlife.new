@@ -31,121 +31,8 @@ struct HomeView: View {
 
     var body: some View {
         NavigationView {
-            ZStack {
-                // MARK: - Background Gradient
-                LinearGradient(
-                    colors: [OnLifeColors.deepForest, OnLifeColors.surface],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-
-                VStack(spacing: 0) {
-                    // MARK: - Header
-                    headerView
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.top, Spacing.lg)
-                        .padding(.bottom, Spacing.md)
-
-                    // MARK: - Content
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: Spacing.lg) {
-                            // MARK: - Stats & Streak Section
-                            statsSection
-                                .padding(.horizontal, Spacing.lg)
-
-                            // MARK: - Garden Health Card (Loss Aversion)
-                            if plantHealthManager.gardenHealthSummary != nil {
-                                GardenHealthCard(onTapRescue: {
-                                    showRescueSheet = true
-                                    Haptics.warning()
-                                })
-                                .padding(.horizontal, Spacing.lg)
-                            }
-
-                            // MARK: - AI Insight Card (if available)
-                            if let insight = currentInsight {
-                                InsightCardView(insight: insight)
-                                    .padding(.horizontal, Spacing.lg)
-                            }
-
-                            // MARK: - Flow Readiness Indicator
-                            flowReadinessSection
-                                .padding(.horizontal, Spacing.lg)
-
-                            if gardenViewModel.gardens.isEmpty {
-                                // No gardens - show empty state
-                                EmptyGardensCarouselView(onCreateGarden: {
-                                    showCreateGarden = true
-                                })
-                            } else {
-                                // Garden Carousel
-                                GardenCarouselView(
-                                    gardens: gardenViewModel.gardens,
-                                    selectedGarden: Binding(
-                                        get: { gardenViewModel.selectedGarden },
-                                        set: { garden in
-                                            if let garden = garden {
-                                                gardenViewModel.selectGarden(id: garden.id)
-                                            }
-                                        }
-                                    ),
-                                    gardenViewModel: gardenViewModel,
-                                    onEdit: { garden in
-                                        editingGarden = garden
-                                        Haptics.light()
-                                    },
-                                    onDelete: { garden in
-                                        gardenToDelete = garden
-                                        showDeleteAlert = true
-                                        Haptics.light()
-                                    }
-                                )
-                                .padding(.horizontal, -Spacing.lg) // Allow full bleed for carousel
-
-                                // MARK: - Premium 3D Garden Experience
-                                if let selectedGarden = gardenViewModel.selectedGarden {
-                                    let plants = gardenViewModel.plants(for: selectedGarden.id)
-                                    if !plants.isEmpty {
-                                        // Immersive 3D Garden View
-                                        GeometryReader { geometry in
-                                            GardenExperienceView(gardenViewModel: gardenViewModel)
-                                                .frame(height: geometry.size.height)
-                                                .clipShape(RoundedRectangle(cornerRadius: 24))
-                                                .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
-                                        }
-                                        .frame(height: 450) // Fixed height for garden view
-                                        .padding(.top, Spacing.sm)
-                                    } else {
-                                        EmptyGardenPlantsView(
-                                            gardenName: selectedGarden.name,
-                                            onStartSession: {
-                                                showSessionInput = true
-                                            }
-                                        )
-                                        .frame(minHeight: 300)
-                                        .padding(.top, Spacing.md)
-                                    }
-                                }
-                            }
-                        }
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.bottom, 120) // Space for FAB
-                    }
-                }
-
-                // MARK: - FAB (Floating Action Button)
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        fabButton
-                            .padding(.trailing, Spacing.lg)
-                            .padding(.bottom, Spacing.xxl)
-                    }
-                }
-            }
-            .navigationBarHidden(true)
+            mainContent
+                .navigationBarHidden(true)
         }
         .sheet(isPresented: $showSessionInput) {
             SessionInputView(viewModel: sessionViewModel, gardenViewModel: gardenViewModel)
@@ -244,10 +131,6 @@ struct HomeView: View {
             // Fetch sleep data from HealthKit
             healthKitManager.fetchLastNightSleep()
 
-            // Calculate initial flow readiness
-            calculateFlowReadiness()
-            updateBehavioralAssessment()
-
             // Update plant health tracking
             syncPlantHealthTracking()
             plantHealthManager.updateAllPlantHealth()
@@ -255,14 +138,19 @@ struct HomeView: View {
             // Check for streak freeze refresh (monthly)
             streakManager.checkMonthlyRefresh()
 
+            // Calculate flow readiness score
+            calculateFlowReadiness()
+
+            // Update behavioral assessment
+            updateBehavioralAssessment()
+
             withAnimation(OnLifeAnimation.elegant) {
                 headerAppeared = true
             }
         }
         .onChange(of: healthKitManager.lastNightSleep?.score) { _, _ in
-            // Recalculate when sleep data loads
+            // Sleep data loaded - recalculate flow readiness
             calculateFlowReadiness()
-            updateBehavioralAssessment()
         }
         .onChange(of: sessionViewModel.sessionPhase) { oldValue, newValue in
             if newValue == .input {
@@ -291,6 +179,91 @@ struct HomeView: View {
                 withAnimation(OnLifeAnimation.celebration) {
                     showSourceBanner = true
                 }
+            }
+        }
+    }
+
+    // MARK: - Main Content
+
+    private var mainContent: some View {
+        ZStack {
+            // Background Gradient
+            LinearGradient(
+                colors: [OnLifeColors.deepForest, OnLifeColors.surface],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                headerView
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.top, Spacing.lg)
+                    .padding(.bottom, Spacing.md)
+
+                scrollContent
+            }
+
+            // FAB
+            VStack {
+                Spacer()
+                HStack {
+                    Spacer()
+                    fabButton
+                        .padding(.trailing, Spacing.lg)
+                        .padding(.bottom, Spacing.xxl)
+                }
+            }
+        }
+    }
+
+    // MARK: - Scroll Content
+
+    private var scrollContent: some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: Spacing.md) {
+                compactStatsRow
+
+                // Flow Readiness Section
+                flowReadinessSection
+
+                // Garden Health Card (if plants exist)
+                GardenHealthCard(onTapRescue: {
+                    showRescueSheet = true
+                })
+
+                gardenSection
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.bottom, 100)
+        }
+    }
+
+    // MARK: - Garden Section
+
+    @ViewBuilder
+    private var gardenSection: some View {
+        if gardenViewModel.gardens.isEmpty {
+            EmptyGardensCarouselView(onCreateGarden: {
+                showCreateGarden = true
+            })
+        } else if let selectedGarden = gardenViewModel.selectedGarden {
+            gardenSelectorPill
+                .padding(.bottom, Spacing.sm)
+
+            let plants = gardenViewModel.plants(for: selectedGarden.id)
+            if !plants.isEmpty {
+                GardenDioramaView(gardenViewModel: gardenViewModel)
+                    .frame(height: 480)
+                    .shadow(color: .black.opacity(0.3), radius: 20, y: 10)
+            } else {
+                EmptyGardenPlantsView(
+                    gardenName: selectedGarden.name,
+                    onStartSession: {
+                        showSessionInput = true
+                    }
+                )
+                .frame(minHeight: 350)
             }
         }
     }
@@ -351,6 +324,57 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Garden Selector Pill (Minimal)
+
+    private var gardenSelectorPill: some View {
+        Menu {
+            ForEach(gardenViewModel.gardens) { garden in
+                Button {
+                    gardenViewModel.selectGarden(id: garden.id)
+                    Haptics.light()
+                } label: {
+                    HStack {
+                        Text(garden.icon)
+                        Text(garden.name)
+                        if garden.id == gardenViewModel.selectedGarden?.id {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+
+            Divider()
+
+            Button {
+                if let garden = gardenViewModel.selectedGarden {
+                    editingGarden = garden
+                }
+            } label: {
+                Label("Edit Garden", systemImage: "pencil")
+            }
+        } label: {
+            HStack(spacing: Spacing.sm) {
+                if let garden = gardenViewModel.selectedGarden {
+                    Text(garden.icon)
+                        .font(.system(size: 20))
+                    Text(garden.name)
+                        .font(OnLifeFont.body())
+                        .fontWeight(.medium)
+                        .foregroundColor(OnLifeColors.textPrimary)
+                }
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(
+                Capsule()
+                    .fill(OnLifeColors.cardBackground)
+            )
+        }
+    }
+
     // MARK: - FAB Button
 
     private var fabButton: some View {
@@ -376,8 +400,43 @@ struct HomeView: View {
         .buttonStyle(PressableButtonStyle())
     }
 
-    // MARK: - Stats Section (Streak & Orbs)
+    // MARK: - Compact Stats Row
 
+    private var compactStatsRow: some View {
+        HStack(spacing: Spacing.lg) {
+            // Streak
+            HStack(spacing: Spacing.xs) {
+                Text("🔥")
+                    .font(.system(size: 16))
+                Text("\(gamificationEngine.stats.currentStreak)")
+                    .font(OnLifeFont.body())
+                    .fontWeight(.semibold)
+                    .foregroundColor(OnLifeColors.textPrimary)
+                Text("day streak")
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            // Orbs
+            HStack(spacing: Spacing.xs) {
+                Text("✨")
+                    .font(.system(size: 16))
+                Text("\(gamificationEngine.stats.totalLifeOrbs)")
+                    .font(OnLifeFont.body())
+                    .fontWeight(.semibold)
+                    .foregroundColor(OnLifeColors.textPrimary)
+                Text("orbs")
+                    .font(OnLifeFont.caption())
+                    .foregroundColor(OnLifeColors.textSecondary)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, Spacing.xs)
+    }
+
+    // MARK: - Stats Section (Streak & Orbs) - LEGACY
+    @available(*, deprecated, message: "Use compactStatsRow instead")
     private var statsSection: some View {
         HStack(spacing: Spacing.md) {
             // Streak Card

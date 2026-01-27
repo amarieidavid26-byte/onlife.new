@@ -53,9 +53,10 @@ struct Plant: Codable, Identifiable {
     }
 
     var totalFocusTime: TimeInterval {
-        // TODO: Calculate from associated sessions
-        // For now, estimate based on growth stage
-        return TimeInterval(growthStage * 30 * 60) // 30 min per stage
+        // Estimate based on growth progress (0.0-1.0 maps to 0-25 minutes)
+        // This prevents the old bug of showing "5h" for a 5-minute session
+        // growthProgress of 0.2 (20%) = ~5 minutes of focus
+        return TimeInterval(growthProgress * 25 * 60)
     }
 
     var daysSinceWatering: Int {

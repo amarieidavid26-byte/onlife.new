@@ -1,25 +1,15 @@
-import RealityKit
 import Foundation
 
-/// Loads and caches USDZ assets for the 3D garden
-@MainActor
+/// Loads USDZ assets for the garden
+/// Framework-agnostic - provides URLs that SceneKit or RealityKit can load
 class GardenAssetLoader {
     static let shared = GardenAssetLoader()
-
-    /// Cached loaded entities
-    private var entityCache: [String: Entity] = [:]
-
-    /// Asset loading errors
-    enum AssetError: Error {
-        case assetNotFound(String)
-        case loadFailed(String)
-    }
 
     private init() {}
 
     // MARK: - Growth Stage
 
-    enum GrowthStage: Int {
+    enum GrowthStage: Int, CaseIterable {
         case seedling = 0  // 0-33%
         case growing = 1   // 34-66%
         case mature = 2    // 67-100%
@@ -33,6 +23,34 @@ class GardenAssetLoader {
                 return .mature
             }
         }
+    }
+
+    // MARK: - Get Model URL (for SceneKit)
+
+    /// Get the URL for a plant model based on species and growth progress
+    func getModelURL(for species: PlantSpecies, growthProgress: Double) -> URL? {
+        let stage = GrowthStage.from(progress: growthProgress)
+        let modelName = assetName(for: species, stage: stage)
+        return getModelURL(named: modelName)
+    }
+
+    /// Get the URL for a model by name
+    func getModelURL(named name: String) -> URL? {
+        // Try various bundle paths for USDZ files
+        let searchPaths: [String?] = [
+            "GardenAssets",
+            "Resources/GardenAssets",
+            nil  // Root bundle
+        ]
+
+        for subdirectory in searchPaths {
+            if let url = Bundle.main.url(forResource: name, withExtension: "usdz", subdirectory: subdirectory) {
+                return url
+            }
+        }
+
+        print("⚠️ [AssetLoader] Model not found: \(name).usdz")
+        return nil
     }
 
     // MARK: - Asset Mapping
@@ -90,7 +108,6 @@ class GardenAssetLoader {
             }
 
         case .bonsai:
-            // Using available tree assets as fallback
             switch stage {
             case .seedling: return "tree_small"
             case .growing: return "tree_default"
@@ -98,7 +115,6 @@ class GardenAssetLoader {
             }
 
         case .cherry:
-            // Using available tree assets as fallback
             switch stage {
             case .seedling: return "tree_small"
             case .growing: return "tree_default"
@@ -114,86 +130,12 @@ class GardenAssetLoader {
         }
     }
 
-    // MARK: - Loading
-
-    /// Load entity for a plant based on its species and growth progress
-    func loadEntity(for plant: Plant) async throws -> Entity {
-        let stage = GrowthStage.from(progress: plant.growthProgress)
-        let assetName = assetName(for: plant.species, stage: stage)
-        return try await loadEntity(named: assetName)
-    }
-
-    /// Load entity by asset name (cached)
-    func loadEntity(named name: String) async throws -> Entity {
-        // Check cache first
-        if let cached = entityCache[name] {
-            return cached.clone(recursive: true)
-        }
-
-        // Try various bundle paths for USDZ files
-        let searchPaths = [
-            "GardenAssets",
-            "Resources/GardenAssets",
-            nil  // Root bundle
-        ]
-
-        for subdirectory in searchPaths {
-            if let url = Bundle.main.url(forResource: name, withExtension: "usdz", subdirectory: subdirectory) {
-                return try await loadFromURL(url, name: name)
-            }
-        }
-
-        print("❌ [AssetLoader] Asset not found: \(name).usdz")
-        throw AssetError.assetNotFound(name)
-    }
-
-    private func loadFromURL(_ url: URL, name: String) async throws -> Entity {
-        do {
-            let entity = try await Entity(contentsOf: url)
-            entityCache[name] = entity
-            print("✅ [AssetLoader] Loaded: \(name).usdz")
-            return entity.clone(recursive: true)
-        } catch {
-            print("❌ [AssetLoader] Failed to load \(name): \(error)")
-            throw AssetError.loadFailed(name)
-        }
-    }
-
-    // MARK: - Preloading
-
-    /// Preload all assets for faster garden loading
-    func preloadAllAssets() async {
-        let allAssets = Set(PlantSpecies.allCases.flatMap { species in
-            GrowthStage.allCases.map { stage in
-                assetName(for: species, stage: stage)
-            }
-        })
-
-        print("🔄 [AssetLoader] Preloading \(allAssets.count) unique assets...")
-
-        for asset in allAssets {
-            do {
-                _ = try await loadEntity(named: asset)
-            } catch {
-                print("⚠️ [AssetLoader] Failed to preload: \(asset)")
-            }
-        }
-
-        print("✅ [AssetLoader] Preloading complete")
-    }
-
-    /// Clear the cache
-    func clearCache() {
-        entityCache.removeAll()
-        print("🗑️ [AssetLoader] Cache cleared")
-    }
+    // MARK: - Scale Factors
 
     /// Get scale factor for species (some models need adjustment)
     func scaleFactor(for species: PlantSpecies, stage: GrowthStage) -> Float {
-        // Base scale to fit garden nicely
         let baseScale: Float = 0.3
 
-        // Adjust per species
         let speciesMultiplier: Float
         switch species {
         case .oak, .cherry, .bonsai:
@@ -210,7 +152,6 @@ class GardenAssetLoader {
             speciesMultiplier = 1.1
         }
 
-        // Adjust per growth stage
         let stageMultiplier: Float
         switch stage {
         case .seedling: stageMultiplier = 0.6
@@ -220,12 +161,26 @@ class GardenAssetLoader {
 
         return baseScale * speciesMultiplier * stageMultiplier
     }
-}
 
-// MARK: - GrowthStage CaseIterable
+    // MARK: - Available Assets
 
-extension GardenAssetLoader.GrowthStage: CaseIterable {
-    static var allCases: [GardenAssetLoader.GrowthStage] {
-        [.seedling, .growing, .mature]
+    /// List all available USDZ files in the bundle
+    func listAvailableAssets() -> [String] {
+        var assets: [String] = []
+
+        let searchPaths: [String?] = ["GardenAssets", "Resources/GardenAssets", nil]
+
+        for subdirectory in searchPaths {
+            if let resourcePath = subdirectory.flatMap({ Bundle.main.path(forResource: nil, ofType: nil, inDirectory: $0) }) ?? Bundle.main.resourcePath {
+                let fileManager = FileManager.default
+                if let files = try? fileManager.contentsOfDirectory(atPath: resourcePath) {
+                    let usdzFiles = files.filter { $0.hasSuffix(".usdz") }
+                        .map { $0.replacingOccurrences(of: ".usdz", with: "") }
+                    assets.append(contentsOf: usdzFiles)
+                }
+            }
+        }
+
+        return Array(Set(assets)).sorted()
     }
 }

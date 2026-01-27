@@ -17,16 +17,8 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
         print("⚠️ [Memory] Memory warning received - triggering cleanup")
 
-        // Clear 3D garden resources
-        Task { @MainActor in
-            GardenSceneCoordinator.shared.cleanup()
-
-            // Clear asset cache
-            PlantAssetLoader.shared.clearCache()
-
-            // Force garbage collection hint
-            URLCache.shared.removeAllCachedResponses()
-        }
+        // Clear caches
+        URLCache.shared.removeAllCachedResponses()
     }
 }
 
@@ -42,7 +34,6 @@ struct OnLifeApp: App {
     @StateObject private var decayManager = PlantDecayManager.shared
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var themeManager = ThemeManager.shared
-    @StateObject private var gardenCoordinator = GardenSceneCoordinator.shared
 
     // Asset preloading state
     @State private var isPreloadingAssets = true
@@ -133,12 +124,6 @@ struct OnLifeApp: App {
                 // Force complete view hierarchy rebuild when theme changes
                 themeRefreshID = UUID()
                 print("🎨 [OnLifeApp] Theme changed - refreshing view hierarchy")
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
-                gardenCoordinator.onEnterBackground()
-            }
-            .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
-                gardenCoordinator.onEnterForeground()
             }
             .onOpenURL { url in
                 print("📱 [OnLifeApp] ===== onOpenURL RECEIVED =====")
