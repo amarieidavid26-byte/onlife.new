@@ -2,29 +2,12 @@ import SwiftUI
 import SceneKit
 
 /// Nintendo-style isometric garden view using SceneKit
-/// Supports tap-to-place for planting trees on the island
+/// Long-press and drag to move plants around the island
 struct SceneKitGardenView: UIViewRepresentable {
     let plants: [Plant]
 
-    // Tap-to-place state
-    @Binding var isPlacingPlant: Bool
-    @Binding var plantToPlace: Plant?
-    var onPlantPlaced: ((Plant, SCNVector3) -> Void)?
-
-    // Initializer with default values for backwards compatibility
-    init(plants: [Plant],
-         isPlacingPlant: Binding<Bool> = .constant(false),
-         plantToPlace: Binding<Plant?> = .constant(nil),
-         onPlantPlaced: ((Plant, SCNVector3) -> Void)? = nil) {
-        self.plants = plants
-        self._isPlacingPlant = isPlacingPlant
-        self._plantToPlace = plantToPlace
-        self.onPlantPlaced = onPlantPlaced
-    }
-
     func makeCoordinator() -> Coordinator {
-        print("👆 [Coordinator] Created")
-        return Coordinator(parent: self)
+        Coordinator()
     }
 
     func makeUIView(context: Context) -> SCNView {
@@ -50,25 +33,14 @@ struct SceneKitGardenView: UIViewRepresentable {
         panGesture.delegate = context.coordinator
         scnView.addGestureRecognizer(panGesture)
 
-        // DOUBLE-TAP to place NEW plants (placement mode)
-        let doubleTapGesture = UITapGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.handleTap(_:)))
-        doubleTapGesture.numberOfTapsRequired = 2
-        scnView.addGestureRecognizer(doubleTapGesture)
-
         context.coordinator.scnView = scnView
 
-        print("👆 [Gesture] Long-press + pan for moving, double-tap for placement")
+        print("🌿 [Garden] Long-press + drag to move plants")
 
         return scnView
     }
 
     func updateUIView(_ uiView: SCNView, context: Context) {
-        // Sync placement state to coordinator (bindings don't work through parent struct)
-        context.coordinator.updateState(
-            isPlacing: isPlacingPlant,
-            plant: plantToPlace,
-            onPlaced: onPlantPlaced
-        )
 
         // Update plants when data changes
         if let scene = uiView.scene {
@@ -76,35 +48,15 @@ struct SceneKitGardenView: UIViewRepresentable {
         }
     }
 
-    // MARK: - Coordinator for Tap Handling
+    // MARK: - Coordinator for Gesture Handling
 
     class Coordinator: NSObject, UIGestureRecognizerDelegate {
-        var parent: SceneKitGardenView
         weak var scnView: SCNView?
-
-        // Store placement state directly (updated from updateUIView)
-        var isPlacingPlant: Bool = false
-        var plantToPlace: Plant?
-        var onPlantPlaced: ((Plant, SCNVector3) -> Void)?
 
         // Drag-to-move state
         var draggedNode: SCNNode?
         var dragStartPosition: SCNVector3?
         var isDragging: Bool = false
-
-        init(parent: SceneKitGardenView) {
-            self.parent = parent
-        }
-
-        /// Called from updateUIView to sync state
-        func updateState(isPlacing: Bool, plant: Plant?, onPlaced: ((Plant, SCNVector3) -> Void)?) {
-            self.isPlacingPlant = isPlacing
-            self.plantToPlace = plant
-            self.onPlantPlaced = onPlaced
-            if isPlacing {
-                print("📍 [Coordinator] State updated: isPlacing=\(isPlacing), plant=\(plant?.species.rawValue ?? "nil")")
-            }
-        }
 
         // MARK: - UIGestureRecognizerDelegate
 
@@ -236,187 +188,6 @@ struct SceneKitGardenView: UIViewRepresentable {
             }
         }
 
-        // MARK: - Double Tap for New Plant Placement
-
-        @objc func handleTap(_ gesture: UITapGestureRecognizer) {
-            print("👆 [Tap] handleTap called!")
-            print("👆 [Tap] scnView: \(scnView != nil)")
-            print("👆 [Tap] isPlacingPlant: \(isPlacingPlant)")
-            print("👆 [Tap] plantToPlace: \(plantToPlace != nil)")
-
-            guard let scnView = scnView else {
-                print("❌ [Tap] No scnView")
-                return
-            }
-
-            guard let scene = scnView.scene else {
-                print("❌ [Tap] No scene")
-                return
-            }
-
-            guard isPlacingPlant else {
-                print("ℹ️ [Tap] Not in placement mode, ignoring tap")
-                return
-            }
-
-            guard let plantToPlace = plantToPlace else {
-                print("❌ [Tap] No plant to place")
-                return
-            }
-
-            let location = gesture.location(in: scnView)
-            print("👆 [Tap] Screen location: \(location)")
-
-            // Use ground plane projection for more accurate placement
-            // This projects the tap onto a horizontal plane at grass level
-            guard let position = projectTapToGroundPlane(screenPoint: location, in: scnView) else {
-                print("❌ [Tap] Could not project tap to ground plane")
-                return
-            }
-
-            // Check if position is within island bounds (roughly circular, radius ~4)
-            let distanceFromCenter = sqrt(position.x * position.x + position.z * position.z)
-            guard distanceFromCenter < 4.5 else {
-                print("⚠️ [Tap] Too far from island center (distance: \(distanceFromCenter))")
-                return
-            }
-
-            print("✅ [Tap] Planting at: (\(position.x), \(position.y), \(position.z))")
-
-            // Place the plant with animation
-            placePlantWithAnimation(plantToPlace, at: position, in: scene)
-
-            // Notify via callback (callback handles state reset)
-            onPlantPlaced?(plantToPlace, position)
-
-            // Reset local state
-            self.isPlacingPlant = false
-            self.plantToPlace = nil
-        }
-
-        private func placePlantWithAnimation(_ plant: Plant, at position: SCNVector3, in scene: SCNScene) {
-            let plantNode: SCNNode
-
-            // Try to load USDZ model
-            if let usdzURL = GardenAssetLoader.shared.getModelURL(for: plant.species, growthProgress: plant.growthProgress) {
-                do {
-                    let loadedScene = try SCNScene(url: usdzURL, options: [.checkConsistency: true])
-                    plantNode = SCNNode()
-                    for child in loadedScene.rootNode.childNodes {
-                        plantNode.addChildNode(child.clone())
-                    }
-                } catch {
-                    plantNode = createSimplePlant(for: plant)
-                }
-            } else {
-                plantNode = createSimplePlant(for: plant)
-            }
-
-            plantNode.name = "plant_\(plant.id)"
-            plantNode.position = position
-
-            // Start tiny for pop-in animation
-            plantNode.scale = SCNVector3(0.01, 0.01, 0.01)
-            plantNode.eulerAngles.y = Float.random(in: 0...Float.pi * 2)
-
-            scene.rootNode.addChildNode(plantNode)
-
-            // Animate to full size
-            let targetScale: Float = 0.5 * (0.5 + Float(plant.growthProgress) * 0.5)
-            SCNTransaction.begin()
-            SCNTransaction.animationDuration = 0.4
-            SCNTransaction.animationTimingFunction = CAMediaTimingFunction(name: .easeOut)
-            plantNode.scale = SCNVector3(targetScale, targetScale, targetScale)
-            SCNTransaction.commit()
-
-            print("🌱 [Plant] Placed \(plant.species.rawValue) with pop-in animation")
-        }
-
-        /// Projects a 2D screen tap to a 3D point on the ground plane (Y = grass level)
-        /// Uses SCNView hit test with a virtual ground plane for accurate projection
-        private func projectTapToGroundPlane(screenPoint: CGPoint, in scnView: SCNView) -> SCNVector3? {
-            // Ground plane Y level (grass surface height from your logs)
-            let groundY: Float = 4.5
-
-            // Method: Use SCNView's built-in hit test against the island geometry
-            // Then adjust Y to grass level for consistent placement height
-            let hitResults = scnView.hitTest(screenPoint, options: [
-                .searchMode: NSNumber(value: SCNHitTestSearchMode.closest.rawValue),
-                .backFaceCulling: NSNumber(value: false)
-            ])
-
-            // Find hit on any geometry (island, grass, etc.)
-            if let hit = hitResults.first {
-                let worldPos = hit.worldCoordinates
-                print("🎯 [Project] Hit geometry at: (\(worldPos.x), \(worldPos.y), \(worldPos.z))")
-                print("🎯 [Project] Hit node: \(hit.node.name ?? "unnamed")")
-                print("🎯 [Project] Normal: (\(hit.worldNormal.x), \(hit.worldNormal.y), \(hit.worldNormal.z))")
-
-                // Use the X,Z from the hit, but normalize Y to grass level
-                // This prevents plants floating at different heights
-                return SCNVector3(worldPos.x, groundY + 0.1, worldPos.z)
-            }
-
-            // Fallback: No geometry hit, try unprojecting to ground plane
-            print("⚠️ [Project] No geometry hit, using ray-plane intersection")
-
-            // Get 3D points at near and far planes
-            let nearPoint = scnView.unprojectPoint(SCNVector3(Float(screenPoint.x), Float(screenPoint.y), 0))
-            let farPoint = scnView.unprojectPoint(SCNVector3(Float(screenPoint.x), Float(screenPoint.y), 1))
-
-            print("🔍 [Project] Near: (\(nearPoint.x), \(nearPoint.y), \(nearPoint.z))")
-            print("🔍 [Project] Far: (\(farPoint.x), \(farPoint.y), \(farPoint.z))")
-
-            // Ray direction
-            let rayDir = SCNVector3(
-                farPoint.x - nearPoint.x,
-                farPoint.y - nearPoint.y,
-                farPoint.z - nearPoint.z
-            )
-
-            print("🔍 [Project] Ray dir: (\(rayDir.x), \(rayDir.y), \(rayDir.z))")
-
-            // Avoid division by zero (ray parallel to ground)
-            guard abs(rayDir.y) > 0.001 else {
-                print("❌ [Project] Ray parallel to ground")
-                return nil
-            }
-
-            // Calculate intersection with ground plane: Y = groundY
-            let t = (groundY - nearPoint.y) / rayDir.y
-
-            guard t > 0 else {
-                print("❌ [Project] Intersection behind camera (t=\(t))")
-                return nil
-            }
-
-            let intersectionX = nearPoint.x + t * rayDir.x
-            let intersectionZ = nearPoint.z + t * rayDir.z
-
-            print("🔍 [Project] Intersection: (\(intersectionX), \(groundY), \(intersectionZ))")
-
-            return SCNVector3(intersectionX, groundY + 0.1, intersectionZ)
-        }
-
-        private func createSimplePlant(for plant: Plant) -> SCNNode {
-            let node = SCNNode()
-
-            // Simple tree shape
-            let trunkGeometry = SCNCylinder(radius: 0.06, height: 0.35)
-            trunkGeometry.firstMaterial?.diffuse.contents = UIColor.brown
-            let trunk = SCNNode(geometry: trunkGeometry)
-            trunk.position = SCNVector3(0, 0.175, 0)
-
-            let foliageGeometry = SCNSphere(radius: 0.25)
-            foliageGeometry.firstMaterial?.diffuse.contents = UIColor.green
-            let foliage = SCNNode(geometry: foliageGeometry)
-            foliage.position = SCNVector3(0, 0.45, 0)
-
-            node.addChildNode(trunk)
-            node.addChildNode(foliage)
-
-            return node
-        }
     }
 
     // MARK: - Scene Creation

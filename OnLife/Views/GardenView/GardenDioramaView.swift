@@ -3,22 +3,13 @@ import SceneKit
 
 /// Main garden diorama view - Nintendo/Animal Crossing style
 /// Contains the 3D SceneKit view with UI overlays
-/// Supports tap-to-place for planting new trees
+/// Long-press and drag to move plants around the island
 struct GardenDioramaView: View {
     @ObservedObject var gardenViewModel: GardenViewModel
     @State private var selectedPlantID: UUID?
 
-    // Tap-to-place state (owned by this view)
-    @State private var isPlacingPlant: Bool = false
-    @State private var plantToPlace: Plant?
-
-    // Callback when plant is placed (for persistence)
-    var onPlantPlaced: ((Plant, SCNVector3) -> Void)?
-
-    init(gardenViewModel: GardenViewModel,
-         onPlantPlaced: ((Plant, SCNVector3) -> Void)? = nil) {
+    init(gardenViewModel: GardenViewModel) {
         self.gardenViewModel = gardenViewModel
-        self.onPlantPlaced = onPlantPlaced
     }
 
     var body: some View {
@@ -26,39 +17,21 @@ struct GardenDioramaView: View {
 
         ZStack {
             // The 3D Garden Scene - fills entire card
-            SceneKitGardenView(
-                plants: plants,
-                isPlacingPlant: $isPlacingPlant,
-                plantToPlace: $plantToPlace,
-                onPlantPlaced: { plant, position in
-                    // Reset placement mode
-                    isPlacingPlant = false
-                    plantToPlace = nil
-                    // Notify parent
-                    onPlantPlaced?(plant, position)
-                }
-            )
+            // Long-press + drag to move plants
+            SceneKitGardenView(plants: plants)
 
-            // Gradient overlay at bottom for readability (hide during placement)
-            if !isPlacingPlant {
-                VStack {
-                    Spacer()
-                    LinearGradient(
-                        colors: [.clear, .black.opacity(0.4)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .frame(height: 120)
-                }
+            // Gradient overlay at bottom for readability
+            VStack {
+                Spacer()
+                LinearGradient(
+                    colors: [.clear, .black.opacity(0.4)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: 120)
             }
 
-            // Placement mode overlay
-            if isPlacingPlant {
-                placementOverlay
-            }
-
-            // UI Overlays (hide during placement)
-            if !isPlacingPlant {
+            // UI Overlays
                 VStack(spacing: 0) {
                     // Top: Garden name (if multiple gardens)
                     if let garden = gardenViewModel.selectedGarden {
@@ -117,19 +90,6 @@ struct GardenDioramaView: View {
                             )
 
                             Spacer()
-
-                            // TEMPORARY TEST BUTTON - Remove after testing
-                            Button(action: {
-                                triggerTestPlacement()
-                            }) {
-                                Text("🌱 Test")
-                                    .font(.caption)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.white)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
-                                    .background(Color.green.opacity(0.6), in: Capsule())
-                            }
                         }
                         .padding(.horizontal, 16)
                         .padding(.bottom, 16)
@@ -138,73 +98,6 @@ struct GardenDioramaView: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: 24))
-    }
-
-    // MARK: - Test Placement (TEMPORARY)
-
-    private func triggerTestPlacement() {
-        guard let garden = gardenViewModel.selectedGarden else { return }
-
-        // Create a test plant
-        let testPlant = Plant(
-            gardenId: garden.id,
-            sessionId: UUID(),
-            species: .oak,
-            seedType: .oneTime,
-            growthStage: 5
-        )
-
-        plantToPlace = testPlant
-        isPlacingPlant = true
-        print("🧪 [Test] Triggered placement mode for test plant")
-    }
-
-    // MARK: - Placement Overlay
-
-    private var placementOverlay: some View {
-        VStack {
-            // Top prompt
-            HStack {
-                Spacer()
-                VStack(spacing: 4) {
-                    Text("🌱 Double-tap on grass to plant!")
-                        .font(.headline)
-                        .foregroundColor(.white)
-
-                    if let plant = plantToPlace {
-                        Text("Planting: \(plant.species.rawValue.capitalized)")
-                            .font(.caption)
-                            .foregroundColor(.white.opacity(0.8))
-                    }
-
-                    Text("Drag to rotate view")
-                        .font(.caption2)
-                        .foregroundColor(.white.opacity(0.6))
-                }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16))
-                Spacer()
-            }
-            .padding(.top, 20)
-
-            Spacer()
-
-            // Cancel button
-            Button(action: {
-                isPlacingPlant = false
-                plantToPlace = nil
-            }) {
-                Text("Cancel")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 10)
-                    .background(Color.red.opacity(0.8), in: Capsule())
-            }
-            .padding(.bottom, 20)
-        }
     }
 
     // MARK: - Computed Properties
