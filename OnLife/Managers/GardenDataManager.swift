@@ -87,6 +87,22 @@ class GardenDataManager {
         print("🌱 Deleted plant: \(plantId)")
     }
 
+    func updatePlantPosition(plantId: UUID, position: PlantPosition) {
+        var gardens = loadGardens()
+
+        // Find the plant across all gardens
+        for gardenIndex in gardens.indices {
+            if let plantIndex = gardens[gardenIndex].plants.firstIndex(where: { $0.id == plantId }) {
+                gardens[gardenIndex].plants[plantIndex].gardenPosition = position
+                saveGardens(gardens)
+                print("💾 [Position] Saved position for plant \(plantId): (\(position.x), \(position.y), \(position.z))")
+                return
+            }
+        }
+
+        print("⚠️ [Position] Plant not found: \(plantId)")
+    }
+
     // MARK: - Helper Methods
 
     private func saveGardens(_ gardens: [Garden]) {

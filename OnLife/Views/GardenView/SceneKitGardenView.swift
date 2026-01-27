@@ -119,9 +119,10 @@ struct SceneKitGardenView: UIViewRepresentable {
             case .ended, .cancelled:
                 if let node = draggedNode {
                     // Drop the plant
+                    let finalY: Float = 4.6  // Normalize to grass level
                     SCNTransaction.begin()
                     SCNTransaction.animationDuration = 0.2
-                    node.position.y = 4.6  // Normalize to grass level
+                    node.position.y = finalY
                     node.scale = SCNVector3(
                         node.scale.x / 1.1,
                         node.scale.y / 1.1,
@@ -129,7 +130,19 @@ struct SceneKitGardenView: UIViewRepresentable {
                     )
                     SCNTransaction.commit()
 
-                    print("🌿 [Drag] Dropped plant at: (\(node.position.x), \(node.position.y), \(node.position.z))")
+                    // Save position to persist across app restarts
+                    if let plantIdString = node.name?.replacingOccurrences(of: "plant_", with: ""),
+                       let plantId = UUID(uuidString: plantIdString) {
+                        let position = PlantPosition(
+                            x: node.position.x,
+                            y: finalY,
+                            z: node.position.z
+                        )
+                        GardenDataManager.shared.updatePlantPosition(plantId: plantId, position: position)
+                        print("💾 [Drag] Saved position for plant \(plantIdString)")
+                    }
+
+                    print("🌿 [Drag] Dropped plant at: (\(node.position.x), \(finalY), \(node.position.z))")
                 }
                 draggedNode = nil
                 dragStartPosition = nil
@@ -422,12 +435,10 @@ struct SceneKitGardenView: UIViewRepresentable {
             .filter { $0.name?.starts(with: "plant_") == true }
             .forEach { $0.removeFromParentNode() }
 
-        // Generate organic positions
-        let positions = generateOrganicPositions(count: plants.count)
+        // Generate fallback positions for plants without saved positions
+        let fallbackPositions = generateOrganicPositions(count: plants.count)
 
         for (index, plant) in plants.enumerated() {
-            guard index < positions.count else { break }
-
             let plantNode: SCNNode
 
             // Try to load USDZ model
@@ -452,20 +463,29 @@ struct SceneKitGardenView: UIViewRepresentable {
 
             plantNode.name = "plant_\(plant.id)"
 
-            let x = positions[index].x
-            let z = positions[index].z
-
-            // Raycast to find actual surface height
-            let surfaceY = findSurfaceHeight(x: x, z: z, in: scene) ?? Self.islandTopY
-            plantNode.position = SCNVector3(x, surfaceY, z)
+            // Use saved position if available, otherwise use fallback
+            if let savedPosition = plant.gardenPosition {
+                plantNode.position = SCNVector3(savedPosition.x, savedPosition.y, savedPosition.z)
+                print("📍 [Plant] Loaded saved position for \(plant.species.rawValue): (\(savedPosition.x), \(savedPosition.y), \(savedPosition.z))")
+            } else if index < fallbackPositions.count {
+                let x = fallbackPositions[index].x
+                let z = fallbackPositions[index].z
+                let surfaceY = findSurfaceHeight(x: x, z: z, in: scene) ?? Self.islandTopY
+                plantNode.position = SCNVector3(x, surfaceY, z)
+            } else {
+                // Last resort: center of island
+                plantNode.position = SCNVector3(0, Self.islandTopY, 0)
+            }
 
             // Scale based on growth progress (0.5 to 1.0 range)
             let baseScale: Float = 0.5
             let growthScale = baseScale * (0.5 + Float(plant.growthProgress) * 0.5)
             plantNode.scale = SCNVector3(growthScale, growthScale, growthScale)
 
-            // Random rotation for natural look
-            plantNode.eulerAngles.y = Float.random(in: 0...Float.pi * 2)
+            // Random rotation for natural look (only if no saved position)
+            if plant.gardenPosition == nil {
+                plantNode.eulerAngles.y = Float.random(in: 0...Float.pi * 2)
+            }
 
             scene.rootNode.addChildNode(plantNode)
         }

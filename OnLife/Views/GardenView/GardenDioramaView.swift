@@ -32,68 +32,67 @@ struct GardenDioramaView: View {
             }
 
             // UI Overlays
-                VStack(spacing: 0) {
-                    // Top: Garden name (if multiple gardens)
-                    if let garden = gardenViewModel.selectedGarden {
-                        HStack {
-                            Text(garden.icon)
-                                .font(.title2)
-                            Text(garden.name)
-                                .font(.headline)
-                                .foregroundColor(.white)
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 12)
+            VStack(spacing: 0) {
+                // Top: Garden name (if multiple gardens)
+                if let garden = gardenViewModel.selectedGarden {
+                    HStack {
+                        Text(garden.icon)
+                            .font(.title2)
+                        Text(garden.name)
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Spacer()
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 12)
+                }
 
-                    Spacer()
+                Spacer()
 
-                    // Bottom: Plant carousel + Stats
-                    VStack(spacing: 12) {
-                        // Plant quick-select carousel
-                        if !plants.isEmpty {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 10) {
-                                    ForEach(plants) { plant in
-                                        PlantPillButton(
-                                            plant: plant,
-                                            isSelected: selectedPlantID == plant.id
-                                        ) {
-                                            selectedPlantID = plant.id
-                                            HapticManager.shared.impact(style: .light)
-                                        }
+                // Bottom: Plant carousel + Stats
+                VStack(spacing: 12) {
+                    // Plant quick-select carousel
+                    if !plants.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 10) {
+                                ForEach(plants) { plant in
+                                    PlantPillButton(
+                                        plant: plant,
+                                        isSelected: selectedPlantID == plant.id
+                                    ) {
+                                        selectedPlantID = plant.id
+                                        HapticManager.shared.impact(style: .light)
                                     }
                                 }
-                                .padding(.horizontal, 16)
                             }
+                            .padding(.horizontal, 16)
                         }
-
-                        // Stats bar
-                        HStack(spacing: 16) {
-                            DioramaStatPill(
-                                icon: "leaf.fill",
-                                value: "\(plants.count)",
-                                label: "Plants"
-                            )
-
-                            DioramaStatPill(
-                                icon: "heart.fill",
-                                value: "\(Int(averageHealth * 100))%",
-                                label: "Health"
-                            )
-
-                            DioramaStatPill(
-                                icon: "clock.fill",
-                                value: totalFocusTimeString,
-                                label: "Focus"
-                            )
-
-                            Spacer()
-                        }
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 16)
                     }
+
+                    // Stats bar
+                    HStack(spacing: 16) {
+                        DioramaStatPill(
+                            icon: "leaf.fill",
+                            value: "\(plants.count)",
+                            label: "Plants"
+                        )
+
+                        DioramaStatPill(
+                            icon: "heart.fill",
+                            value: "\(Int(averageHealth * 100))%",
+                            label: "Health"
+                        )
+
+                        DioramaStatPill(
+                            icon: "clock.fill",
+                            value: totalFocusTimeString,
+                            label: "Focus"
+                        )
+
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
                 }
             }
         }

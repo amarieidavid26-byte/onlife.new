@@ -1,5 +1,21 @@
 import Foundation
 
+// MARK: - Plant Position (for 3D garden)
+
+struct PlantPosition: Codable, Equatable {
+    var x: Float
+    var y: Float
+    var z: Float
+
+    init(x: Float, y: Float, z: Float) {
+        self.x = x
+        self.y = y
+        self.z = z
+    }
+}
+
+// MARK: - Plant Model
+
 struct Plant: Codable, Identifiable {
     let id: UUID
     let gardenId: UUID
@@ -15,6 +31,9 @@ struct Plant: Codable, Identifiable {
     // Decay tracking (for recurring plants)
     var lastWateredDate: Date
 
+    // Garden position (x, y, z) - nil means use default placement
+    var gardenPosition: PlantPosition?
+
     init(
         id: UUID = UUID(),
         gardenId: UUID,
@@ -26,7 +45,8 @@ struct Plant: Codable, Identifiable {
         growthStage: Int = 0,
         lastSessionDate: Date = Date(),
         hasScar: Bool = false,
-        lastWateredDate: Date = Date()
+        lastWateredDate: Date = Date(),
+        gardenPosition: PlantPosition? = nil
     ) {
         self.id = id
         self.gardenId = gardenId
@@ -39,6 +59,7 @@ struct Plant: Codable, Identifiable {
         self.lastSessionDate = lastSessionDate
         self.hasScar = hasScar
         self.lastWateredDate = lastWateredDate
+        self.gardenPosition = gardenPosition
     }
 
     // Computed properties
